@@ -66,7 +66,7 @@ struct CardSection: Identifiable {
     var lines: [CardLine]
 }
 
-func signed(_ value: Int) -> String {
+public func signed(_ value: Int) -> String {
     value >= 0 ? "+\(value)" : "−\(abs(value))"
 }
 

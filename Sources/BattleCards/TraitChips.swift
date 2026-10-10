@@ -77,16 +77,20 @@ private struct TraitChip: View {
 }
 
 /// Lays out views left to right, wrapping to new rows.
-struct FlowLayout: Layout {
-    var spacing: CGFloat
+public struct FlowLayout: Layout {
+    public var spacing: CGFloat
 
-    func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
+    public init(spacing: CGFloat) {
+        self.spacing = spacing
+    }
+
+    public func sizeThatFits(proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) -> CGSize {
         let rows = arrange(subviews, width: proposal.width ?? .infinity)
         let height = rows.map(\.height).reduce(0, +) + spacing * CGFloat(max(rows.count - 1, 0))
         return CGSize(width: proposal.width ?? rows.map(\.width).max() ?? 0, height: height)
     }
 
-    func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
+    public func placeSubviews(in bounds: CGRect, proposal: ProposedViewSize, subviews: Subviews, cache: inout ()) {
         var top = bounds.minY
         for row in arrange(subviews, width: bounds.width) {
             var left = bounds.minX

@@ -2,11 +2,16 @@ import Bestiary
 import SwiftUI
 
 /// "ELITE" or "WEAK" next to the level, when a template applies.
-struct TemplateBadge: View {
+public struct TemplateBadge: View {
     let template: CreatureTemplate
     let color: Color
 
-    var body: some View {
+    public init(template: CreatureTemplate, color: Color) {
+        self.template = template
+        self.color = color
+    }
+
+    public var body: some View {
         if template != .normal {
             Text(template.rawValue.uppercased())
                 .font(.custom(FontName.condensedBold, size: 12))
