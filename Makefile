@@ -5,7 +5,7 @@ build:
 
 # Builds the libraries for the iPad simulator, as the apps use them there.
 build-ios:
-	xcodebuild -scheme TabletopKit -destination 'generic/platform=iOS Simulator' -quiet build
+	xcodebuild -scheme TabletopKit-Package -destination 'generic/platform=iOS Simulator' -quiet build
 
 test:
 	swift test
