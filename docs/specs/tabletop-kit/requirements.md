@@ -45,6 +45,10 @@ and Field Guide share. It contains no Paizo art or text.
 - R2.8 A token's art is kept as a picture when its PDF is added, so it stays available when the PDF goes
   missing. Other art is drawn from its PDF when asked for.
 - R2.9 Art with no name printed is left out of the library.
+- R2.10 The apps share a store over the art library (`CreatureArt`): importing a watched folder or chosen PDFs with
+  progress and a summary, a catalog of the art (name, game, whether a remastered product prints it, whether it is
+  a token, whether it can be drawn, the PDFs printing it) and of the PDFs (missing or not), and pictures drawn off
+  the main thread.
 
 ## R3 Test support (`ArtExtractionTestSupport`)
 - R3.1 Draws small PDFs laid out like Paizo's (pawns with cut outlines and labels, tokens, Battle Cards decks), so

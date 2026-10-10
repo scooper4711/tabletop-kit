@@ -9,6 +9,7 @@ simulator.
 |---|---|
 | `ArtExtraction` | PDF scanning, pawns, tokens, Battle Cards, figures, fingerprints, and the art library |
 | `ArtExtractionTestSupport` | Test PDF drawing (`DrawnPawn`, `DrawnToken`, `DrawnCard`, `makePDF`, …), published for the apps' tests |
+| `CreatureArt` | `CreatureArtStore`, an actor over `ArtLibrary` that Combat Pad and Field Guide share |
 | `Bestiary` | Creatures, stat-block presentation, conditions and rules text, from Combat Pad |
 | `CreatureImport` | The pf2e repository's creatures, conditions and glossary, written for `Bestiary` to load |
 | `BattleCards` | SwiftUI card fronts and backs, card text, glossary popovers, fonts, and `CardArtImport` |
@@ -198,6 +199,15 @@ build on the same extraction.
 - `picture(of:maxPixels:)` draws the first print that can be drawn: a token's kept picture, or the figure read from
   the PDF (a figure's picture by its index, or the largest picture inside a pawn's outline) turned upright with
   `Figure.draw(in:rotation:)` on a transparent bitmap.
+
+## Creature art store (`CreatureArt`)
+Moved from Combat Pad. `CreatureArtStore` owns an `ArtLibrary` in the folder the app gives it.
+`importFolder(_:progress:)` watches a folder and adds its new PDFs by reference; `addNewFiles` does so for the
+watched folders (at launch); `addFiles(_:progress:)` keeps copies of chosen PDFs; each returns an
+`ArtImportSummary` with a message. `catalog()` refreshes the PDFs' statuses and returns `LibraryArt` for each entry
+(remastered when a printing product's title names one of `remasteredProducts`: Monster Core, NPC Core, Alien Core,
+Howl of the Wild, Rage of Elements) and an `ArtSourceSummary` for each PDF. `picture(id:maxPixels:)` draws and
+caches.
 
 ## Creatures (`Bestiary`)
 Moved from Combat Pad's `CombatPadKit`: `Creature` and its parts, `BestiaryStore` (the index, packs loaded a pack
