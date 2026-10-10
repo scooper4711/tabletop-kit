@@ -37,8 +37,14 @@ Measured across 61 Pathfinder and Starfinder pawn PDFs:
     around the figure (a soft mask), the cut line a filled vector ring, and the name set along the rim one
     letter per text object, twice (outline and fill), with copy numbers ("Smog Scamp 2"). The second page is
     the duplex back. The font maps a hyphen through its ToUnicode CMap only.
-- Not yet handled: pawns printed without outlines (the second half of Monster Core, Dawn of Flame), pages
-  that are only a raster image (the second half of NPC Core), and terrain sets with rectangular outlines.
+- Some products print pawns without cut outlines: the second half of Monster Core Pawn Box (large pawns, sideways,
+  three by five to a page) and all of Dawn of Flame (mediums upright, smaller and larger ones sideways). Each pawn
+  is a picture with a soft mask, about 10 pt of bleed larger than its outline (a medium's is about 100 × 146 pt),
+  with the name and copyright printed along its foot, inside the picture's edge or just outside it. Labels are
+  drawn twice (a fill and an outline), the copies sometimes split into different pieces, and words are broken
+  where the type is kerned ("PITB", "ORN ADEPT"). Back pages draw the same image objects mirrored.
+- Not yet handled: pages that are only a raster image (the second half of NPC Core), and terrain sets with
+  rectangular outlines.
 
 ## Paizo Battle Cards
 Measured across eleven decks (Bestiary 1–3, Monster Core, NPC, NPC Core, Abomination Vaults, Book of the Dead,
@@ -96,6 +102,30 @@ Fists of the Ruby Phoenix, Alien Archive 1 & 2 and 3 & 4), 289 × 425 pt cards (
     across) plus the largest one's thumbnail. Pawns merge only when name and size are equal and the art
     matches: equal digests, or thumbnails with a correlation distance (100 × (1 − r)) of at most 20. Copies
     embedded separately measure up to about 10; different figures start above 40.
+
+## Pawns without outlines (`ArtExtraction/Extraction/FigurePawns.swift`)
+- `PawnExtractor.foundArt` reads pages with no sized outlines and no tokens for `FigurePawns`: each image with a
+  soft mask at least 36 pt across. Each piece of text belongs to the picture it is printed inside (nearest that
+  picture's edge) or else the nearest picture within 18 pt, judged at about the middle of the piece (its start moved
+  half its estimated length along it). A picture is a pawn only when its text includes "©" or "Paizo", which leaves
+  out covers; its foot is the edge nearest the middle of its text, and its head the edge across from it.
+- `PageScanner` records each piece of text's size (`Tf` times the text matrix's vertical scale) and direction.
+  `LabelLines` rebuilds the label: pieces are grouped into lines across the text's direction and ordered along it,
+  joined without spaces (the text carries its own), skipping a piece that starts within the previous piece's
+  estimated length (0.45 em a character) or where it started: the second copy. The lines then go through
+  `PawnLabel.name` as outlined pawns' labels do. Names over 60 characters are blurbs, not pawns.
+- The size is the one whose upright outline is closest to the picture's upright size (summed differences of width
+  and height, small to huge), an estimate, since the bleed varies. The next page is the back when it draws at least
+  half of the page's pictures again (same image digests); it is not read as fronts.
+- Each pawn is an `ExtractedPawn` with the `.card(imageIndex:)` shape, drawn alone like a Battle Card's creature:
+  the face is the picture's opaque bounds on its page, with the rotation that turns the head to the top, and the
+  back is the front mirrored. `Figure.draw(in:mirrored:rotation:context:)` turns a figure upright with the same
+  transform as `PawnFace`.
+- A page after the first that is one image covering 90% of it, with no text or outlines, is listed in
+  `ExtractionResult.unreadablePages`.
+- `PawnExtractor.version` is 2, so PDFs in which version 1 found nothing are read again.
+- Measured: Monster Core Pawn Box gives 411 pawns (202 before, 209 of them from pictures), Dawn of Flame 134
+  (none before); NPC Core reports its 16 flattened pages.
 
 ## Battle Cards (`ArtExtraction/Cards`)
 - `CardDeck.containing(_:)` takes a PDF whose name, or one of its two enclosing folders, says "Battle Cards".
