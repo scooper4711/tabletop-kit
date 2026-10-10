@@ -2,7 +2,8 @@ import CoreText
 import Foundation
 import SwiftUI
 
-/// PostScript names of the fonts converted into `Generated/Fonts` by the import.
+/// PostScript names of the fonts the apps bundle in `Generated/Fonts`: Roboto and the Pathfinder action glyphs from
+/// the pf2e repository.
 public enum FontName {
     public static let condensed = "RobotoCondensed-Regular"
     public static let condensedBold = "RobotoCondensed-Bold"
@@ -14,12 +15,15 @@ public enum FontName {
 }
 
 public enum Fonts {
+    /// The font files Core Text registers: TrueType, OpenType and web fonts, which the pf2e repository ships.
+    static let fileExtensions: Set<String> = ["ttf", "otf", "woff", "woff2"]
+
     /// Registers every font in `Generated/Fonts` for this process. Missing fonts fall back to the system font.
     public static func register(from generatedDirectory: URL?) {
         guard let folder = generatedDirectory?.appendingPathComponent("Fonts"),
               let files = try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)
         else { return }
-        for file in files where file.pathExtension == "ttf" {
+        for file in files where fileExtensions.contains(file.pathExtension.lowercased()) {
             CTFontManagerRegisterFontsForURL(file as CFURL, .process, nil)
         }
     }
