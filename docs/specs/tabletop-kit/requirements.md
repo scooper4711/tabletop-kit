@@ -52,10 +52,22 @@ and Field Guide share. It contains no Paizo art or text.
 - R3.2 Tests that read real Paizo PDFs run when a git-ignored `TestData` folder holds them, and are skipped
   otherwise.
 
-## R4 Planned
+## R4 Creatures (`Bestiary`, `CreatureImport`)
 - R4.1 Creatures (`Bestiary`, `CreatureImport`): the creature model, stat-block presentation and rules shared by
   Combat Pad and Field Guide, imported from the pf2e system repository (every NPC and complex hazard, the
   conditions, and a glossary of what the creatures link to), and art from the art library matched to creatures by
   name. Running the import twice on the same input produces identical output.
-- R4.2 Battle cards (`BattleCards`): SwiftUI card fronts and backs in a look of their own, drawn with UI art each
-  app supplies, not Paizo's card design.
+
+## R5 Battle cards (`BattleCards`)
+- R5.1 A creature's card front shows its stat block with the template and conditions applied, in a look of its
+  own, not Paizo's Battle Cards': Pathfinder on parchment in a stone frame, the level on a heraldic shield and gold
+  rules between sections; Starfinder on a dark panel in steel corner brackets, the name on a cyan bar and the level
+  in a hexagon. An elite card adds a thin gold frame. Linked words open glossary popovers, two deep.
+- R5.2 A card back shows the creature's art (from the user's PDFs, supplied by the app) with its name: Pathfinder in
+  a painted landscape picked by its traits (undead and spirits in haunted ruins, fiends and fire on lava, cold in
+  snow, earth, dragons and giants in a canyon, the rest in a meadow), its name centered on the banner of a parchment
+  ribbon; Starfinder glowing on a dark texture, its name on a terminal plate, an elongated hexagon of dark glass with
+  scanlines and glowing monospaced type.
+- R5.3 The cards are drawn with UI art from the user's own Rexard packs, which can't be published: `CardArtImport`
+  copies the pieces from the packs into an app's folder at build time, and the app passes that folder to the
+  cards. Without a piece, the card draws plain color in its place.
