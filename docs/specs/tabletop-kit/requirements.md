@@ -53,7 +53,9 @@ and Field Guide share. It contains no Paizo art or text.
   otherwise.
 
 ## R4 Planned
-- R4.1 Creatures (`Bestiary`, `BestiaryImport`): the creature model, stat-block presentation and rules shared by
-  Combat Pad and Field Guide, built from the pf2e system repository, and art matched to creatures by name.
+- R4.1 Creatures (`Bestiary`, `CreatureImport`): the creature model, stat-block presentation and rules shared by
+  Combat Pad and Field Guide, imported from the pf2e system repository (every NPC and complex hazard, the
+  conditions, and a glossary of what the creatures link to), and art from the art library matched to creatures by
+  name. Running the import twice on the same input produces identical output.
 - R4.2 Battle cards (`BattleCards`): SwiftUI card fronts and backs in a look of their own, drawn with UI art each
   app supplies, not Paizo's card design.

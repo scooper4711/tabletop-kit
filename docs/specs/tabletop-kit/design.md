@@ -9,7 +9,9 @@ simulator.
 |---|---|
 | `ArtExtraction` | PDF scanning, pawns, tokens, Battle Cards, figures, fingerprints, and the art library |
 | `ArtExtractionTestSupport` | Test PDF drawing (`DrawnPawn`, `DrawnToken`, `DrawnCard`, `makePDF`, …), published for the apps' tests |
-| `Bestiary`, `BestiaryImport`, `BattleCards` | Planned (R4), moved from Combat Pad |
+| `Bestiary` | Creatures, stat-block presentation, conditions and rules text, from Combat Pad |
+| `CreatureImport` | The pf2e repository's creatures, conditions and glossary, written for `Bestiary` to load |
+| `BattleCards` | Planned (R4.2) |
 
 ## Paizo pawn PDFs
 Measured across 61 Pathfinder and Starfinder pawn PDFs:
@@ -196,6 +198,51 @@ build on the same extraction.
 - `picture(of:maxPixels:)` draws the first print that can be drawn: a token's kept picture, or the figure read from
   the PDF (a figure's picture by its index, or the largest picture inside a pawn's outline) turned upright with
   `Figure.draw(in:rotation:)` on a transparent bitmap.
+
+## Creatures (`Bestiary`)
+Moved from Combat Pad's `CombatPadKit`: `Creature` and its parts, `BestiaryStore` (the index, packs loaded a pack
+at a time, conditions, the glossary and `art-overrides.json`), `StatBlockPresenter` (templates and conditions
+applied), the rules the cards need (`CreatureTemplate`, `AppliedCondition`, `ConditionEffects`, `Modifiers`), rules
+text, `PlayerDetails` (a linked PC's sheet shown as a creature), Pluck stat blocks and `LibraryArtMatcher` (art
+from the art library matched to creatures by name; see Combat Pad's spec). Encounter budgets, challenge points and
+everything about campaigns and fights stay in Combat Pad.
+
+## Importing creatures (`CreatureImport`)
+1. **Pack discovery.** Read `system.pf2e.json` and `system.sf2e.json` for the Actor packs. Scan
+   `packs/<system>/<pack>/**/*.json`, keeping `type == "npc"` and complex `hazard` documents.
+2. **Normalization.** Each document becomes a `Creature` with the key `<game>.<pack>.<_id>`. Strikes
+   come from `melee` items, abilities from `action` items, spells are grouped by `spellcastingEntry`,
+   and lore comes from `lore` items.
+3. **Rules text.** HTML and Foundry enrichers become `RulesText` runs. `@Check` and `@Damage` stay
+   structured so templates and conditions can adjust them. `@UUID` becomes its label, `@Localize` is
+   resolved from the lang JSON, and `@Template` becomes prose.
+   A `@UUID` to an Item in a compendium pack becomes a `{{link:<id>|<label>}}` run instead, where the glossary
+   ID is `<system>.<pack>.<_id>` (links by name are resolved to the `_id`). Links into effect packs stay labels.
+4. **Conditions.** The condition packs go to `conditions.json`. sf2e gets the pf2e conditions plus its
+   own.
+5. **Art overrides.** `art-overrides.json` (creature name → the name its art has in a PDF), when present, is
+   copied to `Generated/Bestiary/art-overrides.json` for matching art on the device (below). The import
+   handles no art itself.
+6. **Glossary.** `CompendiumIndex` reads the Item packs of both systems (an Item pack is indexed on first
+   use) and records every glossary ID the import links to. Each creature gets a `LinkTable` from
+   `<kind>:<shown text>` to a glossary ID: spells and items by their compendium source (or, without one, their
+   embedded copy, `<creature key>.<item _id>`), Strike effects by the creature's own action or the ability
+   glossary, and traits as `trait.<game>.<slug>`. `GlossaryBuilder` then turns the linked documents into
+   `GlossaryEntry` values (name, category such as "Spell 3", traits and their links, rules text, with spell
+   cast, range, area, targets, defense and duration lines first), follows their links one more level, and
+   stops: everything a card links to, and everything those entries link to, is in the glossary. Trait text
+   comes from `traitDescriptions` in the system's `src/scripts/config/traits.ts`, else
+   `PF2E.TraitDescription<Slug>`, dropping a trailing `-value` (reach-10, deadly-d10); Starfinder prefers
+   `sf2e-overrides-en.json`.
+   **Player compendium.** For PC cards, `PlayerCompendium` also links every document in the player-facing
+   Item packs of both systems (spells, feats, class features, actions, ancestry features, heritages and
+   equipment), so they and the traits they link to are in the glossary. It writes `glossary-index.json`:
+   `GlossaryIndex` keys `<game>:<kind>:<normalized name>` (kinds spell, ability, item and trait) to glossary
+   IDs. Names are normalized by `GlossaryIndex.normalize` (lowercase, apostrophes dropped, other punctuation
+   as spaces), so "Healing Potion, Moderate" and "Healing Potion (Moderate)" meet; on a clash the remastered
+   document wins.
+7. **Output.** `Generated/Bestiary/index.json` holds a summary of every creature. There is one
+   `packs/<game>.<pack>.json` per pack, plus `conditions.json` and `Generated/import-report.md`. Keys and arrays are sorted, so the output is deterministic.
 
 ## Test support (`ArtExtractionTestSupport`)
 The drawing helpers that Pawn Shop's tests had, made public so that both packages' tests use one copy:
