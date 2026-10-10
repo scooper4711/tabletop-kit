@@ -248,10 +248,11 @@ everything about campaigns and fights stay in Combat Pad.
 - Moved from Combat Pad's `CombatPadUI`: `CardContent` (a presenter's stat block as lines), `CardLine` and
   `CardLineView` (segments with links and changed numbers), `TraitChips`, `GlossaryContext` and `GlossaryPopover`
   (links two deep, URLs of the `tabletop-glossary` scheme), `RulesTextLines`, the player-character lines, and
-  `Fonts`/`FontName` (Roboto and the action glyphs the app's import converts). The Paizo-styled fronts and backs
+  `Fonts`/`FontName` (Roboto and the action glyphs, registered from TrueType, OpenType or the pf2e repository's
+  WOFF2 files, which Core Text reads directly). The Paizo-styled fronts and backs
   were not moved.
 - `BattleCard(creature:template:conditions:textSize:scrolls:)` presents the creature and draws
-  `PathfinderCardFront` or `StarfinderCardFront`, from the mockup in Combat Pad's history.
+  `PathfinderCardFront` or `StarfinderCardFront`.
   `CardBack(name:game:traits:art:)` draws `PathfinderCardBack` or `StarfinderCardBack` at a 0.7 aspect ratio
   around the art view the app passes.
 - `CardArtPieces` reads `<name>.png` from the app's folder (the `cardArt` environment value) and returns nil for a
