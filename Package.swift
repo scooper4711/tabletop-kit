@@ -19,6 +19,7 @@ let package = Package(
         .testTarget(name: "BestiaryTests", dependencies: ["Bestiary"]),
         .target(name: "CreatureImport", dependencies: ["Bestiary"]),
         .testTarget(name: "CreatureImportTests", dependencies: ["CreatureImport"], resources: [.copy("Fixtures")]),
-        .target(name: "BattleCards", dependencies: ["Bestiary"])
+        .target(name: "BattleCards", dependencies: ["Bestiary"]),
+        .testTarget(name: "BattleCardsTests", dependencies: ["BattleCards"], resources: [.copy("Fixtures")])
     ]
 )
