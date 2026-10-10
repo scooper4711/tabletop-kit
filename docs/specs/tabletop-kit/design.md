@@ -7,7 +7,7 @@ simulator.
 ## Modules
 | Module | Contents |
 |---|---|
-| `ArtExtraction` | PDF scanning, pawns, tokens, Battle Cards, figures, fingerprints; later the art library |
+| `ArtExtraction` | PDF scanning, pawns, tokens, Battle Cards, figures, fingerprints, and the art library |
 | `ArtExtractionTestSupport` | Test PDF drawing (`DrawnPawn`, `DrawnToken`, `DrawnCard`, `makePDF`, …), published for the apps' tests |
 | `Bestiary`, `BestiaryImport`, `BattleCards` | Planned (R4), moved from Combat Pad |
 
@@ -166,6 +166,36 @@ behavior, with these changes for sharing:
   `isSamePainting`); they move behind the art library (R2) when it comes.
 - `ProductTitle.fromFileName(_:)` turns a download's file name into a product title; Pawn Shop's `PawnSource` and
   `CardDeck.title` use it.
+
+## Art library (`ArtExtraction/Library`)
+A smaller store than Pawn Shop's `PawnLibrary`, which keeps its own for printing, custom pawns and tagging; both
+build on the same extraction.
+- Stored in the app's folder: `art-library.json` (`StoredArtLibrary`: sources, entries and watched folders, with a
+  version number), kept PDFs in `Sources/<sha256>.pdf`, tokens' art in `Tokens/<uuid>.png`. 74 PDFs (every pawn,
+  token and Battle Cards PDF Scrollkeeper holds) give 9,434 entries in an 11 MB file.
+- `ArtSource`: SHA-256 id, title, `GameSystem` (from the title), `SourceLocation` (`.kept`; `.referenced` by a
+  `FileReference`; or `.inFolder`, a watched folder's reference and the path inside it, since on the iPad access to
+  a file found in a chosen folder comes from the folder), byte count, reader version and the count of art found.
+- `FileReference` holds a bookmark: security-scoped on the iPad and in sandboxed Mac apps, plain otherwise (the
+  scoped one can't be made outside the sandbox). `withAccess` resolves it, starts access, and checks the file
+  can be read. `status(of:)` is `.missing` when the file can't be reached, checked once per source until
+  `refreshStatuses()`; a file that returns is available again.
+- `ArtEntry`: id, name, game, size, traits, fingerprint, `prints` and a `palette` measured when needed. Each
+  `ArtPrint` is where one product prints it: source, `ArtKind` (`.figure` for a card's creature or an outline-less
+  pawn, `.pawn`, `.token`), face, image index (figures) or token picture file, and copies. Figures come first, the
+  sharpest pictures, then the order products were added.
+- `prepare(_:)` hashes and extracts off the main thread; `commit(_:location:)` adds the source and merges with
+  `ArtMerger`: unnamed art is counted and left out; art with the same name (ignoring case and accents) and game is
+  the same painting when the fingerprints match, or, when either is a figure, when the figures' palettes are within
+  `Figure.samePaintingDistance`. A pawn's print sets the size. A source read by an older reader is removed and read
+  afresh (the library holds no edits of the user's to keep).
+- `watch(_:)` remembers a folder; `addNewFiles(progress:)` adds, by `.inFolder` reference, the PDFs
+  `ProductScanner.artPDFs(in:)` finds there (names mentioning pawns or tokens, and each Battle Cards deck once as its
+  art PDF) that `contains(_:)` doesn't recognize by place and size or contents. 74 PDFs take about two minutes on a
+  Mac (release build).
+- `picture(of:maxPixels:)` draws the first print that can be drawn: a token's kept picture, or the figure read from
+  the PDF (a figure's picture by its index, or the largest picture inside a pawn's outline) turned upright with
+  `Figure.draw(in:rotation:)` on a transparent bitmap.
 
 ## Test support (`ArtExtractionTestSupport`)
 The drawing helpers that Pawn Shop's tests had, made public so that both packages' tests use one copy:
