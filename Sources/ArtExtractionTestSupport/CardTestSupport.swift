@@ -60,7 +60,7 @@ public struct DrawnCard: Sendable {
     /// creature itself.
     public func drawArt(_ context: CGContext) {
         context.draw(darkBackground(), in: CGRect(origin: .zero, size: cardPage))
-        if let creature {
+        if creature != nil {
             context.saveGState()
             context.setAlpha(0.3)
             context.draw(creatureArt(variant: 2, scale: 2), in: CGRect(x: -40, y: -40, width: 369, height: 505))
