@@ -1,0 +1,18 @@
+import CoreGraphics
+import Foundation
+import ImageIO
+import UniformTypeIdentifiers
+
+/// A square PNG of one color.
+func writePNG(side: Int, to url: URL) throws {
+    let context = CGContext(data: nil, width: side, height: side, bitsPerComponent: 8, bytesPerRow: 0,
+                            space: CGColorSpaceCreateDeviceRGB(),
+                            bitmapInfo: CGImageAlphaInfo.premultipliedLast.rawValue)
+    context?.setFillColor(CGColor(red: 0.5, green: 0.4, blue: 0.3, alpha: 1))
+    context?.fill(CGRect(x: 0, y: 0, width: side, height: side))
+    guard let image = context?.makeImage(),
+          let destination = CGImageDestinationCreateWithURL(url as CFURL, UTType.png.identifier as CFString, 1, nil)
+    else { throw CocoaError(.fileWriteUnknown) }
+    CGImageDestinationAddImage(destination, image, nil)
+    CGImageDestinationFinalize(destination)
+}

@@ -11,7 +11,7 @@ simulator.
 | `ArtExtractionTestSupport` | Test PDF drawing (`DrawnPawn`, `DrawnToken`, `DrawnCard`, `makePDF`, …), published for the apps' tests |
 | `Bestiary` | Creatures, stat-block presentation, conditions and rules text, from Combat Pad |
 | `CreatureImport` | The pf2e repository's creatures, conditions and glossary, written for `Bestiary` to load |
-| `BattleCards` | Planned (R4.2) |
+| `BattleCards` | SwiftUI card fronts and backs, card text, glossary popovers, fonts, and `CardArtImport` |
 
 ## Paizo pawn PDFs
 Measured across 61 Pathfinder and Starfinder pawn PDFs:
@@ -243,6 +243,32 @@ everything about campaigns and fights stay in Combat Pad.
    document wins.
 7. **Output.** `Generated/Bestiary/index.json` holds a summary of every creature. There is one
    `packs/<game>.<pack>.json` per pack, plus `conditions.json` and `Generated/import-report.md`. Keys and arrays are sorted, so the output is deterministic.
+
+## Battle cards (`BattleCards`)
+- Moved from Combat Pad's `CombatPadUI`: `CardContent` (a presenter's stat block as lines), `CardLine` and
+  `CardLineView` (segments with links and changed numbers), `TraitChips`, `GlossaryContext` and `GlossaryPopover`
+  (links two deep, URLs of the `tabletop-glossary` scheme), `RulesTextLines`, the player-character lines, and
+  `Fonts`/`FontName` (Roboto and the action glyphs the app's import converts). The Paizo-styled fronts and backs
+  were not moved.
+- `BattleCard(creature:template:conditions:textSize:scrolls:)` presents the creature and draws
+  `PathfinderCardFront` or `StarfinderCardFront`, from the mockup in Combat Pad's history.
+  `CardBack(name:game:traits:art:)` draws `PathfinderCardBack` or `StarfinderCardBack` at a 0.7 aspect ratio
+  around the art view the app passes.
+- `CardArtPieces` reads `<name>.png` from the app's folder (the `cardArt` environment value) and returns nil for a
+  missing piece; each view draws a gradient, a stroke or a shape instead. `manifest` lists the 20 pieces and
+  their paths in the packs: Fantasy GUI (parchment `bg_01`, frames `slot_03`/`slot_04`, ribbon `text_bg_03`), Heroic
+  UI (rule `el_28_01`, elite frame `el_29`, drawn at a third of its size so its corners stay small), Shields Badges
+  (`ShieldsBadges_04_a`), Legendary Battlegrounds (`bg_01`–`bg_05`) and Space Depot UI (`bg`, `bg_big`, corners
+  `frame_01_03`–`06`, `button_01_04`, `ava_04_04`). Frames are stretched by cap insets of 60 points.
+- `CardBackdrop(traits:)` picks the landscape: the first of undead/spirit/ghost/incorporeal (ruins), fiend/fire/
+  demon/devil/daemon (lava), cold/ice (snow), earth/dragon/giant (canyon), else meadow. Fantasy Locations' scenes
+  are separate sprites placed by their PSDs, so they aren't used.
+- `NameRibbon` centers the name at 27% of the ribbon's height, the middle of its banner (rows 0–123 of 225).
+  `TerminalPlate` fills an `ElongatedHexagon` (points at half its height) with near-black glass, `Scanlines` every
+  3 points, a cyan edge with a glow, and the name in semibold monospaced cyan with two glow shadows and a `_`.
+- `CardArtCopier.copy(from:to:)` finds each piece, matching each path part without regard to case, scales any
+  over 1,600 pixels down, writes PNGs and returns the missing pieces; the `CardArtImport` executable runs it. The
+  pieces take 9.3 MB.
 
 ## Test support (`ArtExtractionTestSupport`)
 The drawing helpers that Pawn Shop's tests had, made public so that both packages' tests use one copy:
