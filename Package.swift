@@ -10,6 +10,7 @@ let package = Package(
     ],
     targets: [
         .target(name: "ArtExtraction"),
-        .target(name: "ArtExtractionTestSupport", dependencies: ["ArtExtraction"])
+        .target(name: "ArtExtractionTestSupport", dependencies: ["ArtExtraction"]),
+        .testTarget(name: "ArtExtractionTests", dependencies: ["ArtExtraction", "ArtExtractionTestSupport"])
     ]
 )
