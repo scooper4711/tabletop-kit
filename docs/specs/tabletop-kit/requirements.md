@@ -39,7 +39,12 @@ and Field Guide share. It contains no Paizo art or text.
   read again once by each newer version of the reader.
 - R2.5 Art printed in several products is stored once, with every product that prints it. Where a Battle Card and
   a pawn show the same painting, the sharper picture is used.
-- R2.6 Each piece of art can be drawn alone, on a transparent background, at a requested size.
+- R2.6 Each piece of art can be drawn alone, upright, on a transparent background, at a requested size.
+- R2.7 Folders can be watched, such as Scrollkeeper's downloads: the PDFs of art in them that the library
+  doesn't have are added by reference on request, with progress.
+- R2.8 A token's art is kept as a picture when its PDF is added, so it stays available when the PDF goes
+  missing. Other art is drawn from its PDF when asked for.
+- R2.9 Art with no name printed is left out of the library.
 
 ## R3 Test support (`ArtExtractionTestSupport`)
 - R3.1 Draws small PDFs laid out like Paizo's (pawns with cut outlines and labels, tokens, Battle Cards decks), so
