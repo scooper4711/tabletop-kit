@@ -6,6 +6,10 @@ struct TextGlyph: Equatable {
     let text: String
     /// Where the text starts, in page space.
     let origin: CGPoint
+    /// The type's height on the page, in points; zero when unknown.
+    var fontSize: CGFloat = 0
+    /// The direction the text runs, in radians counterclockwise from the page's x axis.
+    var angle: CGFloat = 0
 }
 
 /// The text matrices of a content stream's text objects, enough to place each piece of text shown. Text
@@ -15,6 +19,8 @@ struct TextState {
     private var lineMatrix = CGAffineTransform.identity
     /// Reads the current font's bytes; set by `Tf`.
     var decoder = FontDecoder.plain
+    /// The size `Tf` sets, in text space.
+    var fontSize: CGFloat = 0
 
     /// `BT`: a text object starts at the origin.
     mutating func begin() {
@@ -36,7 +42,10 @@ struct TextState {
 
     /// The text placed on the page through the current transformation matrix.
     func glyph(_ text: String, transform: CGAffineTransform) -> TextGlyph {
-        TextGlyph(text: text, origin: CGPoint.zero.applying(textMatrix.concatenating(transform)))
+        let matrix = textMatrix.concatenating(transform)
+        return TextGlyph(text: text, origin: CGPoint.zero.applying(matrix),
+                         fontSize: fontSize * (matrix.c * matrix.c + matrix.d * matrix.d).squareRoot(),
+                         angle: atan2(matrix.b, matrix.a))
     }
 
     /// The string operand of `Tj`, `'` and `"`, as text.
