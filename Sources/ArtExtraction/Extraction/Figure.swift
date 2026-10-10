@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 
 /// A creature's art alone: one image as its page draws it, cut down to the part that isn't transparent.
-struct Figure {
+public struct Figure {
     /// Alpha at or below this is a faint glow or shadow, not part of the figure's bounds.
     static let opaqueAlpha: UInt8 = 24
     /// The long side, in pixels, of the bitmap the opaque part is measured in: fine enough to trim to a point.
@@ -12,7 +12,7 @@ struct Figure {
     /// Palettes at most this far apart (see `paletteDistance`) are the same painting. Measured on the Bestiary
     /// Battle Cards against the Bestiary Pawn Box: the same painting, however cropped, reached 0.013; a different
     /// painting of the same creature was 0.027 or more.
-    static let samePaintingDistance = 0.02
+    public static let samePaintingDistance = 0.02
 
     let placement: ImagePlacement
     /// The image, made transparent by its soft mask.
@@ -22,21 +22,21 @@ struct Figure {
 
     /// The figure drawn by `placement`, trimmed to its opaque part; nil when its image can't be decoded or is
     /// transparent throughout.
-    init?(_ placement: ImagePlacement) {
+    public init?(_ placement: ImagePlacement) {
         guard let image = placement.stream.flatMap(EmbeddedImage.maskedImage(of:)),
               let bounds = Self.opaqueBounds(of: image, placement: placement)
         else { return nil }
         self.init(placement: placement, image: image, bounds: bounds)
     }
 
-    init(placement: ImagePlacement, image: CGImage, bounds: CGRect) {
+    public init(placement: ImagePlacement, image: CGImage, bounds: CGRect) {
         self.placement = placement
         self.image = image
         self.bounds = bounds
     }
 
     /// The largest image drawn with its center inside `rect`, as on a pawn's face; nil when there is none.
-    static func largest(inside rect: CGRect, among images: [ImagePlacement]) -> Figure? {
+    public static func largest(inside rect: CGRect, among images: [ImagePlacement]) -> Figure? {
         let art = images.filter { image in
             image.stream != nil && min(image.rect.width, image.rect.height) >= ArtFingerprint.smallestArt
                 && rect.contains(CGPoint(x: image.rect.midX, y: image.rect.midY))
@@ -45,7 +45,7 @@ struct Figure {
     }
 
     /// The figure's size in the image's own pixels: how sharp the art is, whatever size it is printed.
-    var pixelArea: CGFloat {
+    public var pixelArea: CGFloat {
         let transform = placement.transform
         let pageArea = abs(transform.a * transform.d - transform.b * transform.c)
         guard pageArea > 0 else { return 0 }
@@ -53,7 +53,7 @@ struct Figure {
     }
 
     /// Draws the figure so that its bounds fill `rect`, flipped left to right when `mirrored`.
-    func draw(in rect: CGRect, mirrored: Bool = false, context: CGContext) {
+    public func draw(in rect: CGRect, mirrored: Bool = false, context: CGContext) {
         guard bounds.width > 0, bounds.height > 0 else { return }
         context.saveGState()
         context.clip(to: rect)
@@ -74,7 +74,7 @@ struct Figure {
 
     /// The share of the figure's opaque pixels in each of 64 colors (four levels of red, green and blue). It
     /// changes little when the painting is cropped or scaled, and a lot between different paintings.
-    func palette() -> [Double] {
+    public func palette() -> [Double] {
         let side = Self.paletteSide
         guard let pixels = Self.pixels(width: side, height: side, draw: { context in
             draw(in: CGRect(x: 0, y: 0, width: side, height: side), context: context)
@@ -91,13 +91,13 @@ struct Figure {
 
     /// How unlike two palettes are, from 0 (the same colors in the same shares) to 1 (no color in common); 1
     /// when either is empty.
-    static func paletteDistance(_ first: [Double], _ second: [Double]) -> Double {
+    public static func paletteDistance(_ first: [Double], _ second: [Double]) -> Double {
         guard !first.isEmpty, first.count == second.count else { return 1 }
         return 1 - zip(first, second).reduce(0) { $0 + ($1.0 * $1.1).squareRoot() }
     }
 
     /// True when the two figures are the same painting, however each is cropped or scaled.
-    func isSamePainting(as other: Figure) -> Bool {
+    public func isSamePainting(as other: Figure) -> Bool {
         Self.paletteDistance(palette(), other.palette()) <= Self.samePaintingDistance
     }
 

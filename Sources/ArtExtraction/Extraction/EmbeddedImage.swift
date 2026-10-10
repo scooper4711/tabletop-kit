@@ -15,7 +15,7 @@ struct ImageIdentity: Equatable, Sendable {
 }
 
 /// Reads image XObjects.
-enum EmbeddedImage {
+public enum EmbeddedImage {
     static let thumbnailColumns = 16, thumbnailRows = 24
 
     static func identity(of stream: CGPDFStreamRef) -> ImageIdentity {

@@ -46,7 +46,7 @@ enum TokenPicture {
 
 extension EmbeddedImage {
     /// The image an XObject shows, made transparent by its soft mask when it has one.
-    static func maskedImage(of stream: CGPDFStreamRef) -> CGImage? {
+    public static func maskedImage(of stream: CGPDFStreamRef) -> CGImage? {
         guard let image = image(of: stream), let dictionary = CGPDFStreamGetDictionary(stream) else { return nil }
         var mask: CGPDFStreamRef?
         guard CGPDFDictionaryGetStream(dictionary, "SMask", &mask), let mask, let alpha = Self.image(of: mask)

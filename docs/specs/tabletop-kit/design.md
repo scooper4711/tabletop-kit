@@ -16,6 +16,9 @@ Moved from Pawn Shop (`PawnShopCore/Extraction`) unchanged in behavior; its desi
 spec. Changes for sharing:
 - `PDFKitLabelReader` reads label font sizes through Core Text (`CTFontGetSize`) instead of AppKit's `NSFont`, so
   the module builds for iPadOS, where PDFKit's font attributes are `UIFont`s; both are `CTFont`s.
+- `Figure`, `ImagePlacement`, `PageScanner.images(on:)` and `EmbeddedImage.maskedImage(of:)` are public, so that
+  Pawn Shop's library can find a pawn's figure in a kept PDF and compare paintings (`palette`, `paletteDistance`,
+  `isSamePainting`); they move behind the art library (R2) when it comes.
 - `ProductTitle.fromFileName(_:)` turns a download's file name into a product title; Pawn Shop's `PawnSource` and
   `CardDeck.title` use it.
 

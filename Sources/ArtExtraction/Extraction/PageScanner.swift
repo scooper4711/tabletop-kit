@@ -2,7 +2,7 @@ import CoreGraphics
 import Foundation
 
 /// An image drawn on a page.
-struct ImagePlacement: Equatable {
+public struct ImagePlacement: Equatable {
     /// Bounds in page space.
     let rect: CGRect
     /// What the image shows.
@@ -12,7 +12,7 @@ struct ImagePlacement: Equatable {
     /// Maps the image's unit square onto the page.
     var transform = CGAffineTransform.identity
     /// The image XObject, valid while its document is open.
-    var stream: CGPDFStreamRef?
+    public var stream: CGPDFStreamRef?
 }
 
 /// The pawn outlines, images and text on a page.
@@ -24,7 +24,7 @@ struct PageContent {
 
 /// Walks a page's content stream, tracking the transformation matrix and circular clips, and records the
 /// stroked pawn outlines, the images drawn and the text shown.
-final class PageScanner {
+public final class PageScanner {
     private static let maximumFormDepth = 8
 
     /// What `q` saves and `Q` restores.
@@ -58,7 +58,7 @@ final class PageScanner {
     }
 
     /// The images drawn on `page`, in page space and drawing order, without their identities.
-    static func images(on page: CGPDFPage) -> [ImagePlacement] {
+    public static func images(on page: CGPDFPage) -> [ImagePlacement] {
         let scanner = PageScanner()
         scanner.identifiesImages = false
         let stream = CGPDFContentStreamCreateWithPage(page)
