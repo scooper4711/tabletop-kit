@@ -48,6 +48,8 @@ public struct UnnamedOutline: Equatable, Sendable {
 public struct ExtractionResult: Sendable {
     public var pawns: [ExtractedPawn] = []
     public var unnamed: [UnnamedOutline] = []
+    /// Pages printed as one flattened picture with no text, whose pawns can't be told apart (zero-based).
+    public var unreadablePages: [Int] = []
 }
 
 public enum PawnExtractionError: Error, Equatable, CustomStringConvertible {
@@ -63,8 +65,8 @@ public enum PawnExtractionError: Error, Equatable, CustomStringConvertible {
 /// Finds the pawns and round tokens in a Paizo pawn or token PDF, with their names, sizes and backs.
 public enum PawnExtractor {
     /// Raised when extraction finds pawns it could not before, so that PDFs in which nothing was found are read
-    /// again. 1: Battle Cards whose art pages credit the illustrator.
-    public static let version = 1
+    /// again. 1: Battle Cards whose art pages credit the illustrator. 2: pawns printed without cut outlines.
+    public static let version = 2
 
     /// The pawns in a pawn or token PDF, or the creatures in a deck of Battle Cards.
     public static func extract(from url: URL) throws -> ExtractionResult {
@@ -87,6 +89,10 @@ public enum PawnExtractor {
         for token in art.tokens {
             if let pawn = token.extracted() { add(pawn, to: &result) }
         }
+        for figure in art.figures {
+            if let pawn = figure.extracted() { add(pawn, to: &result) }
+        }
+        result.unreadablePages = art.unreadablePages
         return result
     }
 
@@ -101,6 +107,8 @@ public enum PawnExtractor {
     struct FoundArt {
         var pawns: [FoundPawn] = []
         var tokens: [PairedToken] = []
+        var figures: [PageFigure] = []
+        var unreadablePages: [Int] = []
     }
 
     /// Every outlined pawn and round token, with its back from the mirrored page that follows, or else its front
@@ -113,9 +121,19 @@ public enum PawnExtractor {
         }
         let tokens = pages.map(TokenFinder.tokens(on:))
         var found = FoundArt()
+        found.unreadablePages = (0..<pages.count).filter { isFlattened(pages[$0], in: document, at: $0) }
         var pageIndex = 0
         while pageIndex < pages.count {
             let next = pageIndex + 1
+            if pages[pageIndex].outlines.isEmpty, tokens[pageIndex].isEmpty {
+                let figures = FigurePawns.figures(on: pages[pageIndex])
+                if !figures.isEmpty {
+                    found.figures += figures.map { PageFigure(found: $0, pageIndex: pageIndex) }
+                    let backs = next < pages.count ? FigurePawns.figures(on: pages[next]) : []
+                    pageIndex += FigurePawns.isBackPage(backs, of: figures) ? 2 : 1
+                    continue
+                }
+            }
             let pawnBacks = PagePairing.backs(for: pages[pageIndex], among: next < pages.count ? pages[next] : .init())
             let tokenBacks = TokenPairing.backs(for: tokens[pageIndex], among: next < pages.count ? tokens[next] : [])
             found.pawns += outlinedPawns(on: pages[pageIndex], at: pageIndex, backs: pawnBacks)
@@ -125,6 +143,15 @@ public enum PawnExtractor {
             pageIndex += pawnBacks == nil && tokenBacks == nil ? 1 : 2
         }
         return found
+    }
+
+    /// True when a page after the first is one picture covering it, with no text or outlines: printed flattened.
+    private static func isFlattened(_ page: PageContent, in document: CGPDFDocument, at index: Int) -> Bool {
+        guard index > 0, page.glyphs.isEmpty, page.outlines.isEmpty, page.images.count == 1,
+              let box = document.page(at: index + 1)?.getBoxRect(.mediaBox), box.width * box.height > 0
+        else { return false }
+        let image = page.images[0].rect.intersection(box)
+        return image.width * image.height >= box.width * box.height * 0.9
     }
 
     /// The outlined pawns on a page, with their backs from the next page when `backs` has them.
@@ -198,5 +225,28 @@ extension PageContent {
     /// The fingerprint of the art drawn inside `rect`.
     func art(inside rect: CGRect) -> ArtFingerprint {
         ArtFingerprint(images: images, inside: rect)
+    }
+}
+
+/// A pawn printed without a cut outline, on its page.
+struct PageFigure {
+    let found: FigurePawns.Found
+    let pageIndex: Int
+
+    /// Longer labels are blurbs beside a cover's art, not names.
+    static let longestName = 60
+
+    /// The pawn, its picture drawn alone like a Battle Card's creature, named from its label; nil when its label
+    /// gives no name (a cover's art) or its picture can't be decoded. Its back is its front mirrored, as the back
+    /// page prints it.
+    func extracted() -> ExtractedPawn? {
+        let name = PawnLabel.name(from: found.label)
+        guard !name.isEmpty, name.count <= Self.longestName, let figure = Figure(found.image) else { return nil }
+        let face = PawnFace(pageIndex: pageIndex, rect: figure.bounds, rotation: found.rotation)
+        let identity = found.image.identity
+        return ExtractedPawn(name: name, size: found.size, front: face, back: face.mirroredCopy(),
+                             fingerprint: ArtFingerprint(imageDigests: [identity.digest],
+                                                         thumbnail: identity.thumbnail),
+                             copies: 1, shape: .card(imageIndex: found.imageIndex))
     }
 }

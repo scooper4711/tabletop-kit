@@ -52,18 +52,14 @@ public struct Figure {
         return bounds.width * bounds.height * CGFloat(image.width * image.height) / pageArea
     }
 
-    /// Draws the figure so that its bounds fill `rect`, flipped left to right when `mirrored`.
-    public func draw(in rect: CGRect, mirrored: Bool = false, context: CGContext) {
+    /// Draws the figure so that its bounds fill `rect`, turned `rotation` degrees counterclockwise (as a
+    /// `PawnFace` turns a sideways pawn upright), flipped left to right when `mirrored`.
+    public func draw(in rect: CGRect, mirrored: Bool = false, rotation: Int = 0, context: CGContext) {
         guard bounds.width > 0, bounds.height > 0 else { return }
+        let face = PawnFace(pageIndex: 0, rect: bounds, rotation: rotation, mirrored: mirrored)
         context.saveGState()
         context.clip(to: rect)
-        context.translateBy(x: rect.minX, y: rect.minY)
-        if mirrored {
-            context.translateBy(x: rect.width, y: 0)
-            context.scaleBy(x: -1, y: 1)
-        }
-        context.scaleBy(x: rect.width / bounds.width, y: rect.height / bounds.height)
-        context.translateBy(x: -bounds.minX, y: -bounds.minY)
+        context.concatenate(face.transform(into: rect))
         context.concatenate(placement.transform)
         context.interpolationQuality = .high
         context.draw(image, in: CGRect(x: 0, y: 0, width: 1, height: 1))

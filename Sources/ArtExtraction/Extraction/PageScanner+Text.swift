@@ -27,7 +27,7 @@ extension PageScanner {
         CGPDFOperatorTableSetCallback(operators, "Tf") { scanner, info in PageScanner.from(info).setFont(scanner) }
     }
 
-    /// `Tf`: the size is ignored; the font gives the decoder.
+    /// `Tf`: the font gives the decoder, and the size the glyphs' size.
     private func setFont(_ scanner: CGPDFScannerRef) {
         var size: CGPDFReal = 0
         var namePointer: UnsafePointer<CChar>?
@@ -40,6 +40,7 @@ extension PageScanner {
         let decoder = decoders[key] ?? FontDecoder(font: font)
         decoders[key] = decoder
         text.decoder = decoder
+        text.fontSize = size
     }
 
     private func show(_ string: String) {
