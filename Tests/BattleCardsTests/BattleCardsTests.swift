@@ -123,3 +123,12 @@ struct GlossaryTests {
         #expect(Font.pad(FontName.condensed, size: 12) == Font.custom(FontName.condensed, size: 12, relativeTo: .body))
     }
 }
+
+@Suite("Registering fonts")
+struct FontRegistrationTests {
+    @Test("Web fonts and TrueType are registered; other files are not")
+    func extensions() {
+        #expect(Fonts.fileExtensions.isSuperset(of: ["ttf", "woff2"]))
+        #expect(!Fonts.fileExtensions.contains("css"))
+    }
+}

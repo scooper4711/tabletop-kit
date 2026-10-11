@@ -9,6 +9,7 @@ simulator.
 |---|---|
 | `ArtExtraction` | PDF scanning, pawns, tokens, Battle Cards, figures, fingerprints, and the art library |
 | `ArtExtractionTestSupport` | Test PDF drawing (`DrawnPawn`, `DrawnToken`, `DrawnCard`, `makePDF`, …), published for the apps' tests |
+| `CreatureArt` | `CreatureArtStore`, an actor over `ArtLibrary` that Combat Pad and Field Guide share |
 | `Bestiary` | Creatures, stat-block presentation, conditions and rules text, from Combat Pad |
 | `CreatureImport` | The pf2e repository's creatures, conditions and glossary, written for `Bestiary` to load |
 | `BattleCards` | SwiftUI card fronts and backs, card text, glossary popovers, fonts, and `CardArtImport` |
@@ -199,6 +200,15 @@ build on the same extraction.
   the PDF (a figure's picture by its index, or the largest picture inside a pawn's outline) turned upright with
   `Figure.draw(in:rotation:)` on a transparent bitmap.
 
+## Creature art store (`CreatureArt`)
+Moved from Combat Pad. `CreatureArtStore` owns an `ArtLibrary` in the folder the app gives it.
+`importFolder(_:progress:)` watches a folder and adds its new PDFs by reference; `addNewFiles` does so for the
+watched folders (at launch); `addFiles(_:progress:)` keeps copies of chosen PDFs; each returns an
+`ArtImportSummary` with a message. `catalog()` refreshes the PDFs' statuses and returns `LibraryArt` for each entry
+(remastered when a printing product's title names one of `remasteredProducts`: Monster Core, NPC Core, Alien Core,
+Howl of the Wild, Rage of Elements) and an `ArtSourceSummary` for each PDF. `picture(id:maxPixels:)` draws and
+caches.
+
 ## Creatures (`Bestiary`)
 Moved from Combat Pad's `CombatPadKit`: `Creature` and its parts, `BestiaryStore` (the index, packs loaded a pack
 at a time, conditions, the glossary and `art-overrides.json`), `StatBlockPresenter` (templates and conditions
@@ -248,10 +258,11 @@ everything about campaigns and fights stay in Combat Pad.
 - Moved from Combat Pad's `CombatPadUI`: `CardContent` (a presenter's stat block as lines), `CardLine` and
   `CardLineView` (segments with links and changed numbers), `TraitChips`, `GlossaryContext` and `GlossaryPopover`
   (links two deep, URLs of the `tabletop-glossary` scheme), `RulesTextLines`, the player-character lines, and
-  `Fonts`/`FontName` (Roboto and the action glyphs the app's import converts). The Paizo-styled fronts and backs
+  `Fonts`/`FontName` (Roboto and the action glyphs, registered from TrueType, OpenType or the pf2e repository's
+  WOFF2 files, which Core Text reads directly). The Paizo-styled fronts and backs
   were not moved.
 - `BattleCard(creature:template:conditions:textSize:scrolls:)` presents the creature and draws
-  `PathfinderCardFront` or `StarfinderCardFront`, from the mockup in Combat Pad's history.
+  `PathfinderCardFront` or `StarfinderCardFront`.
   `CardBack(name:game:traits:art:)` draws `PathfinderCardBack` or `StarfinderCardBack` at a 0.7 aspect ratio
   around the art view the app passes.
 - `CardArtPieces` reads `<name>.png` from the app's folder (the `cardArt` environment value) and returns nil for a

@@ -10,6 +10,7 @@ let package = Package(
         .library(name: "Bestiary", targets: ["Bestiary"]),
         .library(name: "CreatureImport", targets: ["CreatureImport"]),
         .library(name: "BattleCards", targets: ["BattleCards"]),
+        .library(name: "CreatureArt", targets: ["CreatureArt"]),
         .executable(name: "CardArtImport", targets: ["CardArtImport"])
     ],
     targets: [
@@ -22,6 +23,8 @@ let package = Package(
         .testTarget(name: "CreatureImportTests", dependencies: ["CreatureImport"], resources: [.copy("Fixtures")]),
         .target(name: "BattleCards", dependencies: ["Bestiary"]),
         .testTarget(name: "BattleCardsTests", dependencies: ["BattleCards"], resources: [.copy("Fixtures")]),
-        .executableTarget(name: "CardArtImport", dependencies: ["BattleCards"])
+        .executableTarget(name: "CardArtImport", dependencies: ["BattleCards"]),
+        .target(name: "CreatureArt", dependencies: ["ArtExtraction", "Bestiary"]),
+        .testTarget(name: "CreatureArtTests", dependencies: ["CreatureArt", "ArtExtractionTestSupport"])
     ]
 )
