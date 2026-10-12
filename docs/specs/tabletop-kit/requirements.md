@@ -20,6 +20,11 @@ and Field Guide share. It contains no Paizo art or text.
   give each card's creature: the last picture of its own that the art side draws, transparent around the figure,
   with its name, size and traits read from the stat block. Hazards, continued stat blocks and rules pages are
   skipped.
+- R1.6a Item decks (a PDF, or the folders it is in, named "… Deck" or "Deck of …", other than spell, condition,
+  NPC, rules and other decks without art; one PDF, or a Fronts/Backs pair even when the two names differ in more
+  than the side) give each card's item art the same way, named from the card: the capitals before "ITEM n" or
+  "MINOR/MAJOR/GRAND GIFT", else the first lines when all in capitals or all in title case. Pages naming the
+  deck or its instructions are skipped. Deck of Endless Treasure prints the art beside the name on one page.
 - R1.7 Pawns printed without cut outlines (the second half of Monster Core Pawn Box, Dawn of Flame) are found
   from their pictures: each picture with its own transparency is a pawn, named from the label under it, its back
   the same picture mirrored on the following page. Pages that are a single flattened image with no text (the
@@ -39,6 +44,9 @@ and Field Guide share. It contains no Paizo art or text.
   read again once by each newer version of the reader.
 - R2.5 Art printed in several products is stored once, with every product that prints it. Where a Battle Card and
   a pawn show the same painting, the sharper picture is used.
+- R2.5a Item art is never merged with creature art of the same name, and matching creatures never picks it;
+  items are matched by name, then without their grade or potency ("Healing Potion (Minor)", "+1 Striking
+  Longsword").
 - R2.6 Each piece of art can be drawn alone, upright, on a transparent background, at a requested size.
 - R2.7 Folders can be watched, such as Scrollkeeper's downloads: the PDFs of art in them that the library
   doesn't have are added by reference on request, with progress.

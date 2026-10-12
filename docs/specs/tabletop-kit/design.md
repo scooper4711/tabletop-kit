@@ -130,16 +130,20 @@ Fists of the Ruby Phoenix, Alien Archive 1 & 2 and 3 & 4), 289 × 425 pt cards (
 - Measured: Monster Core Pawn Box gives 411 pawns (202 before, 209 of them from pictures), Dawn of Flame 134
   (none before); NPC Core reports its 16 flattened pages.
 
-## Battle Cards (`ArtExtraction/Cards`)
-- `CardDeck.containing(_:)` takes a PDF whose name, or one of its two enclosing folders, says "Battle Cards".
+## Battle Cards and item decks (`ArtExtraction/Cards`)
+- `CardDeck.containing(_:)` takes a PDF whose name, or one of its two enclosing folders, says "Battle Cards"
+  (`kind` `.creatures`), or names a deck (the word "deck") that isn't one without art: spell, condition, NPC,
+  hero point, harrow, chase, critical, rules, reference, character, many worlds, starship (`.items`).
   A file naming a side (FRONT, FRONTS, BACK, BACKS) is paired with the file beside it whose name differs only
-  in naming the other side; the BACKS file is the deck's `artFile`, which the library keeps. The title comes
+  in naming the other side, or else the only file beside it naming the other side (Relics: "Relic Deck
+  Fronts", "Relics Deck Backs"); the BACKS file is the deck's `artFile`, which the library keeps. The title comes
   from the nearest enclosing folder naming the deck and starting with Pathfinder or Starfinder (as Scrollkeeper
   files them), without "(Download)" and "- PDF(s)", or else from the file name.
 - `CardPairing` pairs pages: page *n* of both PDFs; or in one PDF, each art page with the page after it when
-  such pairs cover over a third of the pages, else the *k*th page of each run of other pages with the *k*th of
-  the run of art pages after it. An art page prints under 80 characters and no stat block: the NPC deck's
-  combined PDF credits the illustrator on each art page.
+  such pairs cover over a third of the pages; else, when under a tenth of the pages are art pages (Deck of
+  Endless Treasure, whose art and name share a page), each page with itself; else the *k*th page of each run
+  of other pages with the *k*th of the run of art pages after it. An art page prints under 80 characters and
+  no stat block or item name: the NPC deck's combined PDF credits the illustrator on each art page.
 - `CardExtractor` scans art pages with `PageScanner.images(on:)` (placements without identities, which are
   slow to compute) and digests each image once. Images on at least half the art pages, and on three or more,
   are shared; the creature is the last image drawn that is not shared, has a soft mask and is at least 20 pt
@@ -151,6 +155,13 @@ Fists of the Ruby Phoenix, Alien Archive 1 & 2 and 3 & 4), 289 × 425 pt cards (
   and size words read beside it move to the traits, except after a comma ("Herd Animal, Huge"). Pathfinder's
   traits are the words in capitals between the header and "Perception"; Starfinder's are the size, type and
   subtypes of the first "[alignment] Size type (subtypes)" line, without a book reference after a semicolon.
+- `ItemCardText.name(in:)` reads an item card: the words in capitals before "ITEM n" or "MINOR/MAJOR/GRAND
+  GIFT" (as `CardStats` reads a creature's), else up to three first lines all in capitals (Deck of Endless
+  Treasure) or all in title case: at most five words, each capitalized with a lowercase letter or a joining
+  word, no sentence punctuation (the Guns and Gears decks). Names with "instructions", "deck" or "product
+  identity" are skipped. An item becomes an `ExtractedPawn` of medium size with no traits and the
+  `.item(imageIndex:)` shape, printed as `ArtKind.item`; `ArtEntry.isItem` and `LibraryArt.isItem` mark it, and
+  `ArtMerger` merges items only with items. `PawnExtractor.version` 3 rereads PDFs read before item decks.
 - `Figure` (in Extraction) is one image as its page draws it: the image with its soft mask, and its opaque
   bounds in page space, found in a bitmap at most 512 px across (alpha above 24). `pixelArea` is those bounds in
   the image's own pixels. `palette()` counts the opaque pixels of the figure drawn 64 × 64 into 64 colors (four
@@ -214,7 +225,8 @@ Moved from Combat Pad's `CombatPadKit`: `Creature` and its parts, `BestiaryStore
 at a time, conditions, the glossary and `art-overrides.json`), `StatBlockPresenter` (templates and conditions
 applied), the rules the cards need (`CreatureTemplate`, `AppliedCondition`, `ConditionEffects`, `Modifiers`), rules
 text, `PlayerDetails` (a linked PC's sheet shown as a creature), Pluck stat blocks and `LibraryArtMatcher` (art
-from the art library matched to creatures by name; see Combat Pad's spec). Encounter budgets, challenge points and
+from the art library matched to creatures by name, and with `art(forItemNamed:game:)` to items: by name, then
+without grade words, potency runes and numbers; see Combat Pad's spec). Encounter budgets, challenge points and
 everything about campaigns and fights stay in Combat Pad.
 
 ## Importing creatures (`CreatureImport`)
