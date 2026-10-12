@@ -16,6 +16,7 @@ struct PathfinderCardFront: View {
             VStack(alignment: .leading, spacing: 4) {
                 header
                 TraitChips(traits: content.traits, links: content.links, game: .pathfinder, style: style)
+                ConditionTags(conditions: content.conditions, style: style)
                 lines(content.hazard)
                 lines(content.senses + content.statistics + content.interaction)
                 goldRule

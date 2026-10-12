@@ -8,6 +8,7 @@ struct CardContent {
     var levelLabel: String
     var template: CreatureTemplate
     var traits: TraitLine
+    var conditions: [AppliedCondition]
     /// Where the card's linked words lead.
     var links: LinkTable
     /// The book, such as "Pathfinder Monster Core", for the small line at the bottom.
@@ -29,6 +30,7 @@ struct CardContent {
         levelLabel = "\(Self.kindLabel(creature.kind)) \(presenter.level)"
         template = presenter.template
         traits = creature.traits
+        conditions = presenter.conditions
         links = creature.links ?? LinkTable()
         source = creature.source.title.isEmpty
             ? creature.source.pack.replacingOccurrences(of: "-", with: " ").capitalized
@@ -113,7 +115,7 @@ struct CardLineBuilder {
     func immunityLines() -> [CardLine] {
         let defenses = creature.defenses
         var parts: [[CardSegment]] = []
-        let immunities = defenses.immunities.joined(separator: ", ")
+        let immunities = creature.allImmunities.joined(separator: ", ")
         if !immunities.isEmpty { parts.append([.bold("Immunities "), .text(immunities)]) }
         if !defenses.weaknesses.isEmpty { parts.append([.bold("Weaknesses "), .text(describe(defenses.weaknesses))]) }
         if !defenses.resistances.isEmpty {
