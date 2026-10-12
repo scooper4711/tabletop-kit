@@ -316,8 +316,10 @@ everything about campaigns and fights stay in Combat Pad.
   (`arrow.triangle.2.circlepath`, `arrow.up.left.and.arrow.down.right`, and in full screen
   `arrow.down.right.and.arrow.up.left`) are toggled by a tap gesture on the card's background, which links and
   tags, being buttons, win over; `onContinuousHover` shows each icon while the pointer is within a corner of a
-  fifth of the card. Full screen is a `fullScreenCover` on iOS and an overlay filling the window on the Mac, with
-  a pinch (`MagnifyGesture`, past 1.2 to open, under 0.8 to close) and Escape.
+  fifth of the card. Full screen is a `fullScreenCover` on iOS. On the Mac it's an overlay filling the window of
+  the nearest `battleCardFullScreenHost()` (the app applies it to window and sheet roots; the card passes its
+  glossary, card art and art loader along), or a large sheet without one. A pinch (`MagnifyGesture`, past 1.2 to
+  open, under 0.8 to close) and Escape work too. Callers reset a card's flip with `.id(_:)`.
 - `ArtPicture(path:)` draws a `CGImage` at full size from the `artPictureLoader` environment value, a closure the
   app sets (Combat Pad reads its art store, Field Guide its art model), with a progress view while it loads.
 - `CardArtCopier.copy(from:to:)` finds each piece, matching each path part without regard to case, scales any
