@@ -6,6 +6,8 @@ struct CardStats: Equatable {
     var size: PawnSize
     /// Lowercase, in the order printed: "tiny", "aeon", "monitor". Rarity and alignment are left out.
     var traits: [String]
+    /// True for an item deck's card, which names an item rather than a creature.
+    var isItem = false
 
     /// Traits that say how rare a creature is, or its alignment, rather than what it is.
     static let ignoredTraits: Set<String> = ["common", "uncommon", "rare", "unique",
@@ -20,13 +22,17 @@ struct CardStats: Equatable {
     /// Starfinder one ("AEON GUARD CR 3", then a line such as "LE Medium humanoid (human)"). Nil for a page that
     /// isn't a creature's stat side: a hazard, a stat block continued from another card, rules or a title page.
     static func read(_ text: String) -> CardStats? {
-        // Tabs and the backspaces some cards print after the name separate words.
+        let cleaned = cleaned(text)
+        guard cleaned.range(of: #"\(.*continued from card"#, options: .regularExpression) == nil else { return nil }
+        return readPathfinder(cleaned) ?? readStarfinder(cleaned)
+    }
+
+    /// The text with tabs and the backspaces some cards print after the name as spaces, which separate words.
+    static func cleaned(_ text: String) -> String {
         let scalars = text.unicodeScalars.map { scalar in
             scalar != "\n" && CharacterSet.controlCharacters.contains(scalar) ? " " : scalar
         }
-        let cleaned = String(String.UnicodeScalarView(scalars))
-        guard cleaned.range(of: #"\(.*continued from card"#, options: .regularExpression) == nil else { return nil }
-        return readPathfinder(cleaned) ?? readStarfinder(cleaned)
+        return String(String.UnicodeScalarView(scalars))
     }
 
     private static func readPathfinder(_ text: String) -> CardStats? {
@@ -62,7 +68,7 @@ struct CardStats: Equatable {
     /// The name in title case: the words in capitals that start the header's line or, when there are none, one
     /// of the lines just above it. Trait words that came out of order beside it are returned apart. Nil when
     /// no name is found.
-    private static func name(before header: Range<String.Index>, in text: String) -> (String, [String])? {
+    static func name(before header: Range<String.Index>, in text: String) -> (String, [String])? {
         let lines = text[..<header.lowerBound].split(separator: "\n", omittingEmptySubsequences: false)
         guard var words = lines.suffix(nameLinesAbove + 1).reversed().lazy.map(capitalWords).first(where: {
             !$0.isEmpty

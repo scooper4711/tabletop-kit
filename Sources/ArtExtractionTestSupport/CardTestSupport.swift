@@ -40,20 +40,23 @@ public let cardFrame: CGImage = {
     return context.makeImage()!
 }()
 
-/// A Battle Card as a test deck prints it.
+/// A Battle Card, or an item deck's card, as a test deck prints it.
 public struct DrawnCard: Sendable {
     public var name: String
     public var traits = "N MEDIUM HUMANOID"
     public var creature: CGImage? = creatureArt()
     /// A line printed on the art side, as the NPC deck credits its illustrators.
     public var credit: String?
+    /// What follows the name: "CREATURE 3", "ITEM 1"; empty to print the name alone, as the Guns deck does.
+    public var heading = "CREATURE 3"
 
     public init(name: String, traits: String = "N MEDIUM HUMANOID", creature: CGImage? = creatureArt(),
-                credit: String? = nil) {
+                credit: String? = nil, heading: String = "CREATURE 3") {
         self.name = name
         self.traits = traits
         self.creature = creature
         self.credit = credit
+        self.heading = heading
     }
 
     /// The art side: a background and frame every card shares, a large faded copy of the creature, then the
@@ -73,7 +76,7 @@ public struct DrawnCard: Sendable {
 
     /// The stat side: the name and level, the traits, then the stat block.
     public func drawStats(_ context: CGContext) {
-        drawText(context, "\(name) CREATURE 3", at: CGPoint(x: 12, y: 400), size: 9)
+        drawText(context, heading.isEmpty ? name : "\(name) \(heading)", at: CGPoint(x: 12, y: 400), size: 9)
         drawText(context, traits, at: CGPoint(x: 12, y: 386), size: 7)
         drawText(context, "Perception +9; darkvision", at: CGPoint(x: 12, y: 372), size: 7)
     }
@@ -85,6 +88,9 @@ public enum CardLayout: Sendable {
     case alternating
     /// Every card's stat side, then every card's art.
     case blocks
+    /// Each card's art and stat side on one page, then a page of its own, as Deck of Endless Treasure prints its
+    /// cards' quirks.
+    case sameSide
 }
 
 public func cardDeckPDF(_ cards: [DrawnCard], layout: CardLayout) -> Data {
@@ -92,8 +98,20 @@ public func cardDeckPDF(_ cards: [DrawnCard], layout: CardLayout) -> Data {
     switch layout {
     case .alternating: pages = cards.flatMap { card in [card.drawArt, card.drawStats] }
     case .blocks: pages = cards.map { $0.drawStats } + cards.map { $0.drawArt }
+    case .sameSide:
+        pages = cards.flatMap { card -> [(CGContext) -> Void] in
+            [{ card.drawArt($0); card.drawStats($0) }, { drawQuirk($0) }]
+        }
     }
     return makePDF(size: cardPage, pages: pages)
+}
+
+/// A quirk side as Deck of Endless Treasure prints it: a number, a quirk and a sentence about it.
+private func drawQuirk(_ context: CGContext) {
+    drawText(context, "2", at: CGPoint(x: 12, y: 400), size: 9)
+    drawText(context, "Rooting", at: CGPoint(x: 12, y: 386), size: 7)
+    drawText(context, "The item sprouts roots when set down and takes an action to pull free.",
+             at: CGPoint(x: 12, y: 372), size: 5)
 }
 
 /// Writes a one-file deck named `name` into `folder`.
@@ -113,6 +131,13 @@ public func writeSplitDeck(_ cards: [DrawnCard], base: String = "PZO1 Test Battl
     try makePDF(size: cardPage, pages: cards.map { $0.drawArt }).write(to: backs)
     return (fronts, backs)
 }
+
+/// Three item cards: two named before their level, one by name alone.
+public let threeItems = [
+    DrawnCard(name: "HEALING POTION", creature: creatureArt(variant: 0, scale: 4), heading: "ITEM 1+"),
+    DrawnCard(name: "BAYONET", creature: creatureArt(variant: 1, scale: 4), heading: "ITEM 0"),
+    DrawnCard(name: "Knuckle Duster", creature: creatureArt(variant: 2, scale: 4), heading: "")
+]
 
 /// Three cards, as decks need several for their shared pictures to tell from the creatures.
 public let threeCards = [

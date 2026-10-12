@@ -81,4 +81,21 @@ struct LibraryArtMatcherTests {
     func noArt() {
         #expect(match(LibraryArtMatcher(), "Ksarik") == .none)
     }
+
+    @Test("Items match items by name, then without their grade, and never creatures")
+    func items() {
+        let potion = LibraryArt(id: UUID(), name: "HEALING POTION", game: .pathfinder, isRemastered: false,
+                                isToken: false, isAvailable: true, sourceTitles: ["Potions Deck"], isItem: true)
+        let longsword = LibraryArt(id: UUID(), name: "Longsword", game: .pathfinder, isRemastered: false,
+                                   isToken: false, isAvailable: true, sourceTitles: ["Treasure"], isItem: true)
+        let bayonetCreature = art("Bayonet", game: .pathfinder)
+        let matcher = LibraryArtMatcher(art: [potion, longsword, bayonetCreature])
+        #expect(matcher.art(forItemNamed: "Healing Potion (Minor)", game: .pathfinder).portrait == potion.id)
+        #expect(matcher.art(forItemNamed: "Greater Healing Potion", game: .pathfinder).portrait == potion.id)
+        #expect(matcher.art(forItemNamed: "+1 Striking Longsword", game: .pathfinder).portrait == longsword.id)
+        #expect(matcher.art(forItemNamed: "Healing Potion", game: .starfinder) == .none)
+        #expect(matcher.art(forItemNamed: "Bayonet", game: .pathfinder) == .none)
+        #expect(match(matcher, "Healing Potion", game: .pathfinder) == .none)
+        #expect(match(matcher, "Bayonet", game: .pathfinder).portrait == bayonetCreature.id)
+    }
 }

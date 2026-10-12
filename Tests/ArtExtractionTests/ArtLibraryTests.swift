@@ -146,4 +146,20 @@ import ArtExtractionTestSupport
         let report = try library().add(try writePawns([nameless]), keeping: true)
         #expect(report.unnamed == 1 && report.added == 0)
     }
+
+    @Test func keepsItemsApartFromCreaturesOfTheSameName() throws {
+        let library = try library()
+        let pawns = [DrawnPawn(rect: CGRect(x: 20, y: 600, width: 81, height: 138), art: creatureArt(variant: 0),
+                               name: "BAYONET")]
+        try library.add(try writePawns(pawns), keeping: true)
+        let items = folder.appendingPathComponent("Pathfinder Guns Deck")
+        try FileManager.default.createDirectory(at: items, withIntermediateDirectories: true)
+        var cards = threeItems
+        cards[0].creature = creatureArt(variant: 0, scale: 4)
+        try library.add(try writeCardDeck(cards, named: "Guns.pdf", in: items), keeping: true)
+        #expect(library.entries.map(\.name) == ["Bayonet", "Healing Potion", "Bayonet", "Knuckle Duster"])
+        #expect(library.entries.map(\.isItem) == [false, true, true, true])
+        #expect(library.entries[1].prints.first?.kind == .item)
+        #expect(library.picture(of: library.entries[1], maxPixels: 100) != nil)
+    }
 }
