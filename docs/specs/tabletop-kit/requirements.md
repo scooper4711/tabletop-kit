@@ -72,6 +72,13 @@ and Field Guide share. It contains no Paizo art or text.
   Combat Pad and Field Guide, imported from the pf2e system repository (every NPC and complex hazard, the
   conditions, and a glossary of what the creatures link to), and art from the art library matched to creatures by
   name. Running the import twice on the same input produces identical output.
+- R4.2 A creature's immunities include those its traits grant by their rules text, even when the source data
+  leaves them out: constructs (bleed, death effects, disease, healing, nonlethal attacks, poison, spirit, vitality,
+  void, and the doomed, drained, fatigued, paralyzed, sickened and unconscious conditions), mindless creatures
+  (mental) and swarms (the grabbed, prone and restrained conditions). Each immunity shows once. Undead get none,
+  since their trait's text grants none.
+- R4.3 A creature's health can be described to players without numbers: Unharmed (full), Healthy (76–99%),
+  Injured (51–75%), Bloodied (26–50%), Near Death (1–25%) and Down (0 HP or less).
 
 ## R5 Battle cards (`BattleCards`)
 - R5.1 A creature's card front shows its stat block with the template and conditions applied, in a look of its
@@ -86,3 +93,12 @@ and Field Guide share. It contains no Paizo art or text.
 - R5.3 The cards are drawn with UI art from the user's own Rexard packs, which can't be published: `CardArtImport`
   copies the pieces from the packs into an app's folder at build time, and the app passes that folder to the
   cards. Without a piece, the card draws plain color in its place.
+- R5.4 A card front shows the creature's conditions as colored tags under its traits ("Frightened 2", "Bleed 1d6").
+  Tapping a tag shows the condition's rules text in a glossary popover.
+- R5.5 An interactive card shows the front and back of a creature and lets the user flip it and show it full
+  screen. Tapping empty card area shows or hides two corner icons: flip (top right) and full screen (bottom
+  right); with a pointer, each icon shows while the pointer is over its corner. Taps on links and trait or
+  condition tags go to them, not to the card. Full screen opens with the icon or a pinch out, on the face that's
+  showing, and closes with its icon, a pinch in or Escape; flipping works in it too.
+- R5.6 The apps share one view that loads a creature's art at full size from a loader they supply, so a card
+  back's art is drawn the same way in each.
