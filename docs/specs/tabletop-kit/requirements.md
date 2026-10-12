@@ -25,6 +25,9 @@ and Field Guide share. It contains no Paizo art or text.
   than the side) give each card's item art the same way, named from the card: the capitals before "ITEM n" or
   "MINOR/MAJOR/GRAND GIFT", else the first lines when all in capitals or all in title case. Pages naming the
   deck or its instructions are skipped. Deck of Endless Treasure prints the art beside the name on one page.
+- R1.6b Item decks sold as pictures (a folder of `…Fronts<n>.jpg` and `…Backs<n>.jpg` in an item deck's folder,
+  such as Weapons & Armor) give each back's item cut out of the background all backs share, named from the
+  title across the top of its front. The pictures are kept in the library, as token art is.
 - R1.7 Pawns printed without cut outlines (the second half of Monster Core Pawn Box, Dawn of Flame) are found
   from their pictures: each picture with its own transparency is a pawn, named from the label under it, its back
   the same picture mirrored on the following page. Pages that are a single flattened image with no text (the

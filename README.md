@@ -8,7 +8,8 @@ apps, for macOS and iPadOS.
 
 - **ArtExtraction** finds the creature art in Pathfinder and Starfinder pawn, token and Battle Cards PDFs that you
   bought, and the item art in item decks (Potions & Talismans, Magic Armaments, Alchemy, Guns, Gears, Relics,
-  Deck of Endless Treasure): each pawn, token, card creature and item with its name (and a creature's size and
+  Deck of Endless Treasure, and Weapons & Armor, sold as pictures): each pawn, token, card creature and item
+  with its name (and a creature's size and
   traits), and its picture alone on a transparent background.
 - **ArtExtractionTestSupport** draws small test PDFs laid out like Paizo's, for the apps' tests.
 
