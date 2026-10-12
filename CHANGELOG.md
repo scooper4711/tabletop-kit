@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2026-10-12
+
+### Added
+- Read item art from item decks sold as pictures
+
+### Changed
+- Name the cut-out picture apart from the image helper
+- Describe reading item decks sold as pictures
+
+[0.8.0]: https://github.com/scooper4711/tabletop-kit/releases/tag/v0.8.0
+
 ## [0.7.0] - 2026-10-12
 
 ### Added
