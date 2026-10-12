@@ -71,7 +71,7 @@ public actor CreatureArtStore {
                                   Self.remasteredProducts.contains { title.localizedCaseInsensitiveContains($0) }
                               },
                               isToken: entry.prints.first?.kind == .token,
-                              isAvailable: library.isAvailable(entry), sourceTitles: titles)
+                              isAvailable: library.isAvailable(entry), sourceTitles: titles, isItem: entry.isItem)
         }
         let sources = library.sources.map { source in
             ArtSourceSummary(id: source.id, title: source.title, place: Self.place(of: source),

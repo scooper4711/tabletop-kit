@@ -13,9 +13,11 @@ public struct LibraryArt: Sendable, Equatable {
     public var isAvailable: Bool
     /// The PDFs that print it.
     public var sourceTitles: [String]
+    /// True for an item's art, from an item deck, rather than a creature's.
+    public var isItem = false
 
     public init(id: UUID, name: String, game: Game, isRemastered: Bool, isToken: Bool, isAvailable: Bool,
-                sourceTitles: [String]) {
+                sourceTitles: [String], isItem: Bool = false) {
         self.id = id
         self.name = name
         self.game = game
@@ -23,6 +25,7 @@ public struct LibraryArt: Sendable, Equatable {
         self.isToken = isToken
         self.isAvailable = isAvailable
         self.sourceTitles = sourceTitles
+        self.isItem = isItem
     }
 }
 
@@ -37,13 +40,18 @@ public struct MatchedArt: Sendable, Equatable {
     public static let none = MatchedArt(portrait: nil, token: nil, missingSources: [])
 }
 
-/// Matches the user's art to creatures by name. Names are compared as sets of words, so "AGATHION, VICUNAL"
-/// matches "Vicunal Agathion"; a card title's family prefix ("AEON, AXIOMITE") is optional.
+/// Matches the user's art to creatures, and to items, by name. Names are compared as sets of words, so
+/// "AGATHION, VICUNAL" matches "Vicunal Agathion"; a card title's family prefix ("AEON, AXIOMITE") is optional.
 public struct LibraryArtMatcher: Sendable {
     /// The prefix of an art path drawn from the library: `library:<entry id>`.
     public static let pathPrefix = "library:"
+    /// Words naming an item's grade or potency, which item decks print one card for: "Healing Potion (Minor)" and
+    /// "Greater Bottled Lightning" show the art of "Healing Potion" and "Bottled Lightning".
+    static let gradeWords: Set<String> = ["minor", "lesser", "moderate", "greater", "major", "true", "superior",
+                                          "commercial", "tactical", "advanced", "elite", "paragon", "standard"]
 
     private var byName: [String: [LibraryArt]] = [:]
+    private var itemsByName: [String: [LibraryArt]] = [:]
     /// Manual fixes: creature name → the name its art has in a PDF, from `art-overrides.json`.
     private var overrides: [String: String]
 
@@ -51,7 +59,11 @@ public struct LibraryArtMatcher: Sendable {
         self.overrides = Dictionary(uniqueKeysWithValues: overrides.map { (Self.normalized($0.key), $0.value) })
         for entry in art {
             for key in Self.keys(forArtName: entry.name) {
-                byName["\(entry.game.rawValue)|\(key)", default: []].append(entry)
+                if entry.isItem {
+                    itemsByName["\(entry.game.rawValue)|\(key)", default: []].append(entry)
+                } else {
+                    byName["\(entry.game.rawValue)|\(key)", default: []].append(entry)
+                }
             }
         }
     }
@@ -61,10 +73,23 @@ public struct LibraryArtMatcher: Sendable {
     public func art(forCreatureNamed creatureName: String, game: Game, isRemastered: Bool) -> MatchedArt {
         let name = overrides[Self.normalized(creatureName)] ?? creatureName
         let candidates = Self.lookupKeys(for: name).lazy.compactMap { byName["\(game.rawValue)|\($0)"] }.first ?? []
+        return Self.best(of: candidates, isRemastered: isRemastered)
+    }
+
+    /// The best art for an item: by its name, then without its grade ("Healing Potion (Minor)", "+1 Striking
+    /// Longsword" falls back to "Longsword" only when no card names it whole).
+    public func art(forItemNamed itemName: String, game: Game) -> MatchedArt {
+        let keys = Self.lookupKeys(for: itemName) + [Self.ungraded(itemName)]
+        let candidates = keys.lazy.compactMap { itemsByName["\(game.rawValue)|\($0)"] }.first ?? []
+        return Self.best(of: candidates, isRemastered: nil)
+    }
+
+    /// The candidates ranked: drawable before missing, then of the era wanted, when one is.
+    private static func best(of candidates: [LibraryArt], isRemastered: Bool?) -> MatchedArt {
         guard !candidates.isEmpty else { return .none }
         let ranked = candidates.sorted { first, second in
-            (first.isAvailable ? 0 : 1, first.isRemastered == isRemastered ? 0 : 1)
-                < (second.isAvailable ? 0 : 1, second.isRemastered == isRemastered ? 0 : 1)
+            (first.isAvailable ? 0 : 1, isRemastered.map { first.isRemastered == $0 ? 0 : 1 } ?? 0)
+                < (second.isAvailable ? 0 : 1, isRemastered.map { second.isRemastered == $0 ? 0 : 1 } ?? 0)
         }
         let available = ranked.filter(\.isAvailable)
         let portrait = available.first { !$0.isToken } ?? available.first
@@ -84,6 +109,15 @@ public struct LibraryArtMatcher: Sendable {
             keys.append(key)
         }
         return keys
+    }
+
+    /// The name's words without its grade, potency runes ("+1", "Striking") or parenthetical, normalized.
+    static func ungraded(_ name: String) -> String {
+        let bare = name.replacingOccurrences(of: #"\s*\([^)]*\)"#, with: "", options: .regularExpression)
+        let runes: Set<String> = ["striking", "resilient"]
+        return normalized(bare).split(separator: " ").filter { word in
+            !gradeWords.contains(String(word)) && !runes.contains(String(word)) && word.first?.isNumber != true
+        }.joined(separator: " ")
     }
 
     /// Lowercased words without punctuation or accents, sorted, so word order doesn't matter.

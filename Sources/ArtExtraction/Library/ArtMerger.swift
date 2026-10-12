@@ -24,8 +24,9 @@ struct ArtMerger {
             return
         }
         let print = try makePrint(of: found)
+        // An item and a creature of the same name ("Bayonet") are never the same art.
         let candidates = library.entries.indices.filter { index in
-            library.entries[index].game == source.game
+            library.entries[index].game == source.game && library.entries[index].isItem == (print.kind == .item)
                 && Self.key(library.entries[index].name) == Self.key(found.name)
         }
         if let index = candidates.first(where: { library.entries[$0].fingerprint.matches(found.fingerprint) })
@@ -87,6 +88,9 @@ struct ArtMerger {
             return ArtPrint(sourceID: source.id, kind: .pawn, face: found.front, copies: found.copies)
         case .card(let imageIndex):
             return ArtPrint(sourceID: source.id, kind: .figure, face: found.front, imageIndex: imageIndex,
+                            copies: found.copies)
+        case .item(let imageIndex):
+            return ArtPrint(sourceID: source.id, kind: .item, face: found.front, imageIndex: imageIndex,
                             copies: found.copies)
         case .token(let pictures):
             let file = "\(UUID().uuidString).png"

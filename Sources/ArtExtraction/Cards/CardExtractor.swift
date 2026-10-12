@@ -2,9 +2,10 @@ import CoreGraphics
 import Foundation
 import PDFKit
 
-/// Finds the creatures in a deck of Battle Cards. Each card's art side draws the same background, frame and
-/// badges as every other card, then the creature's own pictures, the creature itself last, alone on a
-/// transparent background. Its stat side names it and gives its size and traits.
+/// Finds the creatures in a deck of Battle Cards, or the items in an item deck. Each card's art side draws the
+/// same background, frame and badges as every other card, then the card's own pictures, the creature or item
+/// itself last, alone on a transparent background. Its stat side names it, and for a creature gives its size and
+/// traits. Deck of Endless Treasure prints the art and the name on the same side.
 enum CardExtractor {
     static func extract(from deck: CardDeck) throws -> ExtractionResult {
         guard let artText = PDFDocument(url: deck.artFile), let art = CGPDFDocument(deck.artFile as CFURL)
@@ -18,20 +19,22 @@ enum CardExtractor {
             pairs = CardPairing.pairs(artPages: artText.pageCount, statPages: statsText.pageCount)
         } else {
             stats = artText
-            pairs = CardPairing.pairs(textless: (0..<artText.pageCount).map { printsLittleText(artText, $0) })
+            pairs = CardPairing.pairs(textless: (0..<artText.pageCount).map {
+                printsLittleText(artText, $0, kind: deck.kind)
+            })
         }
-        return cards(in: pairs, art: art, stats: stats)
+        return cards(in: pairs, of: deck.kind, art: art, stats: stats)
     }
 
-    private static func cards(in pairs: [CardPairing.Pair], art: CGPDFDocument, stats: PDFDocument)
-        -> ExtractionResult {
+    private static func cards(in pairs: [CardPairing.Pair], of kind: CardDeck.Kind, art: CGPDFDocument,
+                              stats: PDFDocument) -> ExtractionResult {
         let pages = Dictionary(uniqueKeysWithValues: pairs.map { pair in
             (pair.art, ArtPage(art.page(at: pair.art + 1).map(PageScanner.images(on:)) ?? []))
         })
         let shared = ArtPage.sharedDigests(Array(pages.values))
         var result = ExtractionResult()
         for pair in pairs {
-            guard let text = stats.page(at: pair.stats)?.string, let card = CardStats.read(text),
+            guard let text = stats.page(at: pair.stats)?.string, let card = read(text, of: kind),
                   let page = pages[pair.art], let pawn = pawn(card, on: pair.art, page: page, shared: shared)
             else { continue }
             PawnExtractor.add(pawn, to: &result)
@@ -39,7 +42,15 @@ enum CardExtractor {
         return result
     }
 
-    /// The creature on an art page as a pawn; nil when the page draws no picture of its own.
+    /// A creature card's stat side, or an item card's name as an item of medium size with no traits.
+    private static func read(_ text: String, of kind: CardDeck.Kind) -> CardStats? {
+        switch kind {
+        case .creatures: CardStats.read(text)
+        case .items: ItemCardText.name(in: text).map { CardStats(name: $0, size: .medium, traits: [], isItem: true) }
+        }
+    }
+
+    /// The creature or item on an art page as a pawn; nil when the page draws no picture of its own.
     private static func pawn(_ card: CardStats, on pageIndex: Int, page: ArtPage,
                              shared: Set<String>) -> ExtractedPawn? {
         guard let index = page.creatureIndex(shared: shared), let figure = Figure(page.images[index]),
@@ -50,16 +61,17 @@ enum CardExtractor {
         return ExtractedPawn(name: card.name, size: card.size, front: face, back: face.mirroredCopy(),
                              fingerprint: ArtFingerprint(imageDigests: [identity.digest],
                                                          thumbnail: identity.thumbnail),
-                             copies: 1, shape: .card(imageIndex: index), traits: card.traits)
+                             copies: 1, shape: card.isItem ? .item(imageIndex: index) : .card(imageIndex: index),
+                             traits: card.traits)
     }
 
     /// Art pages print no words, or only a credit such as "Illustration by Diana Martinez" (the NPC deck's
-    /// combined PDF): little text, and no stat block.
+    /// combined PDF): little text, and no stat block or item name.
     static let artPageText = 80
 
-    private static func printsLittleText(_ document: PDFDocument, _ index: Int) -> Bool {
+    private static func printsLittleText(_ document: PDFDocument, _ index: Int, kind: CardDeck.Kind) -> Bool {
         let text = document.page(at: index)?.string?.trimmingCharacters(in: .whitespacesAndNewlines) ?? ""
-        return text.count < artPageText && CardStats.read(text) == nil
+        return text.count < artPageText && read(text, of: kind) == nil
     }
 }
 
@@ -108,11 +120,16 @@ enum CardPairing {
     }
 
     /// One-file decks print each card's art just before its stat block, or runs of stat blocks each followed by
-    /// a run of the same cards' art. `textless` says which pages print no words: the art.
+    /// a run of the same cards' art, or, when hardly a page is free of words (Deck of Endless Treasure's two
+    /// diagrams), each card's art beside its name on the same page. `textless` says which pages print no words:
+    /// the art.
     static func pairs(textless: [Bool]) -> [Pair] {
         let artThenStats = textless.indices.dropLast().filter { textless[$0] && !textless[$0 + 1] }
         if artThenStats.count * 3 > textless.count {
             return artThenStats.map { Pair(art: $0, stats: $0 + 1) }
+        }
+        if textless.count { $0 } * 10 < textless.count {
+            return textless.indices.map { Pair(art: $0, stats: $0) }
         }
         return runPairs(textless)
     }

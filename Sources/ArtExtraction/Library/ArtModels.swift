@@ -51,6 +51,8 @@ public enum ArtKind: String, Codable, Sendable, Comparable {
     case pawn
     /// A round token's art.
     case token
+    /// An item on an item deck's card, drawn as a figure is.
+    case item
 
     /// Figures come first: their pictures are the sharpest.
     public static func < (lhs: ArtKind, rhs: ArtKind) -> Bool {
@@ -62,6 +64,7 @@ public enum ArtKind: String, Codable, Sendable, Comparable {
         case .figure: 0
         case .pawn: 1
         case .token: 2
+        case .item: 3
         }
     }
 }
@@ -80,7 +83,7 @@ public struct ArtPrint: Codable, Hashable, Sendable {
     public var copies: Int
 }
 
-/// One piece of creature art, with every product that prints it, its sharpest print first.
+/// One piece of creature or item art, with every product that prints it, its sharpest print first.
 public struct ArtEntry: Codable, Identifiable, Hashable, Sendable {
     public let id: UUID
     public var name: String
@@ -93,6 +96,9 @@ public struct ArtEntry: Codable, Identifiable, Hashable, Sendable {
     /// The colors of the art's figure (see `Figure.palette`), once measured to compare it with art of the same
     /// name; empty until then.
     public var palette: [Double]
+
+    /// True for an item's art, from an item deck, rather than a creature's.
+    public var isItem: Bool { prints.contains { $0.kind == .item } }
 }
 
 /// What adding a PDF to the art library found.
