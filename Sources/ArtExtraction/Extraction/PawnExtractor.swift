@@ -12,6 +12,8 @@ public enum PrintedShape: Equatable, Sendable {
     case card(imageIndex: Int)
     /// An item on an item deck's card, drawn as a creature on a Battle Card is.
     case item(imageIndex: Int)
+    /// An item cut out of a card printed as a picture, as PNG: kept, since its card isn't a PDF.
+    case drawnItem(Data)
 }
 
 /// A token's art drawn alone, as PNG: transparent outside the art and its circle.
@@ -68,11 +70,12 @@ public enum PawnExtractionError: Error, Equatable, CustomStringConvertible {
 public enum PawnExtractor {
     /// Raised when extraction finds pawns it could not before, so that PDFs in which nothing was found are read
     /// again. 1: Battle Cards whose art pages credit the illustrator. 2: pawns printed without cut outlines.
-    /// 3: item decks.
-    public static let version = 3
+    /// 3: item decks. 4: item decks printed as pictures.
+    public static let version = 4
 
     /// The pawns in a pawn or token PDF, the creatures in a deck of Battle Cards, or the items in an item deck.
     public static func extract(from url: URL) throws -> ExtractionResult {
+        if let deck = ImageDeck.containing(url) { return ImageDeckExtractor.extract(from: deck) }
         if let deck = CardDeck.containing(url) { return try CardExtractor.extract(from: deck) }
         guard let document = PDFDocument(url: url), let first = document.page(at: 0)?.pageRef,
               let cgDocument = first.document

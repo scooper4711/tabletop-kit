@@ -161,7 +161,18 @@ Fists of the Ruby Phoenix, Alien Archive 1 & 2 and 3 & 4), 289 × 425 pt cards (
   word, no sentence punctuation (the Guns and Gears decks). Names with "instructions", "deck" or "product
   identity" are skipped. An item becomes an `ExtractedPawn` of medium size with no traits and the
   `.item(imageIndex:)` shape, printed as `ArtKind.item`; `ArtEntry.isItem` and `LibraryArt.isItem` mark it, and
-  `ArtMerger` merges items only with items. `PawnExtractor.version` 3 rereads PDFs read before item decks.
+  `ArtMerger` merges items only with items. `PawnExtractor.version` 3 rereads PDFs read before item decks; 4 adds decks sold as pictures.
+- `ImageDeck.containing(_:)` takes a folder (or a JPG in one) whose name, or its parent's, names an item deck
+  and that holds three or more `…Backs<n>.jpg`, each paired with `…Fronts<n>.jpg`. `ImageDeckExtractor` draws
+  the backs at most 520 px on the long side, takes each pixel's median over all backs as the background, and
+  makes each pixel transparent below a color difference of 30 (largest channel), opaque from 60, and partly
+  transparent between; the picture is cropped to the rows and columns holding at least three opaque pixels.
+  `CardNameReader` reads the front's top fifth with Vision's accurate text recognition, keeps the lines at
+  least 0.6 as tall as the tallest and at least 30% capitals, and joins them top to bottom. On Weapons &
+  Armor this names 100 of 102 cards ("Composite Shortbow" comes out "Shortbow", "Glaive" as "Glawe"). The
+  item is an `ExtractedPawn` with the `.drawnItem(png)` shape, kept as a `tokenFile` with `ArtKind.item`. The
+  library keeps the folder as the source: its digest hashes its files' names and sizes and its byte count is
+  their total, so the folder is known again. `ProductScanner` lists each such folder once.
 - `Figure` (in Extraction) is one image as its page draws it: the image with its soft mask, and its opaque
   bounds in page space, found in a bitmap at most 512 px across (alpha above 24). `pixelArea` is those bounds in
   the image's own pixels. `palette()` counts the opaque pixels of the figure drawn 64 × 64 into 64 colors (four

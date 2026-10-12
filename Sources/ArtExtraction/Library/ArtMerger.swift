@@ -92,6 +92,14 @@ struct ArtMerger {
         case .item(let imageIndex):
             return ArtPrint(sourceID: source.id, kind: .item, face: found.front, imageIndex: imageIndex,
                             copies: found.copies)
+        case .drawnItem(let png):
+            let file = "\(UUID().uuidString).png"
+            do {
+                try png.write(to: library.tokenURL(file))
+            } catch {
+                throw ArtLibraryError.saveFailed("writing an item's art: \(error.localizedDescription)")
+            }
+            return ArtPrint(sourceID: source.id, kind: .item, face: found.front, tokenFile: file, copies: found.copies)
         case .token(let pictures):
             let file = "\(UUID().uuidString).png"
             do {
