@@ -240,6 +240,14 @@ from the art library matched to creatures by name, and with `art(forItemNamed:ga
 without grade words, potency runes and numbers; see Combat Pad's spec). Encounter budgets, challenge points and
 everything about campaigns and fights stay in Combat Pad.
 
+- `TraitImmunities` maps trait slugs to the immunities their rules text grants (construct, mindless, swarm).
+  `merged(_:traits:)` appends the missing ones, compared without regard to case, hyphens or spaces, after the
+  source's own; `Creature.allImmunities` applies it. Field Guide's import, which works on the raw slugs, calls
+  `merged` too. Undead are left alone: their trait grants nothing, and most undead list their immunities.
+- `HealthEstimate(hitPoints:maxHitPoints:)` picks a band from the fraction of maximum HP: 1 or more is
+  Unharmed, over 0.75 Healthy, over 0.5 Injured, over 0.25 Bloodied, over 0 Near Death, else Down. A creature
+  without a maximum is Unharmed unless at 0 HP or less. The app decides when a dying creature counts as Down.
+
 ## Importing creatures (`CreatureImport`)
 1. **Pack discovery.** Read `system.pf2e.json` and `system.sf2e.json` for the Actor packs. Scan
    `packs/<system>/<pack>/**/*.json`, keeping `type == "npc"` and complex `hazard` documents.
@@ -300,6 +308,20 @@ everything about campaigns and fights stay in Combat Pad.
 - `NameRibbon` centers the name at 27% of the ribbon's height, the middle of its banner (rows 0–123 of 225).
   `TerminalPlate` fills an `ElongatedHexagon` (points at half its height) with near-black glass, `Scanlines` every
   3 points, a cyan edge with a glow, and the name in semibold monospaced cyan with two glow shadows and a `_`.
+- `ConditionTags` (after `TraitChips` on both fronts) draws the presenter's conditions as capsules with
+  `ConditionLabel`'s text and color (moved from Combat Pad's strip chips). A tag opens a `GlossaryPopover` of
+  `GlossaryEntry(id: "condition.<slug>", category: "Condition")` built from `BestiaryStore.condition(_:)`, when
+  the bestiary has the condition and links are open; persistent damage and reminders have no entry.
+- `InteractiveBattleCard(front:back:)` owns the flip state, the 3D flip and full screen. Icons
+  (`arrow.triangle.2.circlepath`, `arrow.up.left.and.arrow.down.right`, and in full screen
+  `arrow.down.right.and.arrow.up.left`) are toggled by a tap gesture on the card's background, which links and
+  tags, being buttons, win over; `onContinuousHover` shows each icon while the pointer is within a corner of a
+  fifth of the card. Full screen is a `fullScreenCover` on iOS. On the Mac it's an overlay filling the window of
+  the nearest `battleCardFullScreenHost()` (the app applies it to window and sheet roots; the card passes its
+  glossary, card art and art loader along), or a large sheet without one. A pinch (`MagnifyGesture`, past 1.2 to
+  open, under 0.8 to close) and Escape work too. Callers reset a card's flip with `.id(_:)`.
+- `ArtPicture(path:)` draws a `CGImage` at full size from the `artPictureLoader` environment value, a closure the
+  app sets (Combat Pad reads its art store, Field Guide its art model), with a progress view while it loads.
 - `CardArtCopier.copy(from:to:)` finds each piece, matching each path part without regard to case, scales any
   over 1,600 pixels down, writes PNGs and returns the missing pieces; the `CardArtImport` executable runs it. The
   pieces take 9.3 MB.

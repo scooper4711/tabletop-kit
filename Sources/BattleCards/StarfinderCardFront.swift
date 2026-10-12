@@ -17,6 +17,7 @@ struct StarfinderCardFront: View {
             VStack(alignment: .leading, spacing: 4) {
                 header
                 TraitChips(traits: content.traits, links: content.links, game: .starfinder, style: style)
+                ConditionTags(conditions: content.conditions, style: style)
                 lines(content.hazard)
                 lines(content.senses)
                 section("DEFENSE", (content.hitPoints.isEmpty ? [] : [CardLine(content.hitPoints)])
