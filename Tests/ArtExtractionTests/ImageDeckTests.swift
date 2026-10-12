@@ -30,10 +30,10 @@ import ArtExtractionTestSupport
         #expect(result.pawns.map(\.name) == ["Dagger", "Longsword", "Full Plate", "Whip", "Spear"])
         let first = try #require(result.pawns.first)
         guard case .drawnItem(let png) = first.shape else { Issue.record("expected a drawn item"); return }
-        let image = try #require(image(fromPNG: png))
+        let picture = try #require(image(fromPNG: png))
         // The shape alone, cropped to it: 60 × 84 pixels of the 300 × 420 card, opaque.
-        #expect(abs(image.width - 60) <= 2 && abs(image.height - 84) <= 2)
-        #expect(pixel(of: image, x: 30, y: 42)[3] == 255)
+        #expect(abs(picture.width - 60) <= 2 && abs(picture.height - 84) <= 2)
+        #expect(pixel(of: picture, x: 30, y: 42)[3] == 255)
     }
 
     @Test func keepsTheItemsInTheLibraryAndKnowsTheFolderAgain() throws {
