@@ -59,7 +59,7 @@ public struct CardDeck: Equatable, Sendable {
         name.range(of: #"battle ?cards?"#, options: [.regularExpression, .caseInsensitive]) != nil
     }
 
-    private static func isItemDeck(_ name: String) -> Bool {
+    static func isItemDeck(_ name: String) -> Bool {
         let lowercased = name.lowercased()
         return lowercased.range(of: #"\bdeck\b"#, options: .regularExpression) != nil
             && !decksWithoutArt.contains(where: lowercased.contains)

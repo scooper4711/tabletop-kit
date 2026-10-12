@@ -16,11 +16,10 @@ extension ArtLibrary {
     /// Reads a PDF's art. It touches nothing in the library, so it can run off the main thread; the caller needs
     /// access to the file.
     public static func prepare(_ url: URL) throws -> PreparedArt {
-        let deck = CardDeck.containing(url)
-        let file = deck?.artFile ?? url
-        let size = (try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int) ?? 0
-        return PreparedArt(file: file, title: deck?.title ?? ProductTitle.fromFileName(url.lastPathComponent),
-                           digest: try digest(of: file), byteCount: size,
+        let file = libraryFile(for: url)
+        let title = ImageDeck.containing(url)?.title ?? CardDeck.containing(url)?.title
+            ?? ProductTitle.fromFileName(url.lastPathComponent)
+        return PreparedArt(file: file, title: title, digest: try digest(of: file), byteCount: byteCount(of: file),
                            extraction: try PawnExtractor.extract(from: file))
     }
 
@@ -59,8 +58,8 @@ extension ArtLibrary {
 
     /// True when the PDF at `url` is in the library: recognized by its place and size, or else its contents.
     public func contains(_ url: URL) -> Bool {
-        let file = CardDeck.containing(url)?.artFile ?? url
-        let size = (try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int) ?? -1
+        let file = Self.libraryFile(for: url)
+        let size = Self.byteCount(of: file)
         if sources.contains(where: { $0.byteCount == size && Self.path(of: $0) == file.path }) { return true }
         return (try? Self.digest(of: file)).map { digest in sources.contains { $0.id == digest } } ?? false
     }
@@ -122,7 +121,34 @@ extension ArtLibrary {
         }
     }
 
+    /// The file the library keeps for `url`: a deck's art PDF, the folder of a deck printed as pictures, or the
+    /// PDF itself.
+    static func libraryFile(for url: URL) -> URL {
+        ImageDeck.containing(url)?.folder ?? CardDeck.containing(url)?.artFile ?? url
+    }
+
+    /// A file's size, or the total size of a folder's files; 0 when it can't be read.
+    static func byteCount(of url: URL) -> Int {
+        let files = folderFiles(url) ?? [url]
+        return files.reduce(0) { total, file in
+            total + ((try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int) ?? 0)
+        }
+    }
+
+    /// The files in `url` sorted by name, or nil when it isn't a folder.
+    private static func folderFiles(_ url: URL) -> [URL]? {
+        var isDirectory: ObjCBool = false
+        guard FileManager.default.fileExists(atPath: url.path, isDirectory: &isDirectory), isDirectory.boolValue,
+              let names = try? FileManager.default.contentsOfDirectory(atPath: url.path) else { return nil }
+        return names.filter { !$0.hasPrefix(".") }.sorted().map(url.appendingPathComponent)
+    }
+
+    /// SHA-256 of a file; of a folder, of its files' names and sizes, which a deck of pictures doesn't change.
     static func digest(of url: URL) throws -> String {
+        if let files = folderFiles(url) {
+            let listing = files.map { "\($0.lastPathComponent):\(byteCount(of: $0))" }.joined(separator: "\n")
+            return SHA256.hash(data: Data(listing.utf8)).map { String(format: "%02x", $0) }.joined()
+        }
         let handle = try FileHandle(forReadingFrom: url)
         defer { try? handle.close() }
         var hasher = SHA256()
