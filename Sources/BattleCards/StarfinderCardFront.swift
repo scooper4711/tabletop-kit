@@ -31,7 +31,7 @@ struct StarfinderCardFront: View {
             .padding(.vertical, 28)
         }
         .background { panel }
-        .overlay { CornerBrackets(size: 56) }
+        .overlay { CornerBrackets(size: 56).allowsHitTesting(false) }
     }
 
     @ViewBuilder

@@ -33,9 +33,11 @@ struct PathfinderCardFront: View {
         .background { parchment }
         .cardPiece(art.image("front-frame"), capInsets: EdgeInsets(top: 60, leading: 60, bottom: 60, trailing: 60))
         .overlay {
-            if art.image("front-frame") == nil { RoundedRectangle(cornerRadius: 10).strokeBorder(ink, lineWidth: 6) }
+            if art.image("front-frame") == nil {
+                RoundedRectangle(cornerRadius: 10).strokeBorder(ink, lineWidth: 6).allowsHitTesting(false)
+            }
         }
-        .overlay { eliteFrame }
+        .overlay { eliteFrame.allowsHitTesting(false) }
     }
 
     @ViewBuilder

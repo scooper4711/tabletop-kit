@@ -73,13 +73,17 @@ extension View {
     /// Draws a piece over the view's whole area, stretched, or nothing when it is missing.
     func cardPiece(_ piece: Image?, capInsets: EdgeInsets? = nil) -> some View {
         overlay {
-            if let piece {
-                if let capInsets {
-                    piece.resizable(capInsets: capInsets, resizingMode: .stretch)
-                } else {
-                    piece.resizable()
+            Group {
+                if let piece {
+                    if let capInsets {
+                        piece.resizable(capInsets: capInsets, resizingMode: .stretch)
+                    } else {
+                        piece.resizable()
+                    }
                 }
             }
+            // The piece covers the card, so taps go through it to the links and tags underneath.
+            .allowsHitTesting(false)
         }
     }
 }
