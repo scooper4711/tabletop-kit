@@ -132,3 +132,13 @@ struct FontRegistrationTests {
         #expect(!Fonts.fileExtensions.contains("css"))
     }
 }
+
+@Suite("Action glyphs")
+struct ActionGlyphTests {
+    @Test("Without the font registered, the glyphs fall back to symbols")
+    func fallsBackWithoutTheFont() {
+        #expect(!ActionGlyph.isFontRegistered)
+        #expect(ActionGlyph.text(.two, size: 10, color: .black) == Text(ActionIcons.symbols(for: .two))
+            .font(.system(size: 10)).foregroundColor(.black))
+    }
+}

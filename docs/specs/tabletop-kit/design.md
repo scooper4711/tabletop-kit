@@ -289,9 +289,15 @@ everything about campaigns and fights stay in Combat Pad.
 - Moved from Combat Pad's `CombatPadUI`: `CardContent` (a presenter's stat block as lines), `CardLine` and
   `CardLineView` (segments with links and changed numbers), `TraitChips`, `GlossaryContext` and `GlossaryPopover`
   (links two deep, URLs of the `tabletop-glossary` scheme), `RulesTextLines`, the player-character lines, and
-  `Fonts`/`FontName` (Roboto and the action glyphs, registered from TrueType, OpenType or the pf2e repository's
-  WOFF2 files, which Core Text reads directly). The Paizo-styled fronts and backs
+  `Fonts`/`FontName` (Roboto and the action icons, registered from TrueType, OpenType or WOFF2 files, which Core
+  Text reads directly). The Paizo-styled fronts and backs
   were not moved.
+- Action icons come from Paizo's Pathfinder-Icons font (Paizo Compatibility License), which each app copies
+  unaltered from its private `Artwork` submodule into `Generated/Fonts`; the font is never committed here.
+  `ActionIcons` (in `Bestiary`, so every app can share it) names the font and maps each `ActionCost` to the
+  font's private-use code point (U+E900 to U+E904), which needs no ligatures, and to Unicode stand-ins (◆ ◆◆
+  ◆◆◆ ◇ ⤾). `ActionGlyph` draws the icon at 0.97 times the text size, 0.075 of it below the baseline, matching
+  the pf2e action font it replaced, and falls back to the stand-ins when the font isn't registered.
 - `BattleCard(creature:template:conditions:textSize:scrolls:)` presents the creature and draws
   `PathfinderCardFront` or `StarfinderCardFront`.
   `CardBack(name:game:traits:art:)` draws `PathfinderCardBack` or `StarfinderCardBack` at a 0.7 aspect ratio

@@ -1,9 +1,9 @@
+import Bestiary
 import CoreText
 import Foundation
 import SwiftUI
 
-/// PostScript names of the fonts the apps bundle in `Generated/Fonts`: Roboto and the Pathfinder action glyphs from
-/// the pf2e repository.
+/// PostScript names of the fonts the apps bundle in `Generated/Fonts`: Roboto and Paizo's Pathfinder-Icons.
 public enum FontName {
     public static let condensed = "RobotoCondensed-Regular"
     public static let condensedBold = "RobotoCondensed-Bold"
@@ -11,11 +11,11 @@ public enum FontName {
     public static let body = "Roboto-Regular"
     public static let bodyBold = "Roboto-Bold"
     public static let bodyItalic = "Roboto-Italic"
-    public static let actions = "Pathfinder2eActions"
+    public static let actions = ActionIcons.fontName
 }
 
 public enum Fonts {
-    /// The font files Core Text registers: TrueType, OpenType and web fonts, which the pf2e repository ships.
+    /// The font files Core Text registers: TrueType, OpenType and web fonts.
     static let fileExtensions: Set<String> = ["ttf", "otf", "woff", "woff2"]
 
     /// Registers every font in `Generated/Fonts` for this process. Missing fonts fall back to the system font.
