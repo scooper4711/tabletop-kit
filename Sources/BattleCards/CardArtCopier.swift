@@ -16,7 +16,8 @@ public enum CardArtCopier {
         var missing: [CardArtPieces.Piece] = []
         for piece in CardArtPieces.manifest {
             guard let source = find(piece.packPath, in: packs),
-                  let image = CGImageSourceCreateWithURL(source as CFURL, nil).flatMap(scaledImage)
+                  let scaled = CGImageSourceCreateWithURL(source as CFURL, nil).flatMap(scaledImage),
+                  let image = piece.patches.isEmpty ? scaled : ArtPatch.applying(piece.patches, to: scaled)
             else {
                 missing.append(piece)
                 continue

@@ -6,11 +6,13 @@ import SwiftUI
 /// own folder at build time (`CardArtImport`), since the art may not be published. A missing piece is drawn as plain
 /// color instead.
 public struct CardArtPieces: Sendable {
-    /// One piece: its name in the folder, and where it is among the user's packs.
+    /// One piece: its name in the folder, where it is among the user's packs, and any retouching it gets.
     public struct Piece: Sendable, Equatable {
         public let name: String
         /// The file's path inside the folder of Rexard packs, as Humble Bundle's downloads unpack.
         public let packPath: String
+        /// Parts of the art covered with others as it is copied.
+        public var patches: [ArtPatch] = []
     }
 
     /// Every piece the cards use.
@@ -22,7 +24,8 @@ public struct CardArtPieces: Sendable {
         Piece(name: "name-ribbon", packPath: "fantasygui/fantasy_gui_png/text_bg_03.png"),
         Piece(name: "gold-rule", packPath: "heroicui/Heroic_UI_png/el_28_01.png"),
         Piece(name: "elite-frame", packPath: "heroicui/Heroic_UI_png/el_29.png"),
-        Piece(name: "level-shield", packPath: "shieldsbadges/ShieldsBadges_png/ShieldsBadges_04_a.png"),
+        Piece(name: "level-shield", packPath: "shieldsbadges/ShieldsBadges_png/ShieldsBadges_04_a.png",
+              patches: shieldWithoutRivets),
         // Pathfinder backs: Legendary Battlegrounds' landscapes.
         Piece(name: "backdrop-lava", packPath: "legendarybattlegrounds/LegendaryBattlegrounds_bg/bg_01.png"),
         Piece(name: "backdrop-ruins", packPath: "legendarybattlegrounds/LegendaryBattlegrounds_bg/bg_02.png"),
@@ -38,6 +41,14 @@ public struct CardArtPieces: Sendable {
         Piece(name: "corner-bottom-right", packPath: "spacedepotui/SpaceDepotUI_png/frame_01_06.png"),
         Piece(name: "name-bar", packPath: "spacedepotui/SpaceDepotUI_png/button_01_04.png"),
         Piece(name: "level-hexagon", packPath: "spacedepotui/SpaceDepotUI_png/ava_04_04.png")
+    ]
+
+    /// The level shield's two rivets would sit behind the level, so the planks beside them cover them: each half
+    /// from its own side, then the bottom rivet's shadow from the planks above it.
+    static let shieldWithoutRivets = [
+        ArtPatch(area: CGRect(x: 0.33, y: 0.1925, width: 0.1575, height: 0.56), offset: CGVector(dx: -0.115, dy: 0)),
+        ArtPatch(area: CGRect(x: 0.4725, y: 0.1925, width: 0.145, height: 0.56), offset: CGVector(dx: 0.13, dy: 0)),
+        ArtPatch(area: CGRect(x: 0.34, y: 0.71, width: 0.28, height: 0.07), offset: CGVector(dx: 0, dy: -0.165))
     ]
 
     /// The folder holding the pieces as `<name>.png`; nil when there is none, so every card is drawn plainly.
