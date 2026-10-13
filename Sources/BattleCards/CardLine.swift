@@ -1,4 +1,5 @@
 import Bestiary
+import CoreText
 import SwiftUI
 
 /// One piece of a card line.
@@ -168,14 +169,27 @@ private struct BreakdownModifier: ViewModifier {
     }
 }
 
-/// Action glyphs in the Pathfinder action font, falling back to symbols if the font is missing.
+/// Action icons in Paizo's Pathfinder-Icons font, falling back to Unicode symbols if the font is missing.
 enum ActionGlyph {
-    private static let characters: [ActionCost: String] = [
-        .one: "1", .two: "2", .three: "3", .free: "F", .reaction: "R"
-    ]
+    /// The icons' size relative to the text: they fill more of their em than the pf2e action font they replace,
+    /// so this keeps them the size that font's were at 1.1 times the text.
+    static let scale: CGFloat = 0.97
+    /// Lowers the icons, as a fraction of the text size, to sit on the line where the pf2e font's did.
+    static let baselineShift: CGFloat = -0.075
 
     static func text(_ cost: ActionCost, size: CGFloat, color: Color) -> Text {
-        guard let character = characters[cost] else { return Text("") }
-        return Text(character).font(.custom(FontName.actions, size: size * 1.1)).foregroundColor(color)
+        guard isFontRegistered else {
+            return Text(ActionIcons.symbols(for: cost)).font(.system(size: size)).foregroundColor(color)
+        }
+        return Text(ActionIcons.character(for: cost))
+            .font(.custom(FontName.actions, size: size * scale))
+            .baselineOffset(size * baselineShift)
+            .foregroundColor(color)
+    }
+
+    /// Whether `Fonts.register` found the Pathfinder-Icons font.
+    static var isFontRegistered: Bool {
+        let font = CTFontCreateWithName(FontName.actions as CFString, 12, nil)
+        return CTFontCopyPostScriptName(font) as String == FontName.actions
     }
 }
