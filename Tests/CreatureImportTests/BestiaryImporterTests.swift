@@ -5,11 +5,12 @@ import Testing
 
 @Suite("Importing a bestiary end to end")
 struct BestiaryImporterTests {
-    /// A copy of the fixture repository with an Actor pack holding the goblin warrior.
+    /// A copy of the fixture repository with an Actor pack holding the goblin warrior, in a folder named unlike the
+    /// pack, as The Fall of Plaguestone's is.
     private func repositoryWithACreature(in folder: URL) throws -> URL {
         let repository = folder.appendingPathComponent("repo")
         try FileManager.default.copyItem(at: try Fixtures.repository(), to: repository)
-        let pack = repository.appendingPathComponent("packs/pf2e/test-bestiary")
+        let pack = repository.appendingPathComponent("packs/pf2e/test-pack")
         try FileManager.default.createDirectory(at: pack, withIntermediateDirectories: true)
         let goblin = try #require(Bundle.module.url(forResource: "goblin-warrior", withExtension: "json",
                                                     subdirectory: "Fixtures"))
@@ -18,7 +19,7 @@ struct BestiaryImporterTests {
         var manifest = try #require(JSONSerialization.jsonObject(with: Data(contentsOf: system)) as? [String: Any])
         var packs = manifest["packs"] as? [[String: Any]] ?? []
         packs.append(["name": "test-bestiary", "label": "Test Bestiary", "type": "Actor",
-                      "path": "packs/pf2e/test-bestiary"])
+                      "path": "packs/pf2e/test-pack"])
         manifest["packs"] = packs
         try JSONSerialization.data(withJSONObject: manifest).write(to: system)
         return repository
@@ -40,6 +41,7 @@ struct BestiaryImporterTests {
         let bestiary = try BestiaryStore(generatedDirectory: output)
         let entry = try #require(bestiary.index.entries.first)
         #expect(entry.name == "Goblin Warrior" && entry.game == .pathfinder)
+        #expect(entry.key.hasPrefix("pf2e.test-bestiary."), "keyed by the pack's name in links, not its folder")
         #expect(bestiary.creature(entry.key)?.name == "Goblin Warrior")
         #expect(!bestiary.conditions.isEmpty)
         #expect(bestiary.artOverrides == ["Goblin Warrior": "GOBLIN, WARRIOR"])
