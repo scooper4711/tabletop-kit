@@ -64,7 +64,9 @@ public struct BestiaryImporter {
         for pack in try scanner.actorPacks() {
             for file in scanner.documentFiles(in: pack) {
                 let document = try JSONValue(contentsOf: file)
-                if let creature = parser.creature(from: document, game: pack.game, pack: pack.name) {
+                // Keyed by the pack's name in links (`Compendium.pf2e.<name>.Actor.<id>`), which can differ
+                // from its folder: The Fall of Plaguestone's is `fall-of-plaguestone-bestiary`.
+                if let creature = parser.creature(from: document, game: pack.game, pack: pack.compendiumName) {
                     creatures.append(creature)
                 }
             }
