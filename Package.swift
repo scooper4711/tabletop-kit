@@ -11,6 +11,7 @@ let package = Package(
         .library(name: "CreatureImport", targets: ["CreatureImport"]),
         .library(name: "BattleCards", targets: ["BattleCards"]),
         .library(name: "CreatureArt", targets: ["CreatureArt"]),
+        .library(name: "AppNotices", targets: ["AppNotices"]),
         .executable(name: "CardArtImport", targets: ["CardArtImport"])
     ],
     targets: [
@@ -25,6 +26,8 @@ let package = Package(
         .testTarget(name: "BattleCardsTests", dependencies: ["BattleCards"], resources: [.copy("Fixtures")]),
         .executableTarget(name: "CardArtImport", dependencies: ["BattleCards"]),
         .target(name: "CreatureArt", dependencies: ["ArtExtraction", "Bestiary"]),
-        .testTarget(name: "CreatureArtTests", dependencies: ["CreatureArt", "ArtExtractionTestSupport"])
+        .testTarget(name: "CreatureArtTests", dependencies: ["CreatureArt", "ArtExtractionTestSupport"]),
+        .target(name: "AppNotices"),
+        .testTarget(name: "AppNoticesTests", dependencies: ["AppNotices"])
     ]
 )
