@@ -110,9 +110,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Share the flow layout, template badge and signed numbers
 - Copy the cards' UI art from the user's packs
 - Draw battle cards in a look of their own
-- Move the card text and glossary from Combat Pad
-- Move the creature import from Combat Pad
-- Move the creature model from Combat Pad
+- Move the card text and glossary from Turnkeeper
+- Move the creature import from Turnkeeper
+- Move the creature model from Turnkeeper
 
 ### Changed
 - Describe the battle cards
