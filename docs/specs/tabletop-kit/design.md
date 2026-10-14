@@ -9,8 +9,8 @@ simulator.
 |---|---|
 | `ArtExtraction` | PDF scanning, pawns, tokens, Battle Cards, figures, fingerprints, and the art library |
 | `ArtExtractionTestSupport` | Test PDF drawing (`DrawnPawn`, `DrawnToken`, `DrawnCard`, `makePDF`, …), published for the apps' tests |
-| `CreatureArt` | `CreatureArtStore`, an actor over `ArtLibrary` that Combat Pad and Field Guide share |
-| `Bestiary` | Creatures, stat-block presentation, conditions and rules text, from Combat Pad |
+| `CreatureArt` | `CreatureArtStore`, an actor over `ArtLibrary` that Turnkeeper and Field Guide share |
+| `Bestiary` | Creatures, stat-block presentation, conditions and rules text, from Turnkeeper |
 | `CreatureImport` | The pf2e repository's creatures, conditions and glossary, written for `Bestiary` to load |
 | `BattleCards` | SwiftUI card fronts and backs, card text, glossary popovers, fonts, and `CardArtImport` |
 | `AppNotices` | The About screen with Paizo's required notices |
@@ -224,7 +224,7 @@ build on the same extraction.
   `Figure.draw(in:rotation:)` on a transparent bitmap.
 
 ## Creature art store (`CreatureArt`)
-Moved from Combat Pad. `CreatureArtStore` owns an `ArtLibrary` in the folder the app gives it.
+Moved from Turnkeeper. `CreatureArtStore` owns an `ArtLibrary` in the folder the app gives it.
 `importFolder(_:progress:)` watches a folder and adds its new PDFs by reference; `addNewFiles` does so for the
 watched folders (at launch); `addFiles(_:progress:)` keeps copies of chosen PDFs; each returns an
 `ArtImportSummary` with a message. `catalog()` refreshes the PDFs' statuses and returns `LibraryArt` for each entry
@@ -233,13 +233,13 @@ Howl of the Wild, Rage of Elements) and an `ArtSourceSummary` for each PDF. `pic
 caches.
 
 ## Creatures (`Bestiary`)
-Moved from Combat Pad's `CombatPadKit`: `Creature` and its parts, `BestiaryStore` (the index, packs loaded a pack
+Moved from Turnkeeper's `TurnkeeperKit`: `Creature` and its parts, `BestiaryStore` (the index, packs loaded a pack
 at a time, conditions, the glossary and `art-overrides.json`), `StatBlockPresenter` (templates and conditions
 applied), the rules the cards need (`CreatureTemplate`, `AppliedCondition`, `ConditionEffects`, `Modifiers`), rules
 text, `PlayerDetails` (a linked PC's sheet shown as a creature), Pluck stat blocks and `LibraryArtMatcher` (art
 from the art library matched to creatures by name, and with `art(forItemNamed:game:)` to items: by name, then
-without grade words, potency runes and numbers; see Combat Pad's spec). Encounter budgets, challenge points and
-everything about campaigns and fights stay in Combat Pad.
+without grade words, potency runes and numbers; see Turnkeeper's spec). Encounter budgets, challenge points and
+everything about campaigns and fights stay in Turnkeeper.
 
 - `TraitImmunities` maps trait slugs to the immunities their rules text grants (construct, mindless, swarm).
   `merged(_:traits:)` appends the missing ones, compared without regard to case, hyphens or spaces, after the
@@ -287,7 +287,7 @@ everything about campaigns and fights stay in Combat Pad.
    `packs/<game>.<pack>.json` per pack, plus `conditions.json` and `Generated/import-report.md`. Keys and arrays are sorted, so the output is deterministic.
 
 ## Battle cards (`BattleCards`)
-- Moved from Combat Pad's `CombatPadUI`: `CardContent` (a presenter's stat block as lines), `CardLine` and
+- Moved from Turnkeeper's `TurnkeeperUI`: `CardContent` (a presenter's stat block as lines), `CardLine` and
   `CardLineView` (segments with links and changed numbers), `TraitChips`, `GlossaryContext` and `GlossaryPopover`
   (links two deep, URLs of the `tabletop-glossary` scheme), `RulesTextLines`, the player-character lines, and
   `Fonts`/`FontName` (Roboto and the action icons, registered from TrueType, OpenType or WOFF2 files, which Core
@@ -316,7 +316,7 @@ everything about campaigns and fights stay in Combat Pad.
   `TerminalPlate` fills an `ElongatedHexagon` (points at half its height) with near-black glass, `Scanlines` every
   3 points, a cyan edge with a glow, and the name in semibold monospaced cyan with two glow shadows and a `_`.
 - `ConditionTags` (after `TraitChips` on both fronts) draws the presenter's conditions as capsules with
-  `ConditionLabel`'s text and color (moved from Combat Pad's strip chips). A tag opens a `GlossaryPopover` of
+  `ConditionLabel`'s text and color (moved from Turnkeeper's strip chips). A tag opens a `GlossaryPopover` of
   `GlossaryEntry(id: "condition.<slug>", category: "Condition")` built from `BestiaryStore.condition(_:)`, when
   the bestiary has the condition and links are open; persistent damage and reminders have no entry.
 - `InteractiveBattleCard(front:back:)` owns the flip state, the 3D flip and full screen. Icons
@@ -328,7 +328,7 @@ everything about campaigns and fights stay in Combat Pad.
   glossary, card art and art loader along), or a large sheet without one. A pinch (`MagnifyGesture`, past 1.2 to
   open, under 0.8 to close) and Escape work too. Callers reset a card's flip with `.id(_:)`.
 - `ArtPicture(path:)` draws a `CGImage` at full size from the `artPictureLoader` environment value, a closure the
-  app sets (Combat Pad reads its art store, Field Guide its art model), with a progress view while it loads.
+  app sets (Turnkeeper reads its art store, Field Guide its art model), with a progress view while it loads.
 - `CardArtCopier.copy(from:to:)` finds each piece, matching each path part without regard to case, scales any
   over 1,600 pixels down, writes PNGs and returns the missing pieces; the `CardArtImport` executable runs it. The
   pieces take 9.3 MB.

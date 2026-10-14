@@ -1,8 +1,8 @@
 # Tabletop Kit: requirements
 
-Swift libraries shared by Pawn Shop, Combat Pad and Field Guide, on macOS and iPadOS. The apps may not ship
+Swift libraries shared by Pawn Shop, Turnkeeper and Field Guide, on macOS and iPadOS. The apps may not ship
 Paizo's art, so each reads it from PDFs the user bought: pawn and token boxes and Battle Cards decks. Tabletop
-Kit holds that reading in one place, and (in later releases) the creature data and battle cards that Combat Pad
+Kit holds that reading in one place, and (in later releases) the creature data and battle cards that Turnkeeper
 and Field Guide share. It contains no Paizo art or text.
 
 ## R1 Finding art in PDFs (`ArtExtraction`)
@@ -38,7 +38,7 @@ and Field Guide share. It contains no Paizo art or text.
 ## R2 The art library (`ArtExtraction`)
 - R2.1 A library of PDFs and the art found in them is kept in a folder the app chooses, between launches.
 - R2.2 A PDF is added either kept (the library copies it, so the art survives the original being moved; Pawn
-  Shop) or referenced (the library remembers where the file is, without copying it; Combat Pad and Field Guide
+  Shop) or referenced (the library remembers where the file is, without copying it; Turnkeeper and Field Guide
   referencing Scrollkeeper's downloads, so the iPad holds each PDF once).
 - R2.3 A referenced PDF that has been deleted, moved or can no longer be opened is reported as missing, with the
   art that came from it, so the app can tell the user which PDFs it needs back. When the file returns, its art
@@ -69,7 +69,7 @@ and Field Guide share. It contains no Paizo art or text.
 
 ## R4 Creatures (`Bestiary`, `CreatureImport`)
 - R4.1 Creatures (`Bestiary`, `CreatureImport`): the creature model, stat-block presentation and rules shared by
-  Combat Pad and Field Guide, imported from the pf2e system repository (every NPC and complex hazard, the
+  Turnkeeper and Field Guide, imported from the pf2e system repository (every NPC and complex hazard, the
   conditions, and a glossary of what the creatures link to), and art from the art library matched to creatures by
   name. Running the import twice on the same input produces identical output.
 - R4.2 A creature's immunities include those its traits grant by their rules text, even when the source data
