@@ -3,7 +3,7 @@
 [![CI](https://github.com/scooper4711/tabletop-kit/actions/workflows/ci.yml/badge.svg)](https://github.com/scooper4711/tabletop-kit/actions/workflows/ci.yml)
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](./LICENSE)
 
-Swift libraries shared by three of the [Society Toolkit](#the-apps) apps,
+Swift libraries shared by three of the [Tableside Toolkit](#the-apps) apps,
 [Pawn Shop](https://github.com/scooper4711/pawn-shop), [Turnkeeper](https://github.com/scooper4711/turnkeeper) and
 [Field Guide](https://github.com/scooper4711/field-guide), for macOS and iPadOS.
 
@@ -33,8 +33,8 @@ Add the package in Xcode or `Package.swift`:
 
 ## The apps
 
-The Society Toolkit is a set of free apps for Pathfinder and Starfinder players and GMs, for the Mac and
-(Turnkeeper and Field Guide) the iPad. Like the toolkits in the game, each one grants a +1 item bonus to game prep.
+The Tableside Toolkit is a set of free apps for running Pathfinder and Starfinder games in person, for the Mac and
+(Turnkeeper and Field Guide) the iPad. Like any good toolkit, each one grants a +1 item bonus to game prep.
 
 - [Scrollkeeper](https://github.com/scooper4711/scrollkeeper) keeps your Paizo library in order and downloads your
   purchases.
