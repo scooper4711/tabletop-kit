@@ -20,6 +20,13 @@ public struct AboutView: View {
                     ForEach(info.credits, id: \.self, content: notice)
                 }
             }
+            if !info.licenses.isEmpty {
+                Section("Licenses") {
+                    ForEach(info.licenses, id: \.self) { license in
+                        NavigationLink(license.title) { LicensePage(license: license) }
+                    }
+                }
+            }
             Section("Links") {
                 Link("Paizo's Community Use Policy", destination: AboutInfo.policyURL)
                 Link("paizo.com", destination: AboutInfo.paizoURL)
@@ -53,5 +60,21 @@ public struct AboutSheet: View {
                     ToolbarItem(placement: .confirmationAction) { Button("Done") { dismiss() } }
                 }
         }
+    }
+}
+
+/// One license's full text, scrolling.
+struct LicensePage: View {
+    let license: LicenseText
+
+    var body: some View {
+        ScrollView {
+            Text(license.text)
+                .font(.footnote)
+                .textSelection(.enabled)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding()
+        }
+        .navigationTitle(license.title)
     }
 }
