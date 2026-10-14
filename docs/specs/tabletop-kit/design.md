@@ -13,6 +13,7 @@ simulator.
 | `Bestiary` | Creatures, stat-block presentation, conditions and rules text, from Combat Pad |
 | `CreatureImport` | The pf2e repository's creatures, conditions and glossary, written for `Bestiary` to load |
 | `BattleCards` | SwiftUI card fronts and backs, card text, glossary popovers, fonts, and `CardArtImport` |
+| `AppNotices` | The About screen with Paizo's required notices |
 
 ## Paizo pawn PDFs
 Measured across 61 Pathfinder and Starfinder pawn PDFs:
@@ -331,6 +332,14 @@ everything about campaigns and fights stay in Combat Pad.
 - `CardArtCopier.copy(from:to:)` finds each piece, matching each path part without regard to case, scales any
   over 1,600 pixels down, writes PNGs and returns the missing pieces; the `CardArtImport` executable runs it. The
   pieces take 9.3 MB.
+
+## About screen (`AppNotices`)
+- `AboutInfo` holds what differs per app: its name, a one-line description, credits and a contact link. It builds
+  the Community Use Policy notice from the name, and `trademarkNotice` is the Compatibility License's line. The
+  policy's wording is fixed, so tests compare it word for word.
+- `AboutView` is a `Form` of the description, the notices, the credits and the links, for an iPad sheet.
+- On the Mac, `AboutCommands` replaces the app menu's About item with the standard About panel, whose credits are
+  `AboutInfo.panelText`: the same content as plain text, links written out.
 
 ## Test support (`ArtExtractionTestSupport`)
 The drawing helpers that Pawn Shop's tests had, made public so that both packages' tests use one copy:

@@ -102,3 +102,12 @@ and Field Guide share. It contains no Paizo art or text.
   showing, and closes with its icon, a pinch in or Escape; flipping works in it too.
 - R5.6 The apps share one view that loads a creature's art at full size from a loader they supply, so a card
   back's art is drawn the same way in each.
+
+## R6 About screen (`AppNotices`)
+- R6.1 Each app shows an About screen with the notice Paizo's Community Use Policy prescribes, word for word with
+  only the app's name filled in, and the Paizo Compatibility License's line "Pathfinder and Starfinder are
+  registered trademarks and copyrights of Paizo Inc."
+- R6.2 The screen also gives a one-line description of the app, credits for the third-party content it ships,
+  links to the policy and paizo.com, and where to reach the author, as the policy requires.
+- R6.3 On the Mac it is the About panel, from the app menu; on the iPad, a sheet the app opens from a button.
+
