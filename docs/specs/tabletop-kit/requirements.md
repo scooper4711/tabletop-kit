@@ -2,8 +2,8 @@
 
 Swift libraries shared by Pawn Shop, Turnkeeper and Field Guide, on macOS and iPadOS. The apps may not ship
 Paizo's art, so each reads it from PDFs the user bought: pawn and token boxes and Battle Cards decks. Tabletop
-Kit holds that reading in one place, and (in later releases) the creature data and battle cards that Turnkeeper
-and Field Guide share. It contains no Paizo art or text.
+Kit holds that reading in one place, along with the creature data and battle cards that Turnkeeper and Field Guide
+share. It contains no Paizo art or text.
 
 ## R1 Finding art in PDFs (`ArtExtraction`)
 - R1.1 Runs on macOS 15 and iPadOS 18, using only PDFKit, Core Graphics and Core Text.
