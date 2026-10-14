@@ -39,11 +39,11 @@ public final class BestiaryStore: @unchecked Sendable {
         artOverrides = [:]
     }
 
-    /// Finds the `Generated` folder: the `COMBAT_PAD_GENERATED` environment variable, the app bundle, or,
+    /// Finds the `Generated` folder: the `BESTIARY_GENERATED` environment variable, the app bundle, or,
     /// when run from the package during development, the repository's own `Generated` folder.
     public static func locateGeneratedDirectory(sourceFile: String = #filePath) -> URL? {
         let candidates = [
-            ProcessInfo.processInfo.environment["COMBAT_PAD_GENERATED"].map { URL(fileURLWithPath: $0) },
+            ProcessInfo.processInfo.environment["BESTIARY_GENERATED"].map { URL(fileURLWithPath: $0) },
             Bundle.main.resourceURL?.appendingPathComponent("Generated"),
             URL(fileURLWithPath: sourceFile).deletingLastPathComponent()
                 .appendingPathComponent("../../../Generated").standardizedFileURL
