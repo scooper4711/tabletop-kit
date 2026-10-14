@@ -110,4 +110,7 @@ share. It contains no Paizo art or text.
 - R6.2 The screen also gives a one-line description of the app, credits for the third-party content it ships,
   links to the policy and paizo.com, and where to reach the author, as the policy requires.
 - R6.3 On the Mac it is the About panel, from the app menu; on the iPad, a sheet the app opens from a button.
+- R6.4 The screen lists the full text of every license the app's bundled content requires it to ship (such as the
+  Open Game License, the ORC License and fonts' licenses), read from a folder the app bundles. On the iPad each
+  opens on its own page; on the Mac the texts follow the credits in the About panel.
 

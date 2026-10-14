@@ -339,7 +339,10 @@ everything about campaigns and fights stay in Turnkeeper.
   policy's wording is fixed, so tests compare it word for word.
 - `AboutView` is a `Form` of the description, the notices, the credits and the links, for an iPad sheet.
 - On the Mac, `AboutCommands` replaces the app menu's About item with the standard About panel, whose credits are
-  `AboutInfo.panelText`: the same content as plain text, links written out.
+  `AboutInfo.panelText`: the same content as plain text, links written out, then each license's full text.
+- `AboutInfo.licenses` are `LicenseText`s (title and full text). `LicenseText.all(in:)` reads every `.md` and
+  `.txt` file in a folder the app bundles, sorted by name, each titled by its file name; `AboutView` lists them in
+  a Licenses section, each opening on its own page.
 
 ## Test support (`ArtExtractionTestSupport`)
 The drawing helpers that Pawn Shop's tests had, made public so that both packages' tests use one copy:

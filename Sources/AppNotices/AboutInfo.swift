@@ -18,12 +18,21 @@ public struct AboutInfo: Sendable {
     public let credits: [String]
     /// Where to reach the author, which the Community Use Policy requires.
     public let contactURL: URL
+    /// The full texts of the licenses the bundled content requires the app to ship.
+    public let licenses: [LicenseText]
 
-    public init(appName: String, tagline: String, credits: [String], contactURL: URL) {
+    public init(appName: String, tagline: String, credits: [String], contactURL: URL, licenses: [LicenseText] = []) {
         self.appName = appName
         self.tagline = tagline
         self.credits = credits
         self.contactURL = contactURL
+        self.licenses = licenses
+    }
+
+    /// The same screen with the licenses in the folder (`LicenseText.all(in:)`).
+    public func licensed(by folder: URL) -> AboutInfo {
+        AboutInfo(appName: appName, tagline: tagline, credits: credits, contactURL: contactURL,
+                  licenses: LicenseText.all(in: folder))
     }
 
     /// The notice the Community Use Policy prescribes. Its wording is fixed; only the product name is ours.
@@ -34,10 +43,12 @@ public struct AboutInfo: Sendable {
             + "more information about Paizo Inc. and Paizo products, visit paizo.com."
     }
 
-    /// Everything the screen shows, as plain text with the links written out, for the Mac's About panel.
+    /// Everything the screen shows, as plain text with the links written out and the licenses' full texts last,
+    /// for the Mac's About panel.
     public var panelText: String {
         let paragraphs = [tagline, communityUseNotice, Self.trademarkNotice] + credits
             + ["Contact: \(contactURL.absoluteString)"]
+            + licenses.map { "\($0.title.uppercased())\n\n\($0.text.trimmingCharacters(in: .whitespacesAndNewlines))" }
         return paragraphs.joined(separator: "\n\n")
     }
 }
