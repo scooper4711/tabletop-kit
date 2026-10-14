@@ -45,7 +45,7 @@ private struct ConditionTag: View {
     }
 }
 
-/// How a condition reads and is colored on cards and on Combat Pad's strips.
+/// How a condition reads and is colored on cards and on Turnkeeper's strips.
 public enum ConditionLabel {
     /// "Frightened 2", "Bleed 1d6", or a custom reminder's text.
     public static func short(_ condition: AppliedCondition) -> String {

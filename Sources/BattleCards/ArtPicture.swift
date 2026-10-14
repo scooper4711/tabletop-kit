@@ -1,7 +1,7 @@
 import CoreGraphics
 import SwiftUI
 
-/// Loads a creature's art at full size from wherever the app keeps it: Combat Pad's art store, Field Guide's art
+/// Loads a creature's art at full size from wherever the app keeps it: Turnkeeper's art store, Field Guide's art
 /// model. Set it as the `artPictureLoader` environment value.
 public struct ArtPictureLoader: Sendable {
     let load: @Sendable (String) async -> CGImage?
