@@ -104,4 +104,19 @@ struct GlossaryImportTests {
             """)
         #expect(SpellDetails.markup(.object([:])).isEmpty)
     }
+
+    @Test("Spell detail fields come in the books' order, with action glyphs")
+    func spellDetailFields() {
+        let system = JSONValue.object([
+            "time": .object(["value": .string("1 or 2")]),
+            "range": .object(["value": .string("30 feet")]),
+            "target": .object(["value": .string("1 creature")]),
+            "duration": .object(["sustained": .bool(true), "value": .string("1 minute")])
+        ])
+        #expect(SpellDetails.fields(system).map(\.label) == ["Cast", "Range", "Targets", "Duration"])
+        #expect(SpellDetails.fields(system).first?.value == "{{actions:1}} or {{actions:2}}")
+        #expect(SpellDetails.fields(system).last?.value == "sustained up to 1 minute")
+        let reaction = JSONValue.object(["time": .object(["value": .string("Reaction")])])
+        #expect(SpellDetails.fields(reaction).first?.value == "{{actions:reaction}}")
+    }
 }
