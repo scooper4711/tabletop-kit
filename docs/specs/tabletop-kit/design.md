@@ -263,7 +263,7 @@ everything about campaigns and fights stay in Turnkeeper.
    and `@` references) that puts in the values it is given (`FormulaValues`, passed to
    `RulesTextConverter.convert(_:values:)`), works out every part without dice or unknown references, and
    prints the rest (`(floor(2/2))d6` is `1d6`). A formula left with `@actor.level` alone is described by
-   `LevelWording`, which works it out for levels 1 to 20; other references are named by
+   `LevelWording`, which works it out for every level from the entry's own (`@item.level`) to 20th; other references are named by
    `FormulaValues.words`. `FormulaWording` is the public entry point, for importers with their own enricher
    code (Field Guide's): the formula worked out, or its description, with room for a damage type. The glossary passes a spell's rank, or an item's level, as both `@item.level` and
    `@item.rank`.
