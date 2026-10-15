@@ -101,6 +101,15 @@ struct LevelWordingTests {
             == "(ceil(your level / 2))d6 + your level")
     }
 
+    @Test("A feat's formula counts from the feat's level")
+    func fromEntryLevel() throws {
+        let formula = try #require(RollFormula("(floor((@actor.level-12)/2)+2)d6"))
+        #expect(LevelWording.wording(formula, values: .level(12))?.text()
+            == "2d6 (increasing by 1d6 at 14th level and every 2 levels after)")
+        let late = try #require(RollFormula("ternary(gte(@actor.level,20),2,1)d6"))
+        #expect(LevelWording.wording(late, values: .level(25))?.text() == "2d6")
+    }
+
     @Test("Skill ranks and other ability paths are named")
     func moreWords() {
         #expect(FormulaValues.word(for: "@actor.system.abilities.int.mod") == "your Intelligence modifier")
