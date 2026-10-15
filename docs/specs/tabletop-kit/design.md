@@ -264,7 +264,8 @@ everything about campaigns and fights stay in Turnkeeper.
    `RulesTextConverter.convert(_:values:)`), works out every part without dice or unknown references, and
    prints the rest (`(floor(2/2))d6` is `1d6`). A formula left with `@actor.level` alone is described by
    `LevelWording`, which works it out for levels 1 to 20; other references are named by
-   `FormulaValues.words`. The glossary passes a spell's rank, or an item's level, as both `@item.level` and
+   `FormulaValues.words`. `FormulaWording` is the public entry point, for importers with their own enricher
+   code (Field Guide's): the formula worked out, or its description, with room for a damage type. The glossary passes a spell's rank, or an item's level, as both `@item.level` and
    `@item.rank`.
    A `@UUID` to an Item in a compendium pack becomes a `{{link:<id>|<label>}}` run instead, where the glossary
    ID is `<system>.<pack>.<_id>` (links by name are resolved to the `_id`). Links into effect packs stay labels.
