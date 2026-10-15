@@ -280,7 +280,8 @@ everything about campaigns and fights stay in Turnkeeper.
    embedded copy, `<creature key>.<item _id>`), Strike effects by the creature's own action or the ability
    glossary, and traits as `trait.<game>.<slug>`. `GlossaryBuilder` then turns the linked documents into
    `GlossaryEntry` values (name, category such as "Spell 3", traits and their links, rules text, with spell
-   cast, range, area, targets, defense and duration lines first), follows their links one more level, and
+   cast, range, area, targets, defense and duration lines first, from `SpellDetails`, whose `fields` other
+   importers use too, as Pawn Shop's spell cards do), follows their links one more level, and
    stops: everything a card links to, and everything those entries link to, is in the glossary. Trait text
    comes from `traitDescriptions` in the system's `src/scripts/config/traits.ts`, else
    `PF2E.TraitDescription<Slug>`, dropping a trailing `-value` (reach-10, deadly-d10); Starfinder prefers

@@ -71,8 +71,26 @@ struct GlossaryEntryParser {
 }
 
 /// The lines above a spell's text: cast, range, area and targets, then defense and duration.
-enum SpellDetails {
+public enum SpellDetails {
+    /// One of a spell's details: its label, such as "Cast", and its value as `RulesText` markup, such as
+    /// `{{actions:2}}`.
+    public struct Field: Equatable, Sendable {
+        public let label: String
+        public let value: String
+    }
+
+    /// The details the spell has, in the books' order: Cast, Range, Area, Targets, Defense, Duration.
+    public static func fields(_ system: JSONValue) -> [Field] {
+        lines(system).flatMap { $0 }
+    }
+
     static func markup(_ system: JSONValue) -> String {
+        lines(system).map { $0.map { "**\($0.label)** \($0.value)" }.joined(separator: "; ") }
+            .filter { !$0.isEmpty }.joined(separator: "\n")
+    }
+
+    /// The details on their two lines: casting and reach, then defense and duration.
+    private static func lines(_ system: JSONValue) -> [[Field]] {
         let first = [
             field("Cast", cast(system[path: "time.value"].string)),
             field("Range", system[path: "range.value"].string),
@@ -80,22 +98,23 @@ enum SpellDetails {
             field("Targets", system[path: "target.value"].string)
         ]
         let second = [field("Defense", defense(system[path: "defense.save"])), field("Duration", duration(system))]
-        return [first, second].map { $0.compactMap { $0 }.joined(separator: "; ") }
-            .filter { !$0.isEmpty }.joined(separator: "\n")
+        return [first.compactMap { $0 }, second.compactMap { $0 }]
     }
 
-    private static func field(_ label: String, _ value: String) -> String? {
-        value.isEmpty ? nil : "**\(label)** \(value)"
+    private static func field(_ label: String, _ value: String) -> Field? {
+        value.isEmpty ? nil : Field(label: label, value: value)
     }
 
-    private static let glyphs = ["1": "1", "2": "2", "3": "3", "reaction": "reaction", "free": "free"]
+    private static let glyphs = ["1": "1", "2": "2", "3": "3", "reaction": "reaction", "Reaction": "reaction",
+                                 "free": "free"]
 
-    /// "2" becomes the two-action glyph and "1 to 3" two glyphs; "1 minute" stays as written.
+    /// "2" becomes the two-action glyph and "1 to 3" or "1 or 2" two glyphs; "1 minute" stays as written.
     private static func cast(_ time: String) -> String {
         if let glyph = glyphs[time] { return "{{actions:\(glyph)}}" }
         let range = time.split(separator: " ")
-        if range.count == 3, range[1] == "to", let low = glyphs[String(range[0])], let high = glyphs[String(range[2])] {
-            return "{{actions:\(low)}} to {{actions:\(high)}}"
+        if range.count == 3, ["to", "or"].contains(range[1]), let low = glyphs[String(range[0])],
+           let high = glyphs[String(range[2])] {
+            return "{{actions:\(low)}} \(range[1]) {{actions:\(high)}}"
         }
         return time
     }
