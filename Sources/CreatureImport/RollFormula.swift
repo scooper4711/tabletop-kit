@@ -72,11 +72,15 @@ indirect enum RollFormula: Equatable {
     }
 
     /// The formula as Foundry writes it, without spaces.
-    var text: String { printed(words: [:]) }
+    var text: String { printed(isNamed: false) }
 
-    /// The formula with references named in words and spaced operators, for a formula that can't be worked
-    /// out: `1d4+@item.system.damage.dice` reads "1d4 + the number of weapon damage dice".
-    func text(naming words: [String: String]) -> String { printed(words: words) }
+    /// The formula with references named in words (`FormulaValues.word(for:)`) and spaced operators, for a
+    /// formula that can't be worked out: `1d4+@item.system.damage.dice` reads "1d4 + the number of weapon damage
+    /// dice". Parentheses around the whole formula are left out.
+    var namedText: String {
+        if case let .group(inner) = self { return inner.printed(isNamed: true) }
+        return printed(isNamed: true)
+    }
 
     private var isAtomic: Bool {
         switch self {
@@ -85,30 +89,29 @@ indirect enum RollFormula: Equatable {
         }
     }
 
-    private func printed(words: [String: String]) -> String {
-        let spaced = !words.isEmpty
+    private func printed(isNamed: Bool) -> String {
         switch self {
         case let .number(value): return Self.numberText(value)
-        case let .reference(name): return words[name] ?? name
+        case let .reference(name): return isNamed ? FormulaValues.word(for: name) ?? name : name
         case let .dice(count, sides):
-            return Self.diceOperand(count, words: words) + "d" + Self.diceOperand(sides, words: words)
+            return Self.diceOperand(count, isNamed: isNamed) + "d" + Self.diceOperand(sides, isNamed: isNamed)
         case let .operation(symbol, left, right):
-            let shown = spaced && symbol == "*" ? "×" : String(symbol)
-            let operands = (left.printed(words: words), right.printed(words: words))
-            return spaced ? "\(operands.0) \(shown) \(operands.1)" : "\(operands.0)\(shown)\(operands.1)"
-        case let .negation(inner): return "-" + inner.printed(words: words)
-        case let .group(inner): return "(" + inner.printed(words: words) + ")"
-        case let .flavored(inner, flavor): return inner.printed(words: words) + "[\(flavor)]"
+            let shown = isNamed && symbol == "*" ? "×" : String(symbol)
+            let operands = (left.printed(isNamed: isNamed), right.printed(isNamed: isNamed))
+            return isNamed ? "\(operands.0) \(shown) \(operands.1)" : "\(operands.0)\(shown)\(operands.1)"
+        case let .negation(inner): return "-" + inner.printed(isNamed: isNamed)
+        case let .group(inner): return "(" + inner.printed(isNamed: isNamed) + ")"
+        case let .flavored(inner, flavor): return inner.printed(isNamed: isNamed) + "[\(flavor)]"
         case let .function(name, arguments):
-            return name + "(" + arguments.map { $0.printed(words: words) }.joined(separator: ",") + ")"
+            return name + "(" + arguments.map { $0.printed(isNamed: isNamed) }.joined(separator: ",") + ")"
         }
     }
 
     /// A dice count or size: plain when it is a number, else in parentheses, as Foundry writes `(@item.level)d6`.
-    private static func diceOperand(_ operand: RollFormula, words: [String: String]) -> String {
+    private static func diceOperand(_ operand: RollFormula, isNamed: Bool) -> String {
         switch operand {
-        case .number, .group: operand.printed(words: words)
-        default: "(" + operand.printed(words: words) + ")"
+        case .number, .group: operand.printed(isNamed: isNamed)
+        default: "(" + operand.printed(isNamed: isNamed) + ")"
         }
     }
 
@@ -169,16 +172,28 @@ public struct FormulaValues: Sendable {
 
     public subscript(name: String) -> Double? { values[name] }
 
-    /// References only known in play, named as the books name them.
-    public static let words: [String: String] = [
+    /// A reference only known in play, named as the books name it: "your level", "your Strength modifier",
+    /// "your Medicine proficiency rank", "the number of weapon damage dice".
+    public static func word(for reference: String) -> String? {
+        if let word = words[reference] { return word }
+        let path = reference.replacingOccurrences(of: "@actor.system.", with: "@actor.")
+        if let ability = path.wholeMatch(of: /@actor\.abilities\.(\w+)\.mod/)?.output.1 {
+            return abilities[String(ability)].map { "your \($0) modifier" }
+        }
+        if let skill = path.wholeMatch(of: /@actor\.skills\.(\w+)\.rank/)?.output.1 {
+            return "your \(skill.capitalized) proficiency rank"
+        }
+        return nil
+    }
+
+    private static let words = [
         "@actor.level": "your level",
-        "@actor.abilities.str.mod": "your Strength modifier",
-        "@actor.abilities.dex.mod": "your Dexterity modifier",
-        "@actor.abilities.con.mod": "your Constitution modifier",
-        "@actor.abilities.int.mod": "your Intelligence modifier",
-        "@actor.abilities.wis.mod": "your Wisdom modifier",
-        "@actor.abilities.cha.mod": "your Charisma modifier",
         "@item.system.damage.dice": "the number of weapon damage dice"
+    ]
+
+    private static let abilities = [
+        "str": "Strength", "dex": "Dexterity", "con": "Constitution", "int": "Intelligence", "wis": "Wisdom",
+        "cha": "Charisma"
     ]
 
     /// `text` with the known values written in, for a formula the parser can't read.

@@ -82,7 +82,9 @@ share. It contains no Paizo art or text.
   formula that refers to something only known in play (the character's level or ability modifiers, a weapon's
   damage dice) prints pf2e's label when it has one, as Foundry does; without one, a formula on the character's
   level is described as the books do ("1d6 per level", "1d6, increasing by 1d6 at 3rd level and every 2 levels
-  after", "half your level"), and any other reference is named in words ("your Strength modifier").
+  after", "half your level", "1d4+1, increasing by 1d4+5 at 3rd level and every 2 levels after"), and any other
+  reference is named in words ("your Strength modifier", "your Medicine proficiency rank"). A damage type the
+  player chooses is left out; the text around it says what to choose.
 - R4.3 A creature's health can be described to players without numbers: Unharmed (full), Healthy (76–99%),
   Injured (51–75%), Bloodied (26–50%), Near Death (1–25%) and Down (0 HP or less).
 

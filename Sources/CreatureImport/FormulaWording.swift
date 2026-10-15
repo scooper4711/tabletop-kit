@@ -27,7 +27,7 @@ public struct FormulaWording: Equatable, Sendable {
             return
         }
         self = LevelWording.wording(parsed, values: values)
-            ?? FormulaWording(start: parsed.text(naming: FormulaValues.words))
+            ?? FormulaWording(start: parsed.namedText)
     }
 
     /// The wording with words after the start, such as a damage type: "1d6 fire (increasing by …)".

@@ -49,28 +49,26 @@ struct LevelWording {
 
     /// "1d6" (per level) for dice that gain one die a level.
     private static func perLevel(_ steps: [Step]) -> String? {
-        guard let sides = steps[0].sides, steps.allSatisfy({ $0.sides == sides }) else { return nil }
-        let counts = steps.compactMap(\.count)
-        guard counts.count == levels.count, zip(levels, counts).allSatisfy({ Double($0) == $1 }) else { return nil }
+        guard let sides = steps[0].amount?.sides,
+              zip(levels, steps).allSatisfy({ $1.amount == Amount(dice: Double($0), sides: sides, bonus: 0) })
+        else { return nil }
         return "1d\(RollFormula.numberText(sides))"
     }
 
     /// "1d6, increasing by 1d6 at 3rd level and every 2 levels after" for a value that grows by the same
-    /// amount at a steady interval, at least twice, through 20th level.
+    /// amount at a steady interval, at least twice, through 20th level. Dice and a bonus can grow together:
+    /// "1d4+1, increasing by 1d4+5 at 3rd level and every 2 levels after".
     private static func regularGrowth(_ changes: [Int], steps: [Step]) -> FormulaWording? {
-        guard changes.count >= 2, let interval = interval(changes),
-              steps.allSatisfy({ $0.sides == steps[0].sides }) else { return nil }
-        let amounts = ([1] + changes).map { steps[$0 - 1].amount }
-        let increases = zip(amounts, amounts.dropFirst()).map { pair -> Double? in
-            guard let first = pair.0, let second = pair.1 else { return nil }
-            return second - first
-        }
-        guard let increase = increases.first ?? nil, increases.allSatisfy({ $0 == increase }) else { return nil }
-        let increaseText = steps[0].sides.map { "\(RollFormula.numberText(increase))d\(RollFormula.numberText($0))" }
-            ?? RollFormula.numberText(increase)
+        let amounts = steps.compactMap(\.amount)
+        // Growth every level reads better as the formula in words ("1d4 + your level").
+        guard changes.count >= 2, let interval = interval(changes), interval > 1, amounts.count == steps.count,
+              amounts.allSatisfy({ $0.sides == amounts[0].sides }) else { return nil }
+        let reached = ([1] + changes).map { amounts[$0 - 1] }
+        let increases = zip(reached, reached.dropFirst()).map { $1.minus($0) }
+        guard increases.allSatisfy({ $0 == increases[0] }) else { return nil }
         let every = interval == 1 ? "every level after" : "every \(interval) levels after"
-        return FormulaWording(start: steps[0].text,
-                       growth: "increasing by \(increaseText) at \(ordinal(changes[0])) level and \(every)")
+        return FormulaWording(start: steps[0].text, growth: "increasing by \(increases[0].text) at "
+                              + "\(ordinal(changes[0])) level and \(every)")
     }
 
     /// The steady gap between changes, when they carry on that way through 20th level.
@@ -95,26 +93,57 @@ struct LevelWording {
         return "\(number)\(suffix)"
     }
 
-    /// The formula at one level: its text, and its number or dice when it is that simple.
+    /// The formula at one level: its text, and its amount when it is that simple.
     private struct Step {
         let text: String
-        let number: Double?
-        let count: Double?
-        let sides: Double?
+        let amount: Amount?
 
         init(_ formula: RollFormula) {
-            text = formula.text
-            if case let .number(value) = formula { number = value } else { number = nil }
-            if case let .dice(.number(count), .number(sides)) = formula {
-                self.count = count
-                self.sides = sides
-            } else {
-                count = nil
-                sides = nil
+            amount = Amount(formula)
+            text = amount?.text ?? formula.text
+        }
+
+        /// The number, when the formula is only that.
+        var number: Double? { amount?.sides == nil ? amount?.bonus : nil }
+    }
+
+    /// A number, dice, or dice with a number added or taken away: "1d4+1".
+    private struct Amount: Equatable {
+        let dice: Double
+        let sides: Double?
+        let bonus: Double
+
+        init(dice: Double, sides: Double?, bonus: Double) {
+            self.dice = dice
+            self.sides = sides
+            self.bonus = bonus
+        }
+
+        init?(_ formula: RollFormula) {
+            switch formula {
+            case let .number(value): self.init(dice: 0, sides: nil, bonus: value)
+            case let .dice(.number(dice), .number(sides)): self.init(dice: dice, sides: sides, bonus: 0)
+            case let .group(inner): self.init(inner)
+            case let .operation(symbol, left, right) where symbol == "+" || symbol == "-":
+                // Dice and a number, either way round; never dice taken away or two kinds of dice.
+                guard let first = Amount(left), let second = Amount(right), first.sides == nil || second.sides == nil,
+                      symbol == "+" || second.sides == nil else { return nil }
+                let sign: Double = symbol == "+" ? 1 : -1
+                self.init(dice: first.dice + second.dice, sides: first.sides ?? second.sides,
+                          bonus: first.bonus + sign * second.bonus)
+            default: return nil
             }
         }
 
-        /// The dice count, or the number, that growth is measured in.
-        var amount: Double? { count ?? number }
+        func minus(_ other: Amount) -> Amount {
+            Amount(dice: dice - other.dice, sides: sides, bonus: bonus - other.bonus)
+        }
+
+        /// "1d4+1", "1d4", "3" or "1d4-1".
+        var text: String {
+            guard let sides, dice > 0 else { return RollFormula.numberText(bonus) }
+            let diceText = "\(RollFormula.numberText(dice))d\(RollFormula.numberText(sides))"
+            return bonus == 0 ? diceText : diceText + (bonus > 0 ? "+" : "") + RollFormula.numberText(bonus)
+        }
     }
 }

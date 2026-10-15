@@ -87,7 +87,8 @@ enum DamageFormula {
         let formula = cleanFormula(String(trimmed[..<open]))
         let tags = trimmed[trimmed.index(after: open)..<trimmed.index(before: trimmed.endIndex)]
             .split(separator: ",").map { $0.trimmingCharacters(in: .whitespaces) }
-        let types = tags.filter { $0 != "persistent" }
+        // A type the player chooses (`@actor.flags.system.dragonDisciple.energyType`) is left for the text to name.
+        let types = tags.filter { $0 != "persistent" && !$0.hasPrefix("@") }
         let isPersistent = tags.contains("persistent") || tags.contains("bleed")
         return DamagePart(formula: formula, type: types.joined(separator: " "), isPersistent: isPersistent)
     }

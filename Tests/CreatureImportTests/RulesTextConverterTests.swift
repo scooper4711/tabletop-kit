@@ -56,6 +56,7 @@ struct RulesTextConverterTests {
         #expect(convert("@Damage[(1d4+@item.system.damage.dice)[persistent,fire]]")
             == "1d4 + the number of weapon damage dice persistent fire")
         #expect(convert("[[/r (@actor.level)d6]]") == "1d6 per level")
+        #expect(convert("@Damage[9d6[@actor.flags.system.dragonDisciple.energyType]]") == "{{damage:9d6|}}")
         #expect(convert("[[/r 1d4+@actor.abilities.dex.mod]]") == "1d4 + your Dexterity modifier")
         #expect(convert("[[/r @item.level]]") == "@item.level")
     }
