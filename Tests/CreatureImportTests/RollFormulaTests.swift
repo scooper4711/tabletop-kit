@@ -53,9 +53,9 @@ struct RollFormulaTests {
     @Test("References only known in play are named in words")
     func words() throws {
         let formula = try #require(RollFormula("1d4+@item.system.damage.dice"))
-        #expect(formula.text(naming: FormulaValues.words) == "1d4 + the number of weapon damage dice")
+        #expect(formula.namedText == "1d4 + the number of weapon damage dice")
         let doubled = try #require(RollFormula("2*@actor.abilities.str.mod"))
-        #expect(doubled.text(naming: FormulaValues.words) == "2 × your Strength modifier")
+        #expect(doubled.namedText == "2 × your Strength modifier")
         #expect(doubled.references == ["@actor.abilities.str.mod"])
     }
 }
@@ -87,6 +87,26 @@ struct LevelWordingTests {
             == "1d6 (increasing by 1d6 at 3rd level and every 2 levels after)")
         #expect(try wording("max(1,floor(@actor.level/2))")
             == "1 (increasing by 1 at 4th level and every 2 levels after)")
+    }
+
+    @Test("Dice and a bonus that grow together")
+    func diceAndBonus() throws {
+        #expect(try wording("((floor((max(1,@actor.level)-1)/2)+1)d4+(floor((max(1,@actor.level)-1)/2)*5+1))")
+            == "1d4+1 (increasing by 1d4+5 at 3rd level and every 2 levels after)")
+        #expect(try wording("(floor(@actor.level/5)+1)d6+2")
+            == "1d6+2 (increasing by 1d6 at 5th level and every 5 levels after)")
+        #expect(try wording("1d4+ceil(@actor.level/2)-1")
+            == "1d4 (increasing by 1 at 3rd level and every 2 levels after)")
+        #expect(FormulaWording("((ceil(@actor.level/2))d6+@actor.level)", values: FormulaValues()).text()
+            == "(ceil(your level / 2))d6 + your level")
+    }
+
+    @Test("Skill ranks and other ability paths are named")
+    func moreWords() {
+        #expect(FormulaValues.word(for: "@actor.system.abilities.int.mod") == "your Intelligence modifier")
+        #expect(FormulaValues.word(for: "@actor.skills.religion.rank") == "your Religion proficiency rank")
+        #expect(FormulaValues.word(for: "@actor.abilities.luck.mod") == nil)
+        #expect(FormulaValues.word(for: "@item.origin.level") == nil)
     }
 
     @Test("Irregular growth lists the values where they change")
