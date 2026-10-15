@@ -19,8 +19,9 @@ public struct RulesTextConverter {
     /// Enricher names that could not be converted so far, for the import report.
     public var unparsedEnrichers: [String] { enrichers.unparsed }
 
-    public mutating func convert(_ html: String) -> RulesText {
+    /// The text as `RulesText`, with formulas worked out from `values` (R4.4).
+    public mutating func convert(_ html: String, values: FormulaValues = FormulaValues()) -> RulesText {
         guard !html.isEmpty else { return RulesText() }
-        return RulesText(HTMLFlattener.markup(from: enrichers.convert(html)))
+        return RulesText(HTMLFlattener.markup(from: enrichers.convert(html, values: values)))
     }
 }

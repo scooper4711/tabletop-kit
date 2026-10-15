@@ -77,6 +77,12 @@ share. It contains no Paizo art or text.
   void, and the doomed, drained, fatigued, paralyzed, sickened and unconscious conditions), mindless creatures
   (mental) and swarms (the grabbed, prone and restrained conditions). Each immunity shows once. Undead get none,
   since their trait's text grants none.
+- R4.4 Damage and roll formulas that refer to their own document's data (`@item.rank`, `@item.level`) print as
+  dice once the importer says what those are worth: a rank 2 spell's `floor(@item.level/2)d6` is "1d6". A
+  formula that refers to something only known in play (the character's level or ability modifiers, a weapon's
+  damage dice) prints pf2e's label when it has one, as Foundry does; without one, a formula on the character's
+  level is described as the books do ("1d6 per level", "1d6, increasing by 1d6 at 3rd level and every 2 levels
+  after", "half your level"), and any other reference is named in words ("your Strength modifier").
 - R4.3 A creature's health can be described to players without numbers: Unharmed (full), Healthy (76–99%),
   Injured (51–75%), Bloodied (26–50%), Near Death (1–25%) and Down (0 HP or less).
 
