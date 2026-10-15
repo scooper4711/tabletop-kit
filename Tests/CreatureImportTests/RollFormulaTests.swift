@@ -65,7 +65,7 @@ struct LevelWordingTests {
     private func wording(_ formula: String) throws -> String {
         let parsed = try #require(RollFormula(formula))
         let wording = try #require(LevelWording.wording(parsed, values: FormulaValues()))
-        return wording.start + (wording.growth.map { " (\($0))" } ?? "")
+        return wording.text()
     }
 
     @Test("Numbers that follow the level are named")
@@ -98,7 +98,16 @@ struct LevelWordingTests {
 
     @Test("A value that changes too often reads as the formula in words")
     func tooManyChanges() throws {
-        #expect(try wording("@actor.level+1d4") == "your level + 1d4")
+        let parsed = try #require(RollFormula("@actor.level+1d4"))
+        #expect(LevelWording.wording(parsed, values: FormulaValues()) == nil)
+        #expect(FormulaWording("@actor.level+1d4", values: FormulaValues()).text() == "your level + 1d4")
+    }
+
+    @Test("A worked-out formula says so")
+    func workedOut() {
+        #expect(FormulaWording("(@item.level)d6", values: .level(3))
+            == FormulaWording(start: "3d6", isWorkedOut: true))
+        #expect(FormulaWording("(@actor.level)d6", values: .level(3)).text(following: ["fire"]) == "1d6 fire per level")
     }
 
     @Test("Other references aren't described by level")

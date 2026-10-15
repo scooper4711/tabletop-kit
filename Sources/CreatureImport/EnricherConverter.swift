@@ -118,24 +118,18 @@ struct EnricherConverter {
     /// play prints pf2e's label, or failing that its description in words.
     private func damage(_ match: EnricherMatch) -> String? {
         guard let parts = Self.damage(match.argument) else { return match.label }
-        let resolved = parts.map { part in
-            var part = part
-            part.formula = RollFormula.resolved(part.formula, values: values)
-            return part
+        let wordings = parts.map { FormulaWording($0.formula, values: values) }
+        guard wordings.contains(where: { !$0.isWorkedOut }) else {
+            return RulesRun.damage(zip(parts, wordings).map { part, wording in
+                var part = part
+                part.formula = wording.start
+                return part
+            }).markup
         }
-        guard resolved.contains(where: { $0.formula.contains("@") }) else { return RulesRun.damage(resolved).markup }
-        return match.label ?? resolved.map(describedDamage).joined(separator: " plus ")
-    }
-
-    /// "1d6 fire (increasing by 1d6 at 3rd level and every 2 levels after)" or "your Strength modifier
-    /// bludgeoning".
-    private func describedDamage(_ part: DamagePart) -> String {
-        let type = (part.isPersistent ? ["persistent"] : []) + (part.type.isEmpty ? [] : [part.type])
-        guard let formula = RollFormula(part.formula) else { return ([part.formula] + type).joined(separator: " ") }
-        let wording = LevelWording.wording(formula, values: values)
-        let start = wording?.start ?? formula.text(naming: FormulaValues.words)
-        let growth = wording?.growth.map { " (\($0))" } ?? ""
-        return ([start] + type).joined(separator: " ") + growth
+        // "1d6 fire (increasing by 1d6 at 3rd level and every 2 levels after)"
+        return match.label ?? zip(parts, wordings).map { part, wording in
+            wording.text(following: (part.isPersistent ? ["persistent"] : []) + (part.type.isEmpty ? [] : [part.type]))
+        }.joined(separator: " plus ")
     }
 
     static func damage(_ argument: String) -> [DamagePart]? {
@@ -167,16 +161,6 @@ struct EnricherConverter {
         let firstWord = body.split(separator: " ").first.map(String.init) ?? body
         if command == "act" { return firstWord.split(separator: "-").map(\.capitalized).joined(separator: " ") }
         let roll = body.split(separator: "#").first.map { $0.trimmingCharacters(in: .whitespaces) } ?? body
-        return rollText(roll)
-    }
-
-    /// An inline roll's formula worked out, or described when it refers to something only known in play.
-    private func rollText(_ roll: String) -> String {
-        let resolved = RollFormula.resolved(roll, values: values)
-        guard resolved.contains("@"), let formula = RollFormula(resolved) else { return resolved }
-        guard let wording = LevelWording.wording(formula, values: values) else {
-            return formula.text(naming: FormulaValues.words)
-        }
-        return wording.start + (wording.growth.map { " (\($0))" } ?? "")
+        return FormulaWording(roll, values: values).text()
     }
 }
