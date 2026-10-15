@@ -28,13 +28,13 @@ of Paizo Inc.; this project is not published, endorsed, or specifically approved
 Add the package in Xcode or `Package.swift`:
 
 ```swift
-.package(url: "https://github.com/scooper4711/tabletop-kit.git", from: "0.12.0")
+.package(url: "https://github.com/scooper4711/tabletop-kit.git", from: "0.13.0")
 ```
 
 ## The apps
 
-The Tableside Toolkit is a set of free apps for running Pathfinder and Starfinder games in person, for the Mac and
-(Turnkeeper and Field Guide) the iPad. Like any good toolkit, each one grants a +1 item bonus to game prep.
+The Tableside Toolkit is a set of free Mac apps for running Pathfinder and Starfinder games in person; Turnkeeper
+and Field Guide run on the iPad too. Like any good toolkit, each one grants a +1 item bonus to game prep.
 
 - [Scrollkeeper](https://github.com/scooper4711/scrollkeeper) keeps your Paizo library in order and downloads your
   purchases.
