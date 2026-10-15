@@ -20,10 +20,8 @@ struct GlossaryEntryParser {
         let system = document["system"]
         let level = Self.level(document)
         let description = system[path: "description.value"].string
-            .replacingOccurrences(of: "(@item.level)", with: "\(level)")
-            .replacingOccurrences(of: "(@item.rank)", with: "\(level)")
         let details = document["type"].string == "spell" ? SpellDetails.markup(system) : ""
-        let body = text.convert(description).markup
+        let body = text.convert(description, values: .level(level)).markup
         let markup = [details, body].filter { !$0.isEmpty }.joined(separator: "\n---\n")
         var entry = GlossaryEntry(id: id, name: document["name"].string,
                                   category: Self.category(document, id: id, level: level), text: RulesText(markup))

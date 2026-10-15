@@ -36,6 +36,30 @@ struct RulesTextConverterTests {
         #expect(convert("@Damage[2d6[fire],1d4[cold]]") == "{{damage:2d6|fire;1d4|cold}}")
     }
 
+    @Test("Damage formulas are worked out from the values given")
+    func damageFormulas() {
+        var converter = Fixtures.converter()
+        let grip = "plus @Damage[floor(@item.level/2)d6[persistent,acid]] damage"
+        #expect(converter.convert(grip, values: .level(2)).markup == "plus {{damage:1d6|acid|persistent}} damage")
+        #expect(converter.convert("[[/r (@item.rank+1)d4]]", values: .level(3)).markup == "4d4")
+    }
+
+    @Test("A formula only known in play prints its label, else words")
+    func damageInPlay() {
+        #expect(convert("@Damage[(@actor.level)d6|options:area-damage]{1d6 damage per level}")
+            == "1d6 damage per level")
+        #expect(convert("@Damage[(@actor.abilities.str.mod)[bludgeoning]]{bludgeoning}") == "bludgeoning")
+        #expect(convert("@Damage[(@actor.abilities.str.mod)[bludgeoning]]")
+            == "your Strength modifier bludgeoning")
+        #expect(convert("@Damage[(floor((@actor.level-1)/2)+1)d6[fire]]")
+            == "1d6 fire (increasing by 1d6 at 3rd level and every 2 levels after)")
+        #expect(convert("@Damage[(1d4+@item.system.damage.dice)[persistent,fire]]")
+            == "1d4 + the number of weapon damage dice persistent fire")
+        #expect(convert("[[/r (@actor.level)d6]]") == "1d6 per level")
+        #expect(convert("[[/r 1d4+@actor.abilities.dex.mod]]") == "1d4 + your Dexterity modifier")
+        #expect(convert("[[/r @item.level]]") == "@item.level")
+    }
+
     @Test("Links, templates and inline rolls become words")
     func linksTemplatesAndRolls() {
         #expect(convert("@UUID[Compendium.pf2e.actionspf2e.Item.Step]{Steps}") == "Steps")

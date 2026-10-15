@@ -8,13 +8,16 @@ struct EnricherConverter {
     let links: LinkResolver
     /// Enricher names that could not be converted, for the import report.
     private(set) var unparsed: [String] = []
+    /// What the formulas' references are worth in the text being converted.
+    private var values = FormulaValues()
 
     init(localizer: Localizer, links: LinkResolver) {
         self.localizer = localizer
         self.links = links
     }
 
-    mutating func convert(_ html: String) -> String {
+    mutating func convert(_ html: String, values: FormulaValues = FormulaValues()) -> String {
+        self.values = values
         var text = expandLocalizations(html, depth: 0)
         text = replaceInlineRolls(in: text)
         return replaceEnrichers(in: text)
@@ -45,7 +48,7 @@ struct EnricherConverter {
         case "UUID": return link(match)
         case "Check":
             return Self.check(match).map { RulesRun.check($0).markup } ?? match.label ?? Self.checkText(match.argument)
-        case "Damage": return Self.damage(match.argument).map { RulesRun.damage($0).markup } ?? match.label
+        case "Damage": return damage(match)
         case "Template": return match.label ?? Self.template(match.argument)
         case "Embed", "Compendium": return match.label ?? ""
         default: return nil
@@ -111,6 +114,30 @@ struct EnricherConverter {
         return result
     }
 
+    /// Damage as a damage run, its formulas worked out. A formula that still refers to something only known in
+    /// play prints pf2e's label, or failing that its description in words.
+    private func damage(_ match: EnricherMatch) -> String? {
+        guard let parts = Self.damage(match.argument) else { return match.label }
+        let resolved = parts.map { part in
+            var part = part
+            part.formula = RollFormula.resolved(part.formula, values: values)
+            return part
+        }
+        guard resolved.contains(where: { $0.formula.contains("@") }) else { return RulesRun.damage(resolved).markup }
+        return match.label ?? resolved.map(describedDamage).joined(separator: " plus ")
+    }
+
+    /// "1d6 fire (increasing by 1d6 at 3rd level and every 2 levels after)" or "your Strength modifier
+    /// bludgeoning".
+    private func describedDamage(_ part: DamagePart) -> String {
+        let type = (part.isPersistent ? ["persistent"] : []) + (part.type.isEmpty ? [] : [part.type])
+        guard let formula = RollFormula(part.formula) else { return ([part.formula] + type).joined(separator: " ") }
+        let wording = LevelWording.wording(formula, values: values)
+        let start = wording?.start ?? formula.text(naming: FormulaValues.words)
+        let growth = wording?.growth.map { " (\($0))" } ?? ""
+        return ([start] + type).joined(separator: " ") + growth
+    }
+
     static func damage(_ argument: String) -> [DamagePart]? {
         let formulaSpec = EnricherScanner.splitTopLevel(argument, separator: "|").first ?? ""
         let parts = EnricherScanner.splitTopLevel(formulaSpec, separator: ",").compactMap(DamageFormula.part)
@@ -127,18 +154,29 @@ struct EnricherConverter {
         var cursor = 0
         for match in regex.matches(in: text, range: NSRange(location: 0, length: source.length)) {
             result += source.substring(with: NSRange(location: cursor, length: match.range.location - cursor))
-            result += Self.inlineRollText(match, in: source)
+            result += inlineRollText(match, in: source)
             cursor = match.range.location + match.range.length
         }
         return result + source.substring(from: cursor)
     }
 
-    private static func inlineRollText(_ match: NSTextCheckingResult, in source: NSString) -> String {
+    private func inlineRollText(_ match: NSTextCheckingResult, in source: NSString) -> String {
         if match.range(at: 3).location != NSNotFound { return source.substring(with: match.range(at: 3)) }
         let command = source.substring(with: match.range(at: 1))
         let body = source.substring(with: match.range(at: 2))
         let firstWord = body.split(separator: " ").first.map(String.init) ?? body
         if command == "act" { return firstWord.split(separator: "-").map(\.capitalized).joined(separator: " ") }
-        return body.split(separator: "#").first.map { $0.trimmingCharacters(in: .whitespaces) } ?? body
+        let roll = body.split(separator: "#").first.map { $0.trimmingCharacters(in: .whitespaces) } ?? body
+        return rollText(roll)
+    }
+
+    /// An inline roll's formula worked out, or described when it refers to something only known in play.
+    private func rollText(_ roll: String) -> String {
+        let resolved = RollFormula.resolved(roll, values: values)
+        guard resolved.contains("@"), let formula = RollFormula(resolved) else { return resolved }
+        guard let wording = LevelWording.wording(formula, values: values) else {
+            return formula.text(naming: FormulaValues.words)
+        }
+        return wording.start + (wording.growth.map { " (\($0))" } ?? "")
     }
 }
