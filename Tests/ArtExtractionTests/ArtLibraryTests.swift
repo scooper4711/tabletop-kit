@@ -122,6 +122,35 @@ import ArtExtractionTestSupport
         #expect(library.missingSources == [source])
     }
 
+    @Test func watchingAFolderAgainRestoresAccessToItsPDFs() throws {
+        let downloads = folder.appendingPathComponent("Scrollkeeper/Files", isDirectory: true)
+        try FileManager.default.createDirectory(at: downloads, withIntermediateDirectories: true)
+        try writePawnPDF([goblin], named: "Pathfinder Test Pawn Box PDF.pdf", in: downloads)
+        let library = try library()
+        try library.watch(downloads)
+        library.addNewFiles()
+        // A bookmark that no longer grants access, like one made before the app was sandboxed.
+        let stale = FileReference(bookmark: Data("stale".utf8), path: library.watchedFolders[0].path)
+        library.sources[0].location = .inFolder(stale, relativePath: "Pathfinder Test Pawn Box PDF.pdf")
+        library.refreshStatuses()
+        #expect(library.missingSources.count == 1)
+
+        try library.watch(downloads)
+        #expect(library.sources[0].location == .inFolder(library.watchedFolders[0],
+                                                         relativePath: "Pathfinder Test Pawn Box PDF.pdf"))
+        #expect(library.missingSources.isEmpty)
+    }
+
+    @Test func watchingAFolderTakesInPDFsAddedFromIt() throws {
+        let library = try library()
+        let pawns = try writePawns([goblin])
+        try library.add(pawns, keeping: false)
+        try library.watch(folder)
+        let relinked = SourceLocation.inFolder(library.watchedFolders[0], relativePath: pawns.lastPathComponent)
+        #expect(library.sources[0].location == relinked)
+        #expect(library.missingSources.isEmpty)
+    }
+
     @Test func removesAPDFWithTheArtOnlyItPrints() throws {
         let library = try library()
         try library.add(try writePawns([goblin, ogre]), keeping: true)
