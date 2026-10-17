@@ -66,11 +66,14 @@ extension ArtLibrary {
 
     // MARK: Watched folders
 
-    /// Watches a folder, such as Scrollkeeper's downloads: its PDFs of art are added by reference.
+    /// Watches a folder, such as Scrollkeeper's downloads: its PDFs of art are added by reference. The PDFs last
+    /// seen inside it are reached through it from now on, so choosing a folder again restores access to them, as
+    /// after the app moved into the App Sandbox, where bookmarks made outside it don't grant access.
     public func watch(_ folder: URL) throws {
         let reference = try FileReference(folder)
         watchedFolders.removeAll { $0.path == reference.path }
         watchedFolders.append(reference)
+        relink(to: reference)
         try save()
     }
 
@@ -100,6 +103,15 @@ extension ArtLibrary {
     }
 
     // MARK: Helpers
+
+    private func relink(to folder: FileReference) {
+        let root = folder.path.hasSuffix("/") ? folder.path : folder.path + "/"
+        for index in sources.indices {
+            guard let path = Self.path(of: sources[index]), path.hasPrefix(root) else { continue }
+            sources[index].location = .inFolder(folder, relativePath: String(path.dropFirst(root.count)))
+        }
+        refreshStatuses()
+    }
 
     private func keep(_ prepared: PreparedArt) throws {
         let destination = keptFile(id: prepared.digest)
