@@ -215,7 +215,8 @@ build on the same extraction.
   the same painting when the fingerprints match, or, when either is a figure, when the figures' palettes are within
   `Figure.samePaintingDistance`. A pawn's print sets the size. A source read by an older reader is removed and read
   afresh (the library holds no edits of the user's to keep).
-- `watch(_:)` remembers a folder; `addNewFiles(progress:)` adds, by `.inFolder` reference, the PDFs
+- `watch(_:)` remembers a folder and points every source last seen inside it at the new reference (`.inFolder`), since
+  sandboxed apps can't use bookmarks made before they were sandboxed; `addNewFiles(progress:)` adds, by `.inFolder` reference, the PDFs
   `ProductScanner.artPDFs(in:)` finds there (names mentioning pawns or tokens, and each Battle Cards deck once as its
   art PDF) that `contains(_:)` doesn't recognize by place and size or contents. 74 PDFs take about two minutes on a
   Mac (release build).

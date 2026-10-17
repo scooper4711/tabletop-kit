@@ -52,7 +52,8 @@ share. It contains no Paizo art or text.
   Longsword").
 - R2.6 Each piece of art can be drawn alone, upright, on a transparent background, at a requested size.
 - R2.7 Folders can be watched, such as Scrollkeeper's downloads: the PDFs of art in them that the library
-  doesn't have are added by reference on request, with progress.
+  doesn't have are added by reference on request, with progress. Watching a folder again restores access to the
+  PDFs last seen in it, such as after the app moved into the App Sandbox.
 - R2.8 A token's art is kept as a picture when its PDF is added, so it stays available when the PDF goes
   missing. Other art is drawn from its PDF when asked for.
 - R2.9 Art with no name printed is left out of the library.
