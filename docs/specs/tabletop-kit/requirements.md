@@ -123,5 +123,6 @@ share. It contains no Paizo art or text.
 - R6.3 On the Mac it is the About panel, from the app menu; on the iPad, a sheet the app opens from a button.
 - R6.4 The screen lists the full text of every license the app's bundled content requires it to ship (such as the
   Open Game License, the ORC License and fonts' licenses), read from a folder the app bundles. On the iPad each
-  opens on its own page; on the Mac the texts follow the credits in the About panel.
+  opens on its own page; on the Mac the texts follow the credits in the About panel. A Markdown file shows as
+  readable text, without its markup: a table, such as the condition icons' credits, shows one line per row.
 

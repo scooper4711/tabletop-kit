@@ -11,7 +11,7 @@ public struct LicenseText: Hashable, Sendable {
     }
 
     /// Every `.md` and `.txt` file in the folder, sorted by name and titled by it ("Open Game License.md" is
-    /// "Open Game License"); none when the folder is missing.
+    /// "Open Game License"), with Markdown turned into plain text; none when the folder is missing.
     public static func all(in folder: URL) -> [LicenseText] {
         let files = (try? FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil)) ?? []
         return files
@@ -19,7 +19,9 @@ public struct LicenseText: Hashable, Sendable {
             .sorted { $0.lastPathComponent.localizedStandardCompare($1.lastPathComponent) == .orderedAscending }
             .compactMap { file in
                 guard let text = try? String(contentsOf: file, encoding: .utf8) else { return nil }
-                return LicenseText(title: file.deletingPathExtension().lastPathComponent, text: text)
+                let isMarkdown = file.pathExtension.lowercased() == "md"
+                return LicenseText(title: file.deletingPathExtension().lastPathComponent,
+                                   text: isMarkdown ? MarkdownPlainText.convert(text) : text)
             }
     }
 }
