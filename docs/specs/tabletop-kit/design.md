@@ -353,7 +353,11 @@ everything about campaigns and fights stay in Turnkeeper.
   `AboutInfo.panelText`: the same content as plain text, links written out, then each license's full text.
 - `AboutInfo.licenses` are `LicenseText`s (title and full text). `LicenseText.all(in:)` reads every `.md` and
   `.txt` file in a folder the app bundles, sorted by name, each titled by its file name; `AboutView` lists them in
-  a Licenses section, each opening on its own page.
+  a Licenses section, each opening on its own page. Both the panel and `AboutView` show text as it is, so
+  `MarkdownPlainText` turns a `.md` file into plain text when it's read: headings, emphasis and code lose their
+  markup, links become "text (URL)", table rows become lines of cells joined by " · " (the separator row is
+  dropped), bullets become "•", and a line of 72 characters or more is joined with the plain line after it, since
+  files wrap paragraphs by hand.
 
 ## Test support (`ArtExtractionTestSupport`)
 The drawing helpers that Pawn Shop's tests had, made public so that both packages' tests use one copy:
