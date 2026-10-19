@@ -45,6 +45,17 @@ struct InteractiveBattleCardTests {
         #expect(CardPinch.closes(0.7) && !CardPinch.closes(0.8))
     }
 
+    @Test("Full screen scales the card to the largest card that fits, whatever the window's shape")
+    func fullScreenKeepsTheCardsProportions() {
+        let card = FullScreenFit.layoutSize
+        #expect(abs(card.width / card.height - 0.7) < 0.001)
+        // A wide window: the height limits the card, and its text grows with it.
+        #expect(FullScreenFit.scale(toFit: CGSize(width: 1800, height: card.height * 2)) == 2)
+        // A tall, narrow one: the width does.
+        #expect(FullScreenFit.scale(toFit: CGSize(width: card.width * 1.5, height: 3000)) == 1.5)
+        #expect(FullScreenFit.scale(toFit: .zero) == 1)
+    }
+
     @Test("The full-screen icon opens or closes")
     func fullScreenActions() {
         var opened = false

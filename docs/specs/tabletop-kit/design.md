@@ -336,7 +336,10 @@ everything about campaigns and fights stay in Turnkeeper.
   tags, being buttons, win over; `onContinuousHover` shows each icon while the pointer is within a corner of a
   fifth of the card. Full screen is a `fullScreenCover` on iOS. On the Mac it's an overlay filling the window of
   the nearest `battleCardFullScreenHost()` (the app applies it to window and sheet roots; the card passes its
-  glossary, card art and art loader along), or a large sheet without one. A pinch (`MagnifyGesture`, past 1.2 to
+  glossary, card art and art loader along), or a large sheet without one. The host hides the window's toolbar
+  while a card is full screen. `FullScreenFit` lays the card out at 440 by 440 / 0.7 points (Field Guide's
+  column width, and the card back's proportions) and scales it to fit the space, so the text grows with the
+  card instead of running in long lines at its column size. A pinch (`MagnifyGesture`, past 1.2 to
   open, under 0.8 to close) and Escape work too. Callers reset a card's flip with `.id(_:)`.
 - `ArtPicture(path:)` draws a `CGImage` at full size from the `artPictureLoader` environment value, a closure the
   app sets (Turnkeeper reads its art store, Field Guide its art model), with a progress view while it loads.
