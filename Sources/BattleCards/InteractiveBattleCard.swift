@@ -76,18 +76,38 @@ struct FullScreenCard<Front: View, Back: View>: View {
     let close: () -> Void
 
     var body: some View {
-        CardFaces(front: front, back: back, hasBack: hasBack, isFlipped: $isFlipped, fullScreenAction: .close(close))
-            .padding(24)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
-            .background(.black)
-            .simultaneousGesture(MagnifyGesture().onEnded { value in
-                if CardPinch.closes(value.magnification) { close() }
-            })
-            .background {
-                Button("Exit Full Screen", action: close)
-                    .keyboardShortcut(.cancelAction)
-                    .hidden()
-            }
+        GeometryReader { proxy in
+            CardFaces(front: front, back: back, hasBack: hasBack, isFlipped: $isFlipped,
+                      fullScreenAction: .close(close))
+                .frame(width: FullScreenFit.layoutSize.width, height: FullScreenFit.layoutSize.height)
+                .scaleEffect(FullScreenFit.scale(toFit: proxy.size))
+                .frame(width: proxy.size.width, height: proxy.size.height)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(.black)
+        .simultaneousGesture(MagnifyGesture().onEnded { value in
+            if CardPinch.closes(value.magnification) { close() }
+        })
+        .background {
+            Button("Exit Full Screen", action: close)
+                .keyboardShortcut(.cancelAction)
+                .hidden()
+        }
+    }
+}
+
+/// How a card is sized full screen: laid out at a card's size, with the text size it has in a column, and scaled as
+/// a whole to the largest card of a battle card's proportions that fits. Laid out at the full width instead, the
+/// text kept its column size and ran in long, small lines across a wide window.
+enum FullScreenFit {
+    /// The width Field Guide lays a card out at in its column, and a card's proportions (its back's).
+    static let layoutSize = CGSize(width: 440, height: 440 / 0.7)
+
+    /// The scale that fits the card into `space`; none before there is a space.
+    static func scale(toFit space: CGSize) -> CGFloat {
+        guard space.width > 0, space.height > 0 else { return 1 }
+        return min(space.width / layoutSize.width, space.height / layoutSize.height)
     }
 }
 

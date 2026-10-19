@@ -43,5 +43,9 @@ private struct CardFullScreenHostModifier: ViewModifier {
                 }
             }
             .animation(.easeInOut(duration: 0.25), value: host.content == nil)
+            #if os(macOS)
+            // The window's toolbar would otherwise stay over the top of the card.
+            .toolbar(host.content == nil ? .automatic : .hidden, for: .windowToolbar)
+            #endif
     }
 }

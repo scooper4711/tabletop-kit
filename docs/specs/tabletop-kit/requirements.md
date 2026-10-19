@@ -108,7 +108,9 @@ share. It contains no Paizo art or text.
   screen. Tapping empty card area shows or hides two corner icons: flip (top right) and full screen (bottom
   right); with a pointer, each icon shows while the pointer is over its corner. Taps on links and trait or
   condition tags go to them, not to the card. Full screen opens with the icon or a pinch out, on the face that's
-  showing, and closes with its icon, a pinch in or Escape; flipping works in it too.
+  showing, and closes with its icon, a pinch in or Escape; flipping works in it too. Full screen shows the
+  largest card of a card's proportions that fits, with its text scaled up with it, and on the Mac nothing of the
+  window, such as its toolbar, shows over it.
 - R5.6 The apps share one view that loads a creature's art at full size from a loader they supply, so a card
   back's art is drawn the same way in each.
 
