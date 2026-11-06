@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.15.2] - 2026-11-06
+
+### Fixed
+- Leave pictures out of pawn labels
+- Stop retrying every split of a label that isn't doubled
+- Show Markdown license files as plain text in About
+- Scale a full-screen card up as a whole, under no toolbar
+
+### Changed
+- Run the real-PDF tests on sample pages in CI
+
+[0.15.2]: https://github.com/scooper4711/tabletop-kit/releases/tag/v0.15.2
+
 ## [0.15.1] - 2026-10-17
 
 ### Fixed
