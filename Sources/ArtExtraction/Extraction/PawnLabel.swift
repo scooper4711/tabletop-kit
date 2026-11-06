@@ -22,10 +22,19 @@ struct PDFKitLabelReader: LabelReader {
         guard let text = document.page(at: pageIndex)?.selection(for: rect)?.attributedString else { return [] }
         var runs: [LabelRun] = []
         text.enumerateAttribute(.font, in: NSRange(location: 0, length: text.length)) { font, range, _ in
-            let size = Self.pointSize(of: font)
-            runs.append(LabelRun(text: (text.string as NSString).substring(with: range), fontSize: size))
+            let piece = Self.withoutPictures((text.string as NSString).substring(with: range))
+            guard !piece.isEmpty else { return }
+            runs.append(LabelRun(text: piece, fontSize: Self.pointSize(of: font)))
         }
         return runs
+    }
+
+    /// The text without the object replacement characters PDFKit reads a picture as, at the picture's size, which
+    /// would otherwise be the label's largest text, nor control characters.
+    static func withoutPictures(_ text: String) -> String {
+        String(String.UnicodeScalarView(text.unicodeScalars.filter { scalar in
+            scalar != "\u{FFFC}" && !CharacterSet.controlCharacters.contains(scalar)
+        }))
     }
 
     /// The size of a font attribute: an `NSFont` on the Mac, a `UIFont` on the iPad, both of them `CTFont`s.

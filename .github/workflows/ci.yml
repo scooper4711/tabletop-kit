@@ -27,7 +27,21 @@ jobs:
           command -v swiftlint >/dev/null || brew install swiftlint
           swiftlint --strict --quiet
 
-      # Tests that read Paizo's PDFs are skipped: the PDFs are copyrighted and not in the repository.
+      # Tests that read Paizo's PDFs read sample pages of them from the private toolkit-artwork repository, of
+      # which only test-pdfs/ is checked out. Pull requests from forks have no key, and skip those tests.
+      - name: Fetch the sample PDFs
+        env:
+          ARTWORK_SSH_KEY: ${{ secrets.ARTWORK_SSH_KEY }}
+        if: env.ARTWORK_SSH_KEY != ''
+        run: |
+          printf '%s\n' "$ARTWORK_SSH_KEY" > "$RUNNER_TEMP/artwork_key"
+          chmod 600 "$RUNNER_TEMP/artwork_key"
+          export GIT_SSH_COMMAND="ssh -i $RUNNER_TEMP/artwork_key -o IdentitiesOnly=yes"
+          git clone --depth 1 --filter=blob:none --sparse git@github.com:scooper4711/toolkit-artwork.git \
+            "$RUNNER_TEMP/toolkit-artwork"
+          git -C "$RUNNER_TEMP/toolkit-artwork" sparse-checkout set test-pdfs
+          echo "TOOLKIT_TEST_PDFS=$RUNNER_TEMP/toolkit-artwork/test-pdfs" >> "$GITHUB_ENV"
+
       - name: Test with coverage gate
         run: scripts/coverage.sh
 
