@@ -62,7 +62,9 @@ enum PawnLabel {
     static func undoubled(_ text: String) -> String {
         let characters = Array(text)
         let letters = characters.indices.filter { !characters[$0].isWhitespace }
-        guard letters.count >= shortestDoubled, let chunks = doubledChunks(letters.map { characters[$0] }, from: 0)
+        var unsplittable: Set<Int> = []
+        guard letters.count >= shortestDoubled,
+              let chunks = doubledChunks(letters.map { characters[$0] }, from: 0, unsplittable: &unsplittable)
         else { return text }
         var result = ""
         var position = 0
@@ -77,12 +79,19 @@ enum PawnLabel {
     }
 
     /// Chunk lengths that split `letters` from `start` into chunks each repeated once, longest chunks first.
-    private static func doubledChunks(_ letters: [Character], from start: Int) -> [Int]? {
+    /// `unsplittable` remembers the starts already found to have no split, so text that repeats a lot without
+    /// being doubled throughout ("AAAA…B") is rejected in polynomial time rather than retried every way.
+    private static func doubledChunks(_ letters: [Character], from start: Int,
+                                      unsplittable: inout Set<Int>) -> [Int]? {
         if start == letters.count { return [] }
+        if unsplittable.contains(start) { return nil }
         for length in stride(from: (letters.count - start) / 2, through: 1, by: -1)
         where letters[start..<start + length] == letters[start + length..<start + 2 * length] {
-            if let rest = doubledChunks(letters, from: start + 2 * length) { return [length] + rest }
+            if let rest = doubledChunks(letters, from: start + 2 * length, unsplittable: &unsplittable) {
+                return [length] + rest
+            }
         }
+        unsplittable.insert(start)
         return nil
     }
 
