@@ -54,6 +54,9 @@ import ArtExtractionTestSupport
     @Test func leavesOrdinaryNamesAlone() {
         #expect(PawnLabel.undoubled("MIMI MIMI") == "MIMI MIMI")
         #expect(PawnLabel.undoubled("GOBLIN WARRIOR") == "GOBLIN WARRIOR")
+        // Text that repeats a lot without being doubled throughout is rejected without trying every split.
+        let repetitive = String(repeating: "A", count: 400) + "B"
+        #expect(PawnLabel.undoubled(repetitive) == repetitive)
     }
 
     @Test func givesNoNameForEmptyLabels() {
