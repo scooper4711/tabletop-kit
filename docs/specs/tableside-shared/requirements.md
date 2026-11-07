@@ -35,3 +35,10 @@ Guide, Turnkeeper) agree. Scrollkeeper's `docs/specs/app-handoff`
 - R3.1 After writing the list Scrollkeeper tells the readers, and a reader can
   follow those changes on the main thread for as long as it wants, without
   polling. This works in the App Sandbox.
+
+## R4 Showing where files are
+- R4.1 Wherever an app shows a folder or a file's folder, Scrollkeeper's downloads read as "Scrollkeeper", with
+  the title folders inside after it ("Scrollkeeper ▸ Murder in Metal City") and where they are ("On this Mac",
+  "On My iPad"), never as a path into the App Group or a container. This holds for the shared folder, for
+  Scrollkeeper's folder before it ran in the sandbox, and on the iPad for an app's Documents folder.
+- R4.2 Other folders show their name and where they are, with the home folder shortened to `~`.
