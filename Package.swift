@@ -3,7 +3,7 @@ import PackageDescription
 
 let package = Package(
     name: "TabletopKit",
-    platforms: [.macOS(.v15), .iOS(.v18)],
+    platforms: [.macOS(.v14), .iOS(.v17)],
     products: [
         .library(name: "ArtExtraction", targets: ["ArtExtraction"]),
         .library(name: "ArtExtractionTestSupport", targets: ["ArtExtractionTestSupport"]),
@@ -12,6 +12,7 @@ let package = Package(
         .library(name: "BattleCards", targets: ["BattleCards"]),
         .library(name: "CreatureArt", targets: ["CreatureArt"]),
         .library(name: "AppNotices", targets: ["AppNotices"]),
+        .library(name: "TablesideShared", targets: ["TablesideShared"]),
         .executable(name: "CardArtImport", targets: ["CardArtImport"])
     ],
     targets: [
@@ -28,6 +29,8 @@ let package = Package(
         .target(name: "CreatureArt", dependencies: ["ArtExtraction", "Bestiary"]),
         .testTarget(name: "CreatureArtTests", dependencies: ["CreatureArt", "ArtExtractionTestSupport"]),
         .target(name: "AppNotices"),
-        .testTarget(name: "AppNoticesTests", dependencies: ["AppNotices"])
+        .testTarget(name: "AppNoticesTests", dependencies: ["AppNotices"]),
+        .target(name: "TablesideShared"),
+        .testTarget(name: "TablesideSharedTests", dependencies: ["TablesideShared"])
     ]
 )
