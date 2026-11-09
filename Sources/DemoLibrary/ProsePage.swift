@@ -81,24 +81,57 @@ struct ProsePage {
 
 /// The last page of every demo PDF: what the file is, and Paizo's Community Use notice.
 enum DemoNotice {
-    static let text = """
-        This file is from Scrollkeeper's demo library, made for trying the Tableside Toolkit apps. Its text is \
-        placeholder lorem ipsum; it is not a Paizo product.
+    /// What a demo file holds, which its notice describes.
+    enum Content {
+        /// Lorem ipsum under headings: the rulebook, adventure and scenario.
+        case placeholderProse
+        /// Pawns of Paizo's Iconics, from the Community Use Package.
+        case iconicPawns
+        /// Pawns, tokens or Battle Cards whose art was drawn for the demo, under real creatures' names.
+        case drawnCreatures
+        /// Battle maps drawn for the demo.
+        case drawnMaps
 
+        var sentence: String {
+            switch self {
+            case .placeholderProse: "Its text is placeholder lorem ipsum; it is not a Paizo product."
+            case .iconicPawns:
+                "These are pawns of Paizo's Iconic characters. Their names and images come from Paizo's Community "
+                    + "Use Package and are used under the Community Use Policy. It is not a Paizo product."
+            case .drawnCreatures:
+                "Its art was drawn for the demo, under the names of real creatures; it is not a Paizo product."
+            case .drawnMaps: "Its maps were drawn for the demo; it is not a Paizo product."
+            }
+        }
+    }
+
+    static let lead = "This file is from Scrollkeeper's demo library, made for trying the Tableside Toolkit apps."
+    static let communityUse = """
         The Tableside Toolkit uses trademarks and/or copyrights owned by Paizo Inc., used under Paizo's Community \
         Use Policy (paizo.com/licenses/communityuse). We are expressly prohibited from charging you to use or \
         access this content. The Tableside Toolkit is not published, endorsed, or specifically approved by Paizo. \
         For more information about Paizo Inc. and Paizo products, visit paizo.com.
         """
 
+    /// The notice for a file holding `content`.
+    static func text(for content: Content) -> String {
+        "\(lead) \(content.sentence)\n\n\(communityUse)"
+    }
+
     /// The notice on a letter page.
-    static func draw(_ context: CGContext) {
-        drawText(text, in: CGRect(x: 72, y: 72, width: 468, height: 648), size: 11, context: context)
+    static func page(_ content: Content) -> (CGContext) -> Void {
+        { context in
+            drawText(text(for: content), in: CGRect(x: 72, y: 72, width: 468, height: 648), size: 11,
+                     context: context)
+        }
     }
 
     /// The notice on a card-sized page.
-    static func drawSmall(_ context: CGContext) {
-        drawText(text, in: CGRect(x: 16, y: 16, width: 257, height: 393), size: 8, context: context)
+    static func smallPage(_ content: Content) -> (CGContext) -> Void {
+        { context in
+            drawText(text(for: content), in: CGRect(x: 16, y: 16, width: 257, height: 393), size: 8,
+                     context: context)
+        }
     }
 
     private static func drawText(_ text: String, in frame: CGRect, size: CGFloat, context: CGContext) {

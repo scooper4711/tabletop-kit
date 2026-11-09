@@ -33,7 +33,7 @@ enum DemoArtProducts {
         Monster("Giant Rat", -1, "N SMALL ANIMAL"),
         Monster("Giant Centipede", -1, "N MEDIUM ANIMAL"),
         Monster("Wolf", 1, "N MEDIUM ANIMAL"),
-        Monster("Hobgoblin Soldier", 1, "LE MEDIUM GOBLIN HUMANOID"),
+        Monster("Aapoph Serpentfolk", 3, "CE MEDIUM HUMANOID MUTANT SERPENTFOLK"),
         Monster("Ghoul", 1, "CE MEDIUM GHOUL UNDEAD"),
         Monster("Ogre Warrior", 3, "CE LARGE GIANT HUMANOID"),
         Monster("Owlbear", 4, "N LARGE ANIMAL"),
@@ -49,7 +49,7 @@ enum DemoArtProducts {
         }
         return makePDF(pages: [{ context in pawns.forEach { $0.draw(context) } },
                                { context in pawns.forEach { $0.mirrored(pageWidth: letterPage.width).draw(context) } },
-                               DemoNotice.draw])
+                               DemoNotice.page(.drawnCreatures)])
     }
 
     /// The Iconics as pawns printed without outlines, named along their feet; front then mirrored back.
@@ -63,7 +63,7 @@ enum DemoArtProducts {
                                { context in
                                    heroes.forEach { $0.mirrored(pageWidth: letterPage.width).draw(context) }
                                },
-                               DemoNotice.draw])
+                               DemoNotice.page(.iconicPawns)])
     }
 
     /// Round tokens of the monsters, their names along the rim.
@@ -72,7 +72,8 @@ enum DemoArtProducts {
             DrawnToken(center: CGPoint(x: 110 + CGFloat(index % 4) * 130, y: 640 - CGFloat(index / 4) * 150),
                        diameter: 110, art: tokenArt(variant: index), rimName: monster.name.uppercased())
         }
-        return makePDF(pages: [{ context in tokens.forEach { $0.draw(context) } }, DemoNotice.draw])
+        return makePDF(pages: [{ context in tokens.forEach { $0.draw(context) } },
+                               DemoNotice.page(.drawnCreatures)])
     }
 
     /// The monsters as a Battle Cards deck: each card's art side, then its stat side.
@@ -85,7 +86,7 @@ enum DemoArtProducts {
         let pages: [(CGContext) -> Void] = cards.flatMap { card -> [(CGContext) -> Void] in
             [{ card.drawArt($0) }, { card.drawStats($0) }]
         }
-        return makePDF(size: cardPage, pages: pages + [DemoNotice.drawSmall])
+        return makePDF(size: cardPage, pages: pages + [DemoNotice.smallPage(.drawnCreatures)])
     }
 }
 

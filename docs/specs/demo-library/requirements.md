@@ -10,7 +10,10 @@ how they work together. This library writes the PDFs and covers the demo serves.
 - R1.2 Art is either drawn by the tool (creature silhouettes, maps) or from Paizo's Community Use Package
   (the Iconics, religious and faction symbols), which the Community Use Policy allows in a free app. No other
   Paizo art: none from books, pawn sets, Battle Cards or maps.
-- R1.3 Each PDF ends with a page saying it is a demo with placeholder text, and Paizo's Community Use notice.
+- R1.3 Each PDF ends with a page saying it is from the demo library and what it holds, then Paizo's Community Use
+  notice. Only the prose files (rulebook, adventure, scenario) say their text is lorem ipsum; the monster pawns,
+  tokens and Battle Cards say their art was drawn for the demo under real creatures' names, the maps that they
+  were drawn for the demo, and the hero pawns that the Iconics come from Paizo's Community Use Package.
 - R1.4 The same input writes the same files, so regenerating them changes nothing unless the tool changed.
 - R1.5 Without the Community Use Package folder (on CI, in tests) the tool draws stand-ins for its art.
 
@@ -22,7 +25,9 @@ how they work together. This library writes the PDFs and covers the demo serves.
 - R2.4 **A Battle Cards deck**: monsters' art sides and stat sides.
 - R2.5 **Two battle maps**, a forest and a starship deck, drawn on a regular one-inch grid.
 - R2.6 **An adventure and a society scenario**: headings, paragraphs, pictures (Iconics), a creature's stat block
-  and a handout.
+  and a handout. The adventure's handout is a torn-off piece of the forest map with a trail to an X, not an Iconic.
+- R2.8 The monsters (pawns, tokens, Battle Cards) are twelve, and include Aapoph Serpentfolk, which is near the top
+  of Field Guide's Bestiary list, so a reviewer sees demo art on its first screen.
 - R2.7 **A rulebook** with chapters, a picture and a page of deities' religious symbols.
 
 ## R3 Working with the apps

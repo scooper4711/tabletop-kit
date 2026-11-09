@@ -24,10 +24,10 @@ enum DemoBooks {
             { context in
                 var page = ProsePage(context: context)
                 page.heading("Handout: The Map Fragment")
-                page.picture(art.iconic(1).image, height: 360)
+                if let fragment = DemoMaps.fragment() { page.picture(fragment, height: 360) }
                 page.paragraph(seed: 5)
             },
-            DemoNotice.draw
+            DemoNotice.page(.placeholderProse)
         ])
     }
 
@@ -48,7 +48,7 @@ enum DemoBooks {
                                entries: skeletonEntries)
                 page.picture(art.iconic(2).image, height: 220)
             },
-            DemoNotice.draw
+            DemoNotice.page(.placeholderProse)
         ])
     }
 
@@ -67,7 +67,7 @@ enum DemoBooks {
                 page.paragraph(seed: 23)
                 for symbol in art.symbols.prefix(3) { page.picture(symbol, height: 110) }
             },
-            DemoNotice.draw
+            DemoNotice.page(.placeholderProse)
         ])
     }
 
