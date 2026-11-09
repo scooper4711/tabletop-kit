@@ -11,13 +11,12 @@ how they work together. This library writes the PDFs and covers the demo serves.
   (the Iconics, religious and faction symbols), which the Community Use Policy allows in a free app. No other
   Paizo art: none from books, pawn sets, Battle Cards or maps.
 - R1.3 Each PDF ends with a page saying it is a demo with placeholder text, and Paizo's Community Use notice.
-  Pawns carry "© 2026 Tableside Toolkit demo" where Paizo's carry their copyright: nothing claims to be Paizo's.
 - R1.4 The same input writes the same files, so regenerating them changes nothing unless the tool changed.
 - R1.5 Without the Community Use Package folder (on CI, in tests) the tool draws stand-ins for its art.
 
 ## R2 The products
-- R2.1 **A pawn collection** of monsters: outlined pawns, each with its name printed inside, front and mirrored
-  back, as Paizo's pawn boxes print them.
+- R2.1 **A pawn collection** of monsters: outlined pawns at Paizo's outline sizes for their size traits, each with
+  its name printed inside, front and mirrored back, as Paizo's pawn boxes print them.
 - R2.2 **A hero pawn collection**: the Iconics as pawns printed without outlines, named along their feet.
 - R2.3 **A token set**: round creature tokens with their names.
 - R2.4 **A Battle Cards deck**: monsters' art sides and stat sides.

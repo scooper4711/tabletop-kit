@@ -4,10 +4,10 @@
   `swift run DemoLibraryTool <output folder> [--art <community-use-artwork folder>]`. Scrollkeeper's
   `make demo-pdfs` runs it from a checkout beside Scrollkeeper and commits the output.
 - **Formats.** Tokens and cards are drawn with `ArtExtractionTestSupport`'s `DrawnToken` and `DrawnCard`, the
-  writers the extraction's tests use; pawns with `DemoPawn` and `DemoFigurePawn`, which print the demo's fine
-  print (`demoCopyright`) instead of Paizo's copyright. What the art import needs, found by `DemoLibraryTests`:
-  a "©" line beside each pawn's label (the import takes it as the sign of a pawn), card names in capitals as
-  Battle Cards print them, and the art and stat sides in pairs. Card pages are built from plain closures: mixing
+  writers the extraction's tests use; pawns with `DemoPawn` (at `PawnSize`'s outline for the monster's size
+  trait, so they are read by their outlines) and `DemoFigurePawn`, neither with a copyright line, which no pawn
+  needs. What the art import needs, found by `DemoLibraryTests`: outlines at Paizo's sizes (larger ones were read
+  only as figures), card names in capitals as Battle Cards print them, and the art and stat sides in pairs. Card pages are built from plain closures: mixing
   `DrawnCard`'s `@Sendable` methods into the page list fails at run time.
 - **Art.** `DemoArt` loads the Iconics (`Community Use Package- Iconics/*.png`, transparent) and the religious and
   faction symbols from `--art`; without it, `creatureArt(variant:)` and drawn shapes stand in. Pictures are

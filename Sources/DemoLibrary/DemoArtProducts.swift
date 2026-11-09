@@ -1,6 +1,7 @@
 import ArtExtraction
 import ArtExtractionTestSupport
 import CoreGraphics
+import CoreText
 import Foundation
 
 /// The pawn, token and Battle Cards products, drawn as Paizo prints them so the toolkit's art import reads them.
@@ -15,6 +16,12 @@ enum DemoArtProducts {
             self.name = name
             self.level = level
             self.traits = traits
+        }
+
+        /// The pawn size its size trait calls for, whose outline Paizo prints.
+        var size: PawnSize {
+            if traits.contains("SMALL") { return .small }
+            return traits.contains("LARGE") ? .large : .medium
         }
     }
 
@@ -36,8 +43,8 @@ enum DemoArtProducts {
     /// Outlined monster pawns, four columns of three, each with its name inside; front then mirrored back.
     static func pawnCollection() -> Data {
         let pawns = monsters.enumerated().map { index, monster in
-            DemoPawn(rect: CGRect(x: 60 + CGFloat(index % 4) * 130, y: 460 - CGFloat(index / 4) * 200,
-                                  width: 90, height: 170),
+            DemoPawn(rect: CGRect(origin: CGPoint(x: 30 + CGFloat(index % 4) * 145, y: 520 - CGFloat(index / 4) * 230),
+                                  size: monster.size.outlineSize),
                      art: creatureArt(variant: index, scale: 4), name: monster.name)
         }
         return makePDF(pages: [{ context in pawns.forEach { $0.draw(context) } },
@@ -82,11 +89,7 @@ enum DemoArtProducts {
     }
 }
 
-/// The fine print under a demo pawn's name. Paizo's pawns carry their copyright there, and the art import takes a
-/// "©" line beside a label as the sign of a pawn; this one claims nothing for Paizo.
-let demoCopyright = "© 2026 TABLESIDE TOOLKIT DEMO"
-
-/// An outlined pawn with its name inside, as Paizo's pawn boxes print them, with the demo's fine print.
+/// An outlined pawn with its name inside, at one of Paizo's outline sizes, as Paizo's pawn boxes print them.
 struct DemoPawn {
     var rect: CGRect
     var art: CGImage
@@ -102,13 +105,22 @@ struct DemoPawn {
     func draw(_ context: CGContext) {
         context.draw(art, in: rect.insetBy(dx: 4, dy: 20))
         strokeOutline(context, rect, head: head)
-        drawText(context, name, at: CGPoint(x: rect.minX + 6, y: rect.minY + 10), size: 8)
-        drawText(context, demoCopyright, at: CGPoint(x: rect.minX + 6, y: rect.minY + 4), size: 4)
+        drawText(context, name, at: CGPoint(x: rect.minX + 6, y: rect.minY + 10),
+                 size: Self.fittedSize(of: name, within: rect.width - 12))
+    }
+
+    /// 8 points, or smaller when the name would run past the outline, as Paizo sets long names on small pawns.
+    static func fittedSize(of name: String, within width: CGFloat) -> CGFloat {
+        let font = CTFontCreateWithName("Helvetica-Bold" as CFString, 8, nil)
+        let line = CTLineCreateWithAttributedString(
+            NSAttributedString(string: name, attributes: [.init(kCTFontAttributeName as String): font]))
+        let natural = CGFloat(CTLineGetTypographicBounds(line, nil, nil, nil))
+        return natural > width ? 8 * width / natural : 8
     }
 }
 
-/// A pawn printed without an outline, as Monster Core Pawn Box prints them: a transparent picture with its name and
-/// the demo's fine print along its foot.
+/// A pawn printed without an outline, as Monster Core Pawn Box prints them: a transparent picture with its name
+/// along its foot.
 struct DemoFigurePawn {
     var rect: CGRect
     var art: CGImage
@@ -123,6 +135,5 @@ struct DemoFigurePawn {
     func draw(_ context: CGContext) {
         context.draw(art, in: rect)
         drawText(context, name, at: CGPoint(x: rect.minX + 4, y: rect.minY - 9), size: 8)
-        drawText(context, demoCopyright, at: CGPoint(x: rect.minX + 4, y: rect.minY - 15), size: 4)
     }
 }

@@ -76,6 +76,17 @@ import Testing
         }
     }
 
+    @Test func theMonsterPawnsAreReadByTheirOutlines() throws {
+        let copy = folder.appendingPathComponent("Sample Bestiary Pawn Collection.pdf")
+        try FileManager.default.copyItem(at: written.appendingPathComponent(DemoLibrary.File.pawnCollection.rawValue),
+                                         to: copy)
+        let pawns = try PawnExtractor.extract(from: copy).pawns
+        #expect(pawns.count == DemoArtProducts.monsters.count)
+        #expect(pawns.allSatisfy { !$0.name.contains("©") })
+        let sizes = Dictionary(uniqueKeysWithValues: pawns.map { ($0.name, $0.size) })
+        #expect(sizes["Owlbear"] == .large && sizes["Goblin Warrior"] == .small && sizes["Wolf"] == .medium)
+    }
+
     @Test func theArtImportNamesTheHeroes() throws {
         let library = try ArtLibrary(folder: folder.appendingPathComponent("Library-heroes"))
         let copy = folder.appendingPathComponent("Sample Iconic Heroes Pawn Collection.pdf")
