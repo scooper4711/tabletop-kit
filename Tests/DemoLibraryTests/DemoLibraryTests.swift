@@ -46,6 +46,16 @@ import Testing
         }
     }
 
+    @Test func writingAgainGivesTheSameFiles() throws {
+        let again = folder.appendingPathComponent("again")
+        try DemoLibrary.write(to: again)
+        for file in DemoLibrary.File.allCases {
+            let first = try Data(contentsOf: written.appendingPathComponent(file.rawValue))
+            #expect(first == (try Data(contentsOf: again.appendingPathComponent(file.rawValue))), "\(file)")
+            #expect(PDFDocument(data: first) != nil, "\(file)")
+        }
+    }
+
     @Test func theArtImportFindsEveryArtProduct() throws {
         let found = ProductScanner.artPDFs(in: try downloads()).map(\.lastPathComponent)
         #expect(found == ["Sample Bestiary Battle Cards PDF.pdf", "Sample Bestiary Pawn Collection PDF.pdf",

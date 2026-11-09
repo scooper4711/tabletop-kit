@@ -21,8 +21,21 @@ public enum DemoLibrary {
         try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
         let art = DemoArt(communityUseFolder: communityUseFolder)
         for file in File.allCases {
-            try data(of: file, art: art).write(to: folder.appendingPathComponent(file.rawValue))
+            try stable(data(of: file, art: art)).write(to: folder.appendingPathComponent(file.rawValue))
         }
+    }
+
+    /// The PDF with the dates and the document ID Quartz writes into it replaced by constants of the same length,
+    /// so the byte offsets stay right and writing again gives the same file (R1.4).
+    static func stable(_ pdf: Data) -> Data {
+        guard var text = String(data: pdf, encoding: .isoLatin1) else { return pdf }
+        text = text.replacingOccurrences(of: #"\(D:\d{14}Z00'00'\)"#, with: "(D:20260101000000Z00'00')",
+                                         options: .regularExpression)
+        text = text.replacingOccurrences(of: #"/ID \[ <[0-9a-f]{32}>\s<[0-9a-f]{32}> \]"#,
+                                         with: "/ID [ <\(String(repeating: "0", count: 32))>\n"
+                                             + "<\(String(repeating: "0", count: 32))> ]",
+                                         options: .regularExpression)
+        return text.data(using: .isoLatin1) ?? pdf
     }
 
     static func data(of file: File, art: DemoArt) -> Data {
