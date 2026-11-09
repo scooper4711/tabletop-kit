@@ -1,4 +1,4 @@
-.PHONY: build build-ios test lint coverage clean
+.PHONY: build build-ios test test-scripts lint coverage clean
 
 build:
 	swift build
@@ -19,3 +19,7 @@ coverage:
 
 clean:
 	rm -rf .build coverage
+
+# Checks the Mac App Store packaging script on a generated trial app.
+test-scripts:
+	scripts/test-package-appstore.sh
