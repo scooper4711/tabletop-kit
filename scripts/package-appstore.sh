@@ -4,7 +4,8 @@
 #
 # Usage: package-appstore.sh <app> <entitlements> <bundle-id>
 #   <app>           the built bundle, such as build/Pluck.app (left untouched; a copy is packaged)
-#   <entitlements>  the app's entitlements with the team ID already filled in
+#   <entitlements>  the entitlements for this channel with the team ID already filled in; an app whose App Store
+#                   build needs fewer or more than its disk image (no Downloads folder, iCloud) passes its own file
 #   <bundle-id>     for the application identifier entitlement
 #
 # BUILD_NUMBER           must increase with every upload (required)
@@ -40,11 +41,19 @@ rm -rf "$OUT"
 mkdir -p "$WORK"
 ditto "$APP_SOURCE" "$APP"
 RESOURCES="$APP/Contents/Resources"
+INFO_PLIST="$APP/Contents/Info.plist"
+
+# The asset catalog is compiled for the system the app itself says it needs.
+deployment_target() {
+    /usr/libexec/PlistBuddy -c "Print :LSMinimumSystemVersion" "$INFO_PLIST" 2>/dev/null \
+        || fail "$INFO_PLIST has no LSMinimumSystemVersion"
+}
 
 compile_icon() {
     local icns="$RESOURCES/AppIcon.icns"
     [[ -f "$icns" ]] || fail "$icns is missing"
-    local catalog="$WORK/Icons.xcassets"
+    local catalog="$WORK/Icons.xcassets" target
+    target="$(deployment_target)"
     local iconset="$catalog/AppIcon.appiconset"
     mkdir -p "$catalog"
     iconutil -c iconset "$icns" -o "$WORK/AppIcon.iconset"
@@ -52,10 +61,27 @@ compile_icon() {
     cp "$WORK"/AppIcon.iconset/*.png "$iconset/"
     write_icon_catalog "$iconset"
     echo '{"info":{"version":1,"author":"xcode"}}' > "$catalog/Contents.json"
-    xcrun actool "$catalog" --compile "$RESOURCES" --platform macosx --minimum-deployment-target 15.0 \
-        --app-icon AppIcon --output-partial-info-plist "$WORK/partial.plist" >"$WORK/actool.log" 2>&1 || true
+    echo "actool --minimum-deployment-target $target" >"$WORK/actool.log"
+    xcrun actool "$catalog" --compile "$RESOURCES" --platform macosx --minimum-deployment-target "$target" \
+        --app-icon AppIcon --output-partial-info-plist "$WORK/partial.plist" >>"$WORK/actool.log" 2>&1 || true
     # actool exits 0 when it fails, so look for what it should have written.
     [[ -f "$RESOURCES/Assets.car" ]] || { cat "$WORK/actool.log" >&2; fail "actool didn't compile the icon"; }
+    name_icon
+}
+
+# App Store Connect wants CFBundleIconName (ITMS-90236), which actool reports in its partial Info.plist.
+name_icon() {
+    local name
+    name="$(/usr/libexec/PlistBuddy -c "Print :CFBundleIconName" "$WORK/partial.plist" 2>/dev/null)" \
+        || fail "actool didn't name the icon in $WORK/partial.plist"
+    set_plist_key CFBundleIconName string "$name"
+}
+
+# Usage: set_plist_key <key> <type> <value> [plist]; replaces the key when it is already there.
+set_plist_key() {
+    local plist="${4:-$INFO_PLIST}"
+    /usr/libexec/PlistBuddy -c "Delete :$1" "$plist" 2>/dev/null || true
+    /usr/libexec/PlistBuddy -c "Add :$1 $2 $3" "$plist"
 }
 
 # Lists the iconutil sizes (icon_16x16.png, icon_16x16@2x.png, …) the way an appiconset's Contents.json wants them.
@@ -71,16 +97,16 @@ write_icon_catalog() {
 }
 
 set_plist_keys() {
-    /usr/libexec/PlistBuddy -c "Set :CFBundleVersion $BUILD_NUMBER" "$APP/Contents/Info.plist"
-    /usr/libexec/PlistBuddy -c "Delete :ITSAppUsesNonExemptEncryption" "$APP/Contents/Info.plist" 2>/dev/null || true
-    /usr/libexec/PlistBuddy -c "Add :ITSAppUsesNonExemptEncryption bool false" "$APP/Contents/Info.plist"
+    set_plist_key CFBundleVersion string "$BUILD_NUMBER"
+    set_plist_key ITSAppUsesNonExemptEncryption bool false
 }
 
 write_entitlements() {
     local file="$WORK/signing.entitlements"
     cp "$ENTITLEMENTS_SOURCE" "$file"
-    /usr/libexec/PlistBuddy -c "Add :com.apple.application-identifier string $TEAM_ID.$BUNDLE_ID" "$file"
-    /usr/libexec/PlistBuddy -c "Add :com.apple.developer.team-identifier string $TEAM_ID" "$file"
+    # Replaced rather than added: entitlements that already carry iCloud name both identifiers themselves.
+    set_plist_key com.apple.application-identifier string "$TEAM_ID.$BUNDLE_ID" "$file"
+    set_plist_key com.apple.developer.team-identifier string "$TEAM_ID" "$file"
     echo "$file"
 }
 
@@ -89,7 +115,9 @@ sign_and_package() {
     name="$(basename "$APP" .app)"
     pkg="$OUT/$name.pkg"
     if [[ "$TRIAL" == "1" ]]; then
-        # An ad hoc signature can't carry the application identifier, which only a profile can approve.
+        # An ad hoc signature can't carry the application identifier, which only a profile can approve; a
+        # profile the disk image build embedded would not match it either.
+        rm -f "$APP/Contents/embedded.provisionprofile"
         codesign --force --sign - "$APP"
         productbuild --component "$APP" /Applications "$pkg" >&2
     else
