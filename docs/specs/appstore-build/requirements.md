@@ -23,6 +23,6 @@ live here once, as scripts the apps call from their SwiftPM checkout of tabletop
   ad hoc signed, unsigned-installer package that checks everything else, and can't be uploaded.
 
 ## R3 Upload
-- R3.1 `UPLOAD=1` validates the package and uploads it to App Store Connect with `xcrun altool`, using an App Store
+- R3.1 `VALIDATE=1` only validates the package with App Store Connect. `UPLOAD=1` validates the package and uploads it to App Store Connect with `xcrun altool`, using an App Store
   Connect API key from the environment (`ASC_KEY_ID`, `ASC_ISSUER_ID`, `ASC_KEY_FILE`).
 - R3.2 Certificates and keys come from the environment or repository secrets, never from the repository.

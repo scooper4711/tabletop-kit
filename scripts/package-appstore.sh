@@ -14,7 +14,8 @@
 # APP_SIGNING_IDENTITY   "Apple Distribution: …" (or its hash)
 # INSTALLER_IDENTITY     "3rd Party Mac Developer Installer: …" (or "Mac Installer Distribution: …")
 # TRIAL=1                sign ad hoc and leave the package unsigned, to check the rest; it can't be uploaded
-# UPLOAD=1               validate and upload with ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_FILE
+# VALIDATE=1             validate with App Store Connect (ASC_KEY_ID, ASC_ISSUER_ID and ASC_KEY_FILE), not upload
+# UPLOAD=1               validate, then upload, with the same key
 set -euo pipefail
 
 APP_SOURCE="${1:?app bundle}"
@@ -31,7 +32,9 @@ if [[ "$TRIAL" != "1" ]]; then
     : "${APP_SIGNING_IDENTITY:?APP_SIGNING_IDENTITY is the Apple Distribution identity}"
     : "${INSTALLER_IDENTITY:?INSTALLER_IDENTITY is the Mac Installer Distribution identity}"
 fi
-[[ "${UPLOAD:-0}" != "1" || "$TRIAL" != "1" ]] || fail "a trial package can't be uploaded"
+UPLOAD="${UPLOAD:-0}"
+VALIDATE="${VALIDATE:-$UPLOAD}"
+[[ "$VALIDATE" != "1" || "$TRIAL" != "1" ]] || fail "a trial package can't be validated or uploaded"
 
 # Absolute: actool resolves relative paths against a directory of its own, not the current one.
 OUT="$(cd "$(dirname "$APP_SOURCE")" && pwd)/appstore"
@@ -128,19 +131,21 @@ sign_and_package() {
     echo "$pkg"
 }
 
-upload() {
+# Usage: send_to_app_store <--validate-app|--upload-package> <pkg>
+send_to_app_store() {
     : "${ASC_KEY_ID:?}" "${ASC_ISSUER_ID:?}" "${ASC_KEY_FILE:?}"
-    # altool looks for AuthKey_<id>.p8 in ./private_keys among other places.
+    # altool looks for AuthKey_<id>.p8 in API_PRIVATE_KEYS_DIR.
     mkdir -p "$WORK/private_keys"
+    # The copy is only for altool: removed however the script ends.
+    trap 'rm -rf "$WORK/private_keys"' EXIT
     cp "$ASC_KEY_FILE" "$WORK/private_keys/AuthKey_$ASC_KEY_ID.p8"
-    (cd "$WORK" && API_PRIVATE_KEYS_DIR="$WORK/private_keys" \
-        xcrun altool --validate-app -f "$1" -t macos --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID" \
-        && API_PRIVATE_KEYS_DIR="$WORK/private_keys" \
-        xcrun altool --upload-package "$1" -t macos --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID")
+    API_PRIVATE_KEYS_DIR="$WORK/private_keys" \
+        xcrun altool "$1" -f "$2" -t macos --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
 }
 
 compile_icon
 set_plist_keys
 PKG="$(sign_and_package "$(write_entitlements)")"
 echo "Packaged $PKG (build $BUILD_NUMBER)"
-[[ "${UPLOAD:-0}" != "1" ]] || upload "$PKG"
+[[ "$VALIDATE" != "1" ]] || send_to_app_store --validate-app "$PKG"
+[[ "$UPLOAD" != "1" ]] || send_to_app_store --upload-package "$PKG"

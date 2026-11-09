@@ -17,7 +17,8 @@ script follows the dependency pin.
    must allow everything in it.
 6. `codesign` with `APP_SIGNING_IDENTITY`, then `productbuild --component <app> /Applications --sign
    INSTALLER_IDENTITY` to `build/appstore/<name>.pkg`.
-7. With `UPLOAD=1`, `xcrun altool --validate-app` then `--upload-package` with the API key.
+7. With `VALIDATE=1`, `xcrun altool --validate-app` with the API key; `UPLOAD=1` validates, then `--upload-package`.
+   The key is copied into the work folder for altool and removed afterwards.
 
 `TRIAL=1` signs ad hoc, removes any profile the disk image build embedded, skips the installer signature, and so exercises 1-3 and 5 on any Mac,
 including CI. `scripts/test-package-appstore.sh` runs a trial package of a tiny generated app and checks `Assets.car`,

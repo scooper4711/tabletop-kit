@@ -44,5 +44,6 @@ check "source app is untouched"     '[[ "$(/usr/libexec/PlistBuddy -c "Print :CF
 check "package exists"              '[[ -f "$OUT/Demo.pkg" ]]'
 check "upload of a trial refused"   '! TRIAL=1 UPLOAD=1 BUILD_NUMBER=1 TEAM_ID=X scripts/package-appstore.sh "$APP" "$DIR/app.entitlements" a.b 2>/dev/null'
 /usr/libexec/PlistBuddy -c "Delete :LSMinimumSystemVersion" "$APP/Contents/Info.plist"
+check "validating a trial refused" '! TRIAL=1 VALIDATE=1 BUILD_NUMBER=1 TEAM_ID=X scripts/package-appstore.sh "$APP" "$DIR/app.entitlements" a.b 2>/dev/null'
 check "missing system version refused" '! TRIAL=1 BUILD_NUMBER=1 TEAM_ID=X scripts/package-appstore.sh "$APP" "$DIR/app.entitlements" a.b 2>/dev/null'
 echo "package-appstore: all checks passed"
