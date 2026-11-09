@@ -44,7 +44,9 @@ Measured across 61 Pathfinder and Starfinder pawn PDFs:
 - Some products print pawns without cut outlines: the second half of Monster Core Pawn Box (large pawns, sideways,
   three by five to a page) and all of Dawn of Flame (mediums upright, smaller and larger ones sideways). Each pawn
   is a picture with a soft mask, about 10 pt of bleed larger than its outline (a medium's is about 100 × 146 pt),
-  with the name and copyright printed along its foot, inside the picture's edge or just outside it. Labels are
+  with the name and copyright printed along its foot, inside the picture's edge or just outside it. A picture
+  counts as a pawn by its transparency, its size (from 36 pt to a gargantuan outline's 360 pt, which keeps
+  covers' art out) and a label beside it; a copyright line is not needed, and is left out of the name. Labels are
   drawn twice (a fill and an outline), the copies sometimes split into different pieces, and words are broken
   where the type is kerned ("PITB", "ORN ADEPT"). Back pages draw the same image objects mirrored.
 - Not yet handled: pages that are only a raster image (the second half of NPC Core), and terrain sets with
