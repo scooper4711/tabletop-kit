@@ -11,6 +11,7 @@ how they work together. This library writes the PDFs and covers the demo serves.
   (the Iconics, religious and faction symbols), which the Community Use Policy allows in a free app. No other
   Paizo art: none from books, pawn sets, Battle Cards or maps.
 - R1.3 Each PDF ends with a page saying it is a demo with placeholder text, and Paizo's Community Use notice.
+  Pawns carry "© 2026 Tableside Toolkit demo" where Paizo's carry their copyright: nothing claims to be Paizo's.
 - R1.4 The same input writes the same files, so regenerating them changes nothing unless the tool changed.
 - R1.5 Without the Community Use Package folder (on CI, in tests) the tool draws stand-ins for its art.
 
@@ -24,7 +25,6 @@ how they work together. This library writes the PDFs and covers the demo serves.
 - R2.6 **An adventure and a society scenario**: headings, paragraphs, pictures (Iconics), a creature's stat block
   and a handout.
 - R2.7 **A rulebook** with chapters, a picture and a page of deities' religious symbols.
-- R2.8 **A cover** for each demo title.
 
 ## R3 Working with the apps
 - R3.1 Pawn Shop's, Turnkeeper's and Field Guide's art import (`ProductScanner`, the pawn, token and card

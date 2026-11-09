@@ -3,9 +3,12 @@
 - **Targets.** `DemoLibrary`, a library, writes everything; `DemoLibraryTool`, an executable,
   `swift run DemoLibraryTool <output folder> [--art <community-use-artwork folder>]`. Scrollkeeper's
   `make demo-pdfs` runs it from a checkout beside Scrollkeeper and commits the output.
-- **Formats.** The pawn, token and card pages are drawn with `ArtExtractionTestSupport`'s writers (`pawnPDF`,
-  `figurePawnPDF`, `tokenPDF`, `cardDeckPDF`), the same ones the extraction's tests are written against, so a
-  change to either is caught by `DemoLibraryTests`.
+- **Formats.** Tokens and cards are drawn with `ArtExtractionTestSupport`'s `DrawnToken` and `DrawnCard`, the
+  writers the extraction's tests use; pawns with `DemoPawn` and `DemoFigurePawn`, which print the demo's fine
+  print (`demoCopyright`) instead of Paizo's copyright. What the art import needs, found by `DemoLibraryTests`:
+  a "©" line beside each pawn's label (the import takes it as the sign of a pawn), card names in capitals as
+  Battle Cards print them, and the art and stat sides in pairs. Card pages are built from plain closures: mixing
+  `DrawnCard`'s `@Sendable` methods into the page list fails at run time.
 - **Art.** `DemoArt` loads the Iconics (`Community Use Package- Iconics/*.png`, transparent) and the religious and
   faction symbols from `--art`; without it, `creatureArt(variant:)` and drawn shapes stand in. Pictures are
   scaled down so the files stay small.
@@ -13,9 +16,12 @@
   pictures, and a stat block laid out as Paizo's are (name and level line, traits, then labeled lines).
 - **Maps.** A drawn image of 8 × 10 one-inch squares at 150 pixels an inch, with dark grid lines, embedded as one
   picture per page, as map packs print them.
-- **Covers.** A JPEG per demo title: its name over a color band, with an Iconic or symbol where one fits.
 - **File names.** As Scrollkeeper's demo editions name them (`DemoLibrary.files`), so its catalog and this tool
   agree.
-- **Tests.** Write into a temporary folder without `--art`; check `ProductScanner` lists the art products, the
-  pawn, token and card extraction find every one by name, the maps' pages hold a single large picture, and every
-  PDF ends with the notice.
+- **Covers** are not written here: Scrollkeeper's demo draws a cover for each title when asked, so this tool
+  needn't know its catalog.
+- **Tests.** Write into a temporary folder without `--art`; check `ProductScanner` lists the art products under
+  the names Scrollkeeper gives them, `ArtLibrary` imports every monster from the pawns, tokens and cards and every
+  hero, and every PDF ends with the notice. Checked once by hand with the Community Use art (2026-11-09): the
+  heroes import with the Iconics; Mapsmith finds each map and a grid of 150 pixels a square at 150 dpi; Pluck
+  finds the Goblin Warrior and Skeleton Guard stat blocks and every picture.
