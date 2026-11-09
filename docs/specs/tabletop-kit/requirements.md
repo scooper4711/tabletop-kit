@@ -114,6 +114,13 @@ share. It contains no Paizo art or text.
 - R5.6 The apps share one view that loads a creature's art at full size from a loader they supply, so a card
   back's art is drawn the same way in each.
 
+## R6a Empty window (`AppNotices`)
+- R6a.1 A newly opened window of Pluck and Mapsmith, before a file is open, shows the same view: a title, the
+  app's symbol, one line saying what the app does with the file and that it can be dropped, and the buttons Open…
+  and Open from Scrollkeeper…, in that order, side by side.
+- R6a.2 The window is outlined while a file is dragged over it.
+- R6a.3 The buttons carry no shortcuts: the File menu's Open… (⌘O) and Open from Scrollkeeper… (⇧⌘O) have them.
+
 ## R6 About screen (`AppNotices`)
 - R6.1 Each app shows an About screen with the notice Paizo's Community Use Policy prescribes, word for word with
   only the app's name filled in, and the Paizo Compatibility License's line "Pathfinder and Starfinder are
