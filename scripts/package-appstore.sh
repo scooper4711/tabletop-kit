@@ -32,7 +32,8 @@ if [[ "$TRIAL" != "1" ]]; then
 fi
 [[ "${UPLOAD:-0}" != "1" || "$TRIAL" != "1" ]] || fail "a trial package can't be uploaded"
 
-OUT="$(dirname "$APP_SOURCE")/appstore"
+# Absolute: actool resolves relative paths against a directory of its own, not the current one.
+OUT="$(cd "$(dirname "$APP_SOURCE")" && pwd)/appstore"
 APP="$OUT/$(basename "$APP_SOURCE")"
 WORK="$OUT/work"
 rm -rf "$OUT"
@@ -52,7 +53,9 @@ compile_icon() {
     write_icon_catalog "$iconset"
     echo '{"info":{"version":1,"author":"xcode"}}' > "$catalog/Contents.json"
     xcrun actool "$catalog" --compile "$RESOURCES" --platform macosx --minimum-deployment-target 15.0 \
-        --app-icon AppIcon --output-partial-info-plist "$WORK/partial.plist" >/dev/null
+        --app-icon AppIcon --output-partial-info-plist "$WORK/partial.plist" >"$WORK/actool.log" 2>&1 || true
+    # actool exits 0 when it fails, so look for what it should have written.
+    [[ -f "$RESOURCES/Assets.car" ]] || { cat "$WORK/actool.log" >&2; fail "actool didn't compile the icon"; }
 }
 
 # Lists the iconutil sizes (icon_16x16.png, icon_16x16@2x.png, …) the way an appiconset's Contents.json wants them.
