@@ -2,10 +2,14 @@ import CoreGraphics
 import Foundation
 
 /// Pawns printed without cut outlines (the second half of Monster Core Pawn Box, Dawn of Flame): each picture with
-/// its own transparency that has a label with Paizo's copyright beside it is a pawn, and the label marks its foot.
+/// its own transparency, no larger than a pawn, that has a label beside it is a pawn, and the label marks its foot.
+/// A copyright line is not needed: nothing about a pawn requires one, and it is left out of the name.
 enum FigurePawns {
     /// Smaller pictures are badges and icons, not pawns.
     static let smallestFigure: CGFloat = 36
+    /// Larger pictures are covers' and pages' art, not pawns: the longest pawn outline, a gargantuan's, with room
+    /// for its tolerance.
+    static let largestFigure = PawnSize.gargantuan.outlineSize.height + PawnSize.tolerance
     /// How far outside its picture a pawn's label may be printed.
     static let labelReach: CGFloat = 18
 
@@ -38,7 +42,7 @@ enum FigurePawns {
             labels[index, default: []].append(glyph)
         }
         return candidates.compactMap { index -> Found? in
-            guard let glyphs = labels[index], glyphs.contains(where: isCopyright) else { return nil }
+            guard let glyphs = labels[index] else { return nil }
             let rect = page.images[index].rect
             return Found(imageIndex: index, image: page.images[index],
                          headEdge: footEdge(of: rect, glyphs: glyphs).opposite, label: LabelLines.runs(of: glyphs))
@@ -53,13 +57,10 @@ enum FigurePawns {
     }
 
     private static func isCandidate(_ image: ImagePlacement) -> Bool {
-        guard let stream = image.stream, min(image.rect.width, image.rect.height) >= smallestFigure
+        guard let stream = image.stream, min(image.rect.width, image.rect.height) >= smallestFigure,
+              max(image.rect.width, image.rect.height) <= largestFigure
         else { return false }
         return EmbeddedImage.hasSoftMask(stream)
-    }
-
-    private static func isCopyright(_ glyph: TextGlyph) -> Bool {
-        glyph.text.contains("©") || glyph.text.localizedCaseInsensitiveContains("paizo")
     }
 
     /// The picture a piece of text belongs to: the one it is printed inside, nearest that picture's edge, or else

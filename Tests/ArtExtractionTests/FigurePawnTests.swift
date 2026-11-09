@@ -52,7 +52,19 @@ import ArtExtractionTestSupport
         #expect(result.pawns.allSatisfy { $0.copies == 1 && $0.front.pageIndex == 0 })
     }
 
-    @Test func ignoresPicturesWithoutPaizosCopyright() throws {
+    @Test func readsPawnsWithoutACopyrightLine() throws {
+        let pawn = DrawnFigurePawn(rect: CGRect(x: 20, y: 600, width: 100, height: 146), art: goblin,
+                                   name: "GOBLIN WARRIOR", copyright: false)
+        #expect(try extract(figurePawnPDF(pages: [[pawn]])).pawns.map(\.name) == ["Goblin Warrior"])
+    }
+
+    @Test func leavesTheCopyrightOutOfTheName() throws {
+        let pawn = DrawnFigurePawn(rect: CGRect(x: 20, y: 600, width: 100, height: 146), art: goblin,
+                                   name: "GOBLIN WARRIOR © 2026 PAIZO INC.", copyright: false)
+        #expect(try extract(figurePawnPDF(pages: [[pawn]])).pawns.map(\.name) == ["Goblin Warrior"])
+    }
+
+    @Test func ignoresACoversArt() throws {
         let cover = DrawnFigurePawn(rect: CGRect(x: 100, y: 300, width: 300, height: 400), art: ogre,
                                     name: "PATHFINDER PAWNS", copyright: false)
         #expect(try extract(figurePawnPDF(pages: [[cover]])).pawns.isEmpty)
