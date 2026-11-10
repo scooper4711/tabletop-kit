@@ -46,6 +46,16 @@ import Testing
         }
     }
 
+    /// Each map is a page the size of a Flip-Mat, 24 by 30 inches, then the letter-size notice.
+    @Test func theMapsAreFlipMatSize() throws {
+        for file in [DemoLibrary.File.forestMap, .starshipMap] {
+            let document = try #require(PDFDocument(url: written.appendingPathComponent(file.rawValue)), "\(file)")
+            #expect(document.page(at: 0)?.bounds(for: .mediaBox).size == CGSize(width: 24 * 72, height: 30 * 72),
+                    "\(file)")
+            #expect(document.page(at: 1)?.bounds(for: .mediaBox).size == CGSize(width: 612, height: 792), "\(file)")
+        }
+    }
+
     @Test func writingAgainGivesTheSameFiles() throws {
         let again = folder.appendingPathComponent("again")
         try DemoLibrary.write(to: again)
