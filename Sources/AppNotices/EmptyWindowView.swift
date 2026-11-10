@@ -41,6 +41,9 @@ public struct EmptyWindowView: View {
                 Button("Open…", action: open)
                 Button("Open from Scrollkeeper…", action: openFromScrollkeeper)
             }
+            // ContentUnavailableView narrows its actions to equal widths on macOS, which truncates the longer
+            // title; fixedSize lets each button take the width its title needs.
+            .fixedSize()
         }
         .overlay {
             if isDropTargeted {
