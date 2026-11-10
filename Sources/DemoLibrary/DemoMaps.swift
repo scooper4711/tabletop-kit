@@ -1,25 +1,24 @@
 import CoreGraphics
 import Foundation
 
-/// Battle maps drawn by the tool, on a regular one-inch grid Mapsmith detects: one picture per page, as map packs
-/// print them.
+/// Battle maps drawn by the tool at the size of Paizo's Flip-Mats, 24 by 30 inches, on a regular one-inch grid
+/// Mapsmith detects: one picture per page, the page the map's own size, as Flip-Mat PDFs print them.
 enum DemoMaps {
     /// Pixels in one inch of the map, and its squares across and down.
     private static let pixelsPerInch = 150
-    private static let squares = (across: 8, down: 10)
+    private static let squares = (across: 24, down: 30)
+    private static let inch = CGFloat(pixelsPerInch)
 
     static func forest() -> Data {
         map { context, size in
             context.setFillColor(CGColor(red: 0.42, green: 0.55, blue: 0.30, alpha: 1))
             context.fill(CGRect(origin: .zero, size: size))
             context.setFillColor(CGColor(red: 0.55, green: 0.45, blue: 0.30, alpha: 1))
-            context.fill(CGRect(x: size.width * 0.4, y: 0, width: size.width * 0.15, height: size.height))
+            let trail = CGRect(x: size.width * 0.4, y: 0, width: size.width * 0.15, height: size.height)
+            context.fill(trail)
             context.setFillColor(CGColor(red: 0.20, green: 0.35, blue: 0.18, alpha: 1))
-            for index in 0..<24 {
-                let treeX = CGFloat((index * 397) % Int(size.width))
-                let treeY = CGFloat((index * 613) % Int(size.height))
-                guard abs(treeX - size.width * 0.47) > size.width * 0.12 else { continue }
-                context.fillEllipse(in: CGRect(x: treeX, y: treeY, width: 140, height: 140))
+            for tree in trees(in: size) where !trail.insetBy(dx: -inch / 2, dy: 0).intersects(tree) {
+                context.fillEllipse(in: tree)
             }
         }
     }
@@ -29,15 +28,32 @@ enum DemoMaps {
             context.setFillColor(CGColor(gray: 0.62, alpha: 1))
             context.fill(CGRect(origin: .zero, size: size))
             context.setFillColor(CGColor(red: 0.30, green: 0.34, blue: 0.40, alpha: 1))
-            for row in stride(from: 0, to: Int(size.height), by: 450) {
-                context.fill(CGRect(x: 0, y: CGFloat(row), width: size.width, height: 40))
+            for row in stride(from: 0, to: size.height, by: 3 * inch) {
+                context.fill(CGRect(x: 0, y: row, width: size.width, height: 0.27 * inch))
             }
             context.setFillColor(CGColor(red: 0.85, green: 0.55, blue: 0.20, alpha: 1))
-            context.fill(CGRect(x: size.width * 0.3, y: size.height * 0.45, width: 300, height: 150))
+            for (column, row) in [(3, 4), (14, 4), (7, 13), (17, 16), (2, 22), (12, 25)] {
+                let corner = CGPoint(x: CGFloat(column) * inch, y: CGFloat(row) * inch)
+                context.fill(CGRect(origin: corner, size: CGSize(width: 4 * inch, height: 2 * inch)))
+            }
         }
     }
 
-    /// A page holding the drawn map, with dark grid lines every inch, and the notice after it.
+    /// About three trees in every ten square inches, each about an inch across, scattered evenly but always in the
+    /// same places (the R2 low-discrepancy sequence), so the map is the same every time it is written.
+    private static func trees(in size: CGSize) -> [CGRect] {
+        let count = squares.across * squares.down * 3 / 10
+        return (0..<count).map { index in
+            let position = Double(index) + 0.5
+            let across = (position * 0.754_877_666).truncatingRemainder(dividingBy: 1)
+            let down = (position * 0.569_840_291).truncatingRemainder(dividingBy: 1)
+            let diameter = inch * (0.8 + 0.1 * CGFloat(index % 5))
+            return CGRect(x: across * size.width - diameter / 2, y: down * size.height - diameter / 2,
+                          width: diameter, height: diameter)
+        }
+    }
+
+    /// A page the map's size holding the drawn map, with dark grid lines every inch, then the letter-size notice.
     private static func map(_ paint: (CGContext, CGSize) -> Void) -> Data {
         let size = CGSize(width: squares.across * pixelsPerInch, height: squares.down * pixelsPerInch)
         guard let context = CGContext(data: nil, width: Int(size.width), height: Int(size.height), bitsPerComponent: 8,
@@ -45,33 +61,48 @@ enum DemoMaps {
                                       bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue)
         else { return Data() }
         paint(context, size)
+        drawGrid(in: context, size: size)
+        guard let image = context.makeImage() else { return Data() }
+        let page = CGRect(x: 0, y: 0, width: squares.across * 72, height: squares.down * 72)
+        return makeDemoPDF(sizedPages: [DemoPage(size: page.size) { $0.draw(image, in: page) },
+                                        DemoPage(draw: DemoNotice.draw)])
+    }
+
+    private static func drawGrid(in context: CGContext, size: CGSize) {
         context.setStrokeColor(CGColor(gray: 0.1, alpha: 1))
         context.setLineWidth(3)
         for column in 0...squares.across {
-            context.strokeLineSegments(between: [CGPoint(x: column * pixelsPerInch, y: 0),
-                                                 CGPoint(x: CGFloat(column * pixelsPerInch), y: size.height)])
+            let left = CGFloat(column) * inch
+            context.strokeLineSegments(between: [CGPoint(x: left, y: 0), CGPoint(x: left, y: size.height)])
         }
         for row in 0...squares.down {
-            context.strokeLineSegments(between: [CGPoint(x: 0, y: row * pixelsPerInch),
-                                                 CGPoint(x: size.width, y: CGFloat(row * pixelsPerInch))])
+            let bottom = CGFloat(row) * inch
+            context.strokeLineSegments(between: [CGPoint(x: 0, y: bottom), CGPoint(x: size.width, y: bottom)])
         }
-        guard let image = context.makeImage() else { return Data() }
-        return makeDemoPDF(pages: [{ page in
-            page.draw(image, in: CGRect(x: 18, y: 36, width: CGFloat(squares.across * 72),
-                                        height: CGFloat(squares.down * 72)))
-        }, DemoNotice.draw])
     }
+}
+
+/// A page of a demo PDF: its size and what is drawn on it.
+struct DemoPage {
+    var size = ProsePage.size
+    var draw: (CGContext) -> Void
 }
 
 /// A letter-size PDF with one page per drawing closure.
 func makeDemoPDF(pages: [(CGContext) -> Void]) -> Data {
+    makeDemoPDF(sizedPages: pages.map { DemoPage(draw: $0) })
+}
+
+/// A PDF with one page per `DemoPage`, each its own size.
+func makeDemoPDF(sizedPages pages: [DemoPage]) -> Data {
     let data = NSMutableData()
-    var mediaBox = CGRect(origin: .zero, size: ProsePage.size)
     guard let consumer = CGDataConsumer(data: data as CFMutableData),
-          let context = CGContext(consumer: consumer, mediaBox: &mediaBox, nil) else { return Data() }
-    for draw in pages {
-        context.beginPDFPage(nil)
-        draw(context)
+          let context = CGContext(consumer: consumer, mediaBox: nil, nil) else { return Data() }
+    for page in pages {
+        var box = CGRect(origin: .zero, size: page.size)
+        let mediaBox = Data(bytes: &box, count: MemoryLayout<CGRect>.size) as CFData
+        context.beginPDFPage([kCGPDFContextMediaBox as String: mediaBox] as CFDictionary)
+        page.draw(context)
         context.endPDFPage()
     }
     context.closePDF()
