@@ -364,6 +364,12 @@ everything about campaigns and fights stay in Turnkeeper.
   dropped), bullets become "•", and a line of 72 characters or more is joined with the plain line after it, since
   files wrap paragraphs by hand.
 
+## Empty window (`AppNotices`)
+`EmptyWindowView` is a `ContentUnavailableView` with the title and symbol as its label, the message as its
+description and the two buttons in an `HStack`. The app passes the title, symbol, message, whether a drop is over the
+window, and the two actions; it keeps its own drop handling and only hands the highlight over. An outline in the
+accent color is overlaid while `isDropTargeted`.
+
 ## Test support (`ArtExtractionTestSupport`)
 The drawing helpers that Pawn Shop's tests had, made public so that both packages' tests use one copy:
 `makePDF`, `rawPDF`, `strokeOutline`, `drawText`, `artImage`, `DrawnPawn` and `writePawnPDF`, `DrawnToken` and
