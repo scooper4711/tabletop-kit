@@ -3,24 +3,31 @@ import AppKit
 import SwiftUI
 import Testing
 
+/// The buttons' actions aren't pressed here: SwiftUI builds no accessibility elements in a test host, so there is
+/// nothing to press without a UI test. What is drawn is checked instead.
 @MainActor
 struct EmptyWindowViewTests {
-    private func makeView(isDropTargeted: Bool = false) -> EmptyWindowView {
-        EmptyWindowView(title: "Open a PDF", symbol: "doc", message: "Drop a PDF here.",
-                        isDropTargeted: isDropTargeted, open: {}, openFromScrollkeeper: {})
+    /// The view drawn into a bitmap, as its bytes.
+    private func drawing(title: String = "Open a PDF", isDropTargeted: Bool = false) throws -> Data {
+        let view = EmptyWindowView(title: title, symbol: "doc", message: "Drop a PDF here.",
+                                   isDropTargeted: isDropTargeted, open: {}, openFromScrollkeeper: {})
+        let hosted = NSHostingView(rootView: view)
+        hosted.frame = CGRect(x: 0, y: 0, width: 480, height: 360)
+        hosted.layoutSubtreeIfNeeded()
+        let bitmap = try #require(hosted.bitmapImageRepForCachingDisplay(in: hosted.bounds))
+        hosted.cacheDisplay(in: hosted.bounds, to: bitmap)
+        return try #require(bitmap.tiffRepresentation)
     }
 
-    @Test func rendersWithoutADropInProgress() {
-        let hosted = NSHostingView(rootView: makeView())
-        hosted.frame = CGRect(x: 0, y: 0, width: 400, height: 300)
-        hosted.layoutSubtreeIfNeeded()
-        #expect(hosted.fittingSize.width > 0)
+    @Test func drawsTheSameWindowEachTime() throws {
+        #expect(try drawing() == drawing())
     }
 
-    @Test func rendersTheOutlineWhileAFileIsDraggedOver() {
-        let hosted = NSHostingView(rootView: makeView(isDropTargeted: true))
-        hosted.frame = CGRect(x: 0, y: 0, width: 400, height: 300)
-        hosted.layoutSubtreeIfNeeded()
-        #expect(hosted.fittingSize.width > 0)
+    @Test func drawsTheTitleItIsGiven() throws {
+        #expect(try drawing(title: "Open a Map") != drawing())
+    }
+
+    @Test func outlinesTheWindowOnlyWhileAFileIsDraggedOver() throws {
+        #expect(try drawing(isDropTargeted: true) != drawing())
     }
 }
