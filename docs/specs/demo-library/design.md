@@ -15,7 +15,11 @@
 - **Text.** `Lorem` makes paragraphs from a fixed seed. Prose pages are drawn with Core Text: headings, body,
   pictures, and a stat block laid out as Paizo's are (name and level line, traits, then labeled lines).
 - **Maps.** A drawn image of 8 × 10 one-inch squares at 150 pixels an inch, with dark grid lines, embedded as one
-  picture per page, as map packs print them.
+  picture per page, as map packs print them. The adventure's handout (`DemoMaps.fragment()`) paints the same forest
+  (`paintForest`) into a transparent bitmap clipped to a torn outline from a fixed sequence, tinted like parchment,
+  with a dashed trail and an X and no grid.
+- **Notice.** `DemoNotice.page(_:)` (or `smallPage` for cards) takes what the file holds (`DemoNotice.Content`):
+  the demo library lead and the Community Use notice are shared, the sentence between them is the file's own.
 - **File names.** As Scrollkeeper's demo editions name them (`DemoLibrary.files`), so its catalog and this tool
   agree.
 - **Covers** are not written here: Scrollkeeper's demo draws a cover for each title when asked, so this tool

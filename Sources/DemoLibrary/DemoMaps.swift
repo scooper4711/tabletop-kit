@@ -10,16 +10,19 @@ enum DemoMaps {
     private static let inch = CGFloat(pixelsPerInch)
 
     static func forest() -> Data {
-        map { context, size in
-            context.setFillColor(CGColor(red: 0.42, green: 0.55, blue: 0.30, alpha: 1))
-            context.fill(CGRect(origin: .zero, size: size))
-            context.setFillColor(CGColor(red: 0.55, green: 0.45, blue: 0.30, alpha: 1))
-            let trail = CGRect(x: size.width * 0.4, y: 0, width: size.width * 0.15, height: size.height)
-            context.fill(trail)
-            context.setFillColor(CGColor(red: 0.20, green: 0.35, blue: 0.18, alpha: 1))
-            for tree in trees(in: size) where !trail.insetBy(dx: -inch / 2, dy: 0).intersects(tree) {
-                context.fillEllipse(in: tree)
-            }
+        map(paintForest)
+    }
+
+    /// The forest with a trail through it, filling `size`.
+    static func paintForest(_ context: CGContext, size: CGSize) {
+        context.setFillColor(CGColor(red: 0.42, green: 0.55, blue: 0.30, alpha: 1))
+        context.fill(CGRect(origin: .zero, size: size))
+        context.setFillColor(CGColor(red: 0.55, green: 0.45, blue: 0.30, alpha: 1))
+        let trail = CGRect(x: size.width * 0.4, y: 0, width: size.width * 0.15, height: size.height)
+        context.fill(trail)
+        context.setFillColor(CGColor(red: 0.20, green: 0.35, blue: 0.18, alpha: 1))
+        for tree in trees(in: size) where !trail.insetBy(dx: -inch / 2, dy: 0).intersects(tree) {
+            context.fillEllipse(in: tree)
         }
     }
 
@@ -39,10 +42,10 @@ enum DemoMaps {
         }
     }
 
-    /// About three trees in every ten square inches, each about an inch across, scattered evenly but always in the
-    /// same places (the R2 low-discrepancy sequence), so the map is the same every time it is written.
+    /// About three trees in every ten square inches of `size`, each about an inch across, scattered evenly but always
+    /// in the same places (the R2 low-discrepancy sequence), so the map is the same every time it is written.
     private static func trees(in size: CGSize) -> [CGRect] {
-        let count = squares.across * squares.down * 3 / 10
+        let count = Int(size.width * size.height / (inch * inch)) * 3 / 10
         return (0..<count).map { index in
             let position = Double(index) + 0.5
             let across = (position * 0.754_877_666).truncatingRemainder(dividingBy: 1)
@@ -65,7 +68,7 @@ enum DemoMaps {
         guard let image = context.makeImage() else { return Data() }
         let page = CGRect(x: 0, y: 0, width: squares.across * 72, height: squares.down * 72)
         return makeDemoPDF(sizedPages: [DemoPage(size: page.size) { $0.draw(image, in: page) },
-                                        DemoPage(draw: DemoNotice.draw)])
+                                        DemoPage(draw: DemoNotice.page(.drawnMaps))])
     }
 
     private static func drawGrid(in context: CGContext, size: CGSize) {

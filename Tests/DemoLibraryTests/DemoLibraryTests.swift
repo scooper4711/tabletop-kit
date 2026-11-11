@@ -56,6 +56,40 @@ import Testing
         }
     }
 
+    @Test func eachFilesNoticeSaysWhatItHoldsAndOnlyProseMentionsLoremIpsum() throws {
+        let contents: [DemoLibrary.File: DemoNotice.Content] = [
+            .pawnCollection: .drawnCreatures, .heroPawns: .iconicPawns, .tokenSet: .drawnCreatures,
+            .battleCards: .drawnCreatures, .forestMap: .drawnMaps, .starshipMap: .drawnMaps,
+            .adventure: .placeholderProse, .scenario: .placeholderProse, .rulebook: .placeholderProse
+        ]
+        for file in DemoLibrary.File.allCases {
+            let document = try #require(PDFDocument(url: written.appendingPathComponent(file.rawValue)), "\(file)")
+            let content = try #require(contents[file], "\(file)")
+            let last = Self.words(document.page(at: document.pageCount - 1)?.string ?? "")
+            #expect(last.contains(Self.words(content.sentence)), "\(file)")
+            let mentionsLorem = (document.string ?? "").localizedCaseInsensitiveContains("lorem ipsum")
+            #expect(mentionsLorem == (content == .placeholderProse), "\(file)")
+        }
+    }
+
+    @Test func theHandoutIsATornMapFragmentDrawnTheSameEveryTime() throws {
+        let fragment = try #require(DemoMaps.fragment())
+        let again = try #require(DemoMaps.fragment())
+        #expect(fragment.dataProvider?.data == again.dataProvider?.data)
+        // The torn edge leaves the corners clear, and the middle is the map.
+        let pixels = try #require(fragment.dataProvider?.data as Data?)
+        let alpha = { (column: Int, row: Int) in pixels[row * fragment.bytesPerRow + column * 4 + 3] }
+        #expect(alpha(0, 0) == 0 && alpha(fragment.width - 1, fragment.height - 1) == 0)
+        #expect(alpha(fragment.width / 2, fragment.height / 2) == 255)
+        let adventure = try #require(PDFDocument(url: written.appendingPathComponent("adventure.pdf")))
+        #expect(adventure.page(at: 2)?.string?.contains("Handout: The Map Fragment") == true)
+    }
+
+    /// The text with its line breaks and runs of spaces made single spaces, as a page's text wraps it.
+    private static func words(_ text: String) -> String {
+        text.split(whereSeparator: \.isWhitespace).joined(separator: " ")
+    }
+
     @Test func writingAgainGivesTheSameFiles() throws {
         let again = folder.appendingPathComponent("again")
         try DemoLibrary.write(to: again)
