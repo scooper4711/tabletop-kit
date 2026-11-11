@@ -22,7 +22,12 @@ Swift libraries shared by three of the [Tableside Toolkit](#the-apps) apps,
   Compatibility License require.
 
 It contains no Paizo art or text, and works only with PDFs you supply. Pathfinder and Starfinder are trademarks
-of Paizo Inc.; this project is not published, endorsed, or specifically approved by Paizo.
+of Paizo Inc.
+
+Tabletop Kit uses trademarks and/or copyrights owned by Paizo Inc., used under Paizo's Community Use Policy
+([paizo.com/licenses/communityuse](https://paizo.com/licenses/communityuse)). We are expressly prohibited from
+charging you to use or access this content. Tabletop Kit is not published, endorsed, or specifically approved by
+Paizo. For more information about Paizo Inc. and Paizo products, visit [paizo.com](https://paizo.com).
 
 ## Use
 Add the package in Xcode or `Package.swift`:
