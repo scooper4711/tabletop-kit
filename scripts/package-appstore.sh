@@ -117,18 +117,28 @@ sign_and_package() {
     local entitlements="$1" name pkg
     name="$(basename "$APP" .app)"
     pkg="$OUT/$name.pkg"
+    embed_profile
+    # App Store Connect refuses a package holding any file with the quarantine attribute (ITMS-91109), which a
+    # downloaded profile or resource carries; the signature must cover the bundle without them.
+    xattr -cr "$APP"
     if [[ "$TRIAL" == "1" ]]; then
-        # An ad hoc signature can't carry the application identifier, which only a profile can approve; a
-        # profile the disk image build embedded would not match it either.
-        rm -f "$APP/Contents/embedded.provisionprofile"
         codesign --force --sign - "$APP"
         productbuild --component "$APP" /Applications "$pkg" >&2
     else
-        cp "$PROVISIONING_PROFILE" "$APP/Contents/embedded.provisionprofile"
         codesign --force --sign "$APP_SIGNING_IDENTITY" --options runtime --entitlements "$entitlements" "$APP"
         productbuild --component "$APP" /Applications --sign "$INSTALLER_IDENTITY" "$pkg" >&2
     fi
     echo "$pkg"
+}
+
+embed_profile() {
+    if [[ "$TRIAL" == "1" ]]; then
+        # An ad hoc signature can't carry the application identifier, which only a profile can approve; a
+        # profile the disk image build embedded would not match it either.
+        rm -f "$APP/Contents/embedded.provisionprofile"
+    else
+        cp "$PROVISIONING_PROFILE" "$APP/Contents/embedded.provisionprofile"
+    fi
 }
 
 # Usage: send_to_app_store <--validate-app|--upload-package> <pkg>

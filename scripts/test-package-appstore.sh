@@ -26,6 +26,9 @@ cat > "$DIR/app.entitlements" <<P
 <key>com.apple.application-identifier</key><string>STALE.io.example.demo</string></dict></plist>
 P
 touch "$APP/Contents/embedded.provisionprofile"
+# As a resource downloaded with a browser carries it (ITMS-91109).
+echo '{}' > "$APP/Contents/Resources/data.json"
+xattr -w com.apple.quarantine "0081;00000000;Safari;" "$APP/Contents/Resources/data.json"
 
 TRIAL=1 BUILD_NUMBER=42 TEAM_ID=ABCDE12345 scripts/package-appstore.sh "$APP" "$DIR/app.entitlements" io.example.demo
 
@@ -42,6 +45,7 @@ check "trial drops the old profile" '[[ ! -e "$OUT/Demo.app/Contents/embedded.pr
 check "identifiers in entitlements" 'grep -q "ABCDE12345.io.example.demo" "$OUT/work/signing.entitlements"'
 check "source app is untouched"     '[[ "$(/usr/libexec/PlistBuddy -c "Print :CFBundleVersion" "$APP/Contents/Info.plist")" == 1 ]]'
 check "package exists"              '[[ -f "$OUT/Demo.pkg" ]]'
+check "no file is quarantined"      '[[ -z "$(xattr -r "$OUT/Demo.app" | grep com.apple.quarantine || true)" ]]'
 check "upload of a trial refused"   '! TRIAL=1 UPLOAD=1 BUILD_NUMBER=1 TEAM_ID=X scripts/package-appstore.sh "$APP" "$DIR/app.entitlements" a.b 2>/dev/null'
 /usr/libexec/PlistBuddy -c "Delete :LSMinimumSystemVersion" "$APP/Contents/Info.plist"
 check "validating a trial refused" '! TRIAL=1 VALIDATE=1 BUILD_NUMBER=1 TEAM_ID=X scripts/package-appstore.sh "$APP" "$DIR/app.entitlements" a.b 2>/dev/null'
