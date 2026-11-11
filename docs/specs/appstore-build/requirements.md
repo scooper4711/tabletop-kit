@@ -21,6 +21,8 @@ live here once, as scripts the apps call from their SwiftPM checkout of tabletop
   that increases with every upload (`BUILD_NUMBER`); the marketing version doesn't change.
 - R2.4 Without the identities or the profile, the script says what is missing and stops. `TRIAL=1` instead builds an
   ad hoc signed, unsigned-installer package that checks everything else, and can't be uploaded.
+- R2.5 No file in the package carries the quarantine attribute (ITMS-91109), which a profile or resource downloaded
+  with a browser brings along.
 
 ## R3 Upload
 - R3.1 `VALIDATE=1` only validates the package with App Store Connect. `UPLOAD=1` validates the package and uploads it to App Store Connect with `xcrun altool`, using an App Store

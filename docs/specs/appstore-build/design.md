@@ -10,7 +10,8 @@ script follows the dependency pin.
    `LSMinimumSystemVersion`. No catalog is committed in the apps.
 3. `Info.plist`: `CFBundleVersion` = `BUILD_NUMBER`, `ITSAppUsesNonExemptEncryption` = false, and `CFBundleIconName`
    from actool's partial Info.plist (ITMS-90236).
-4. Profile: `PROVISIONING_PROFILE` (a file) is copied to `Contents/embedded.provisionprofile`.
+4. Profile: `PROVISIONING_PROFILE` (a file) is copied to `Contents/embedded.provisionprofile`. Then `xattr -cr`
+   clears the extended attributes of the whole copy, the quarantine attribute among them (ITMS-91109).
 5. Entitlements: a copy of the file the app passes for this channel, with the two identifiers from `TEAM_ID` and the
    bundle ID set (replaced when the file already names them, as entitlements with iCloud do). An app whose App Store
    build drops an entitlement only its updater needs, or adds iCloud, passes a channel-specific file; the profile
@@ -22,4 +23,5 @@ script follows the dependency pin.
 
 `TRIAL=1` signs ad hoc, removes any profile the disk image build embedded, skips the installer signature, and so exercises 1-3 and 5 on any Mac,
 including CI. `scripts/test-package-appstore.sh` runs a trial package of a tiny generated app and checks `Assets.car`,
-the icon name, the deployment target, the plist keys, the entitlements and the `.pkg` payload.
+the icon name, the deployment target, the plist keys, the entitlements, that no file is quarantined and the `.pkg`
+payload.
