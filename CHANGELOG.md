@@ -5,6 +5,33 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-11-12
+
+### Added
+- Draw the demo maps at Flip-Mat size
+- Share one empty-window view between Pluck and Mapsmith
+- Validate an App Store package without uploading it
+- Package an app for the Mac App Store from shared scripts
+- Write the demo library's PDFs
+
+### Fixed
+- Describe each demo PDF truly, and show demo art up front
+- Clear the quarantine attribute before signing the App Store package
+- Keep the empty-window buttons from truncating their titles
+- Name the App Store icon and follow the app's system and entitlements
+- Package from absolute paths, which actool needs
+- Draw the demo pawns at Paizo's outline sizes
+- Read pawns printed without a copyright line
+- Write the same demo PDFs every time
+
+### Changed
+- use the exact Community Use notice wording
+- Check what the empty window draws
+- Specify the shared Mac App Store build
+- Specify the demo library's PDFs
+
+[1.0.0]: https://github.com/scooper4711/tabletop-kit/releases/tag/v1.0.0
+
 ## [0.17.0] - 2026-11-07
 
 ### Added
