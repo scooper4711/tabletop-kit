@@ -51,8 +51,9 @@ holds the one bridge through which an app lists and opens Scrollkeeper's titles
   a file (`scrollkeeper://index?app=<key>`). It refuses a handed-over list in a newer format, and tells apart a
   list it can't read, a Scrollkeeper that isn't installed and one that couldn't send the list (with its reason).
 - R5.2 Each app configures the bridge: its key (`app=`), the scheme of the status links Scrollkeeper sends it,
-  which library titles it lists, which file types it opens, whether a title's kind shows under it, and whether it
-  sends one request at a time or several.
+  which library titles it lists, which file types it opens, whether a title's kind shows under it, whether it
+  sends one request at a time or several, and whether it asks Scrollkeeper for the list when there is no library
+  list to read (R5.1) or reads only the library list (R5.7).
 - R5.3 The list is searched by title, kind (where shown) and series: every word must match, ignoring case and
   accents.
 - R5.4 A title whose files are up to date in the shared download folder opens straight from there (R2.3), with no
@@ -65,8 +66,10 @@ holds the one bridge through which an app lists and opens Scrollkeeper's titles
   at a time forgets the earlier one when it sends the next.
 - R5.6 A list read from the library list is read again when Scrollkeeper says it changed (R3); a handed-over list
   is left alone.
-- R5.7 Where Scrollkeeper takes no requests (the iPad), the bridge only reads the library list: without one it
-  says there is no shared library, and looks again when asked to refresh; a title that isn't on disk brings
-  Scrollkeeper forward for the user to download it there.
+- R5.7 Where Scrollkeeper takes no requests (the iPad), or the app chooses not to ask for the list (Mapsmith), the
+  bridge only reads the library list: without one it says there is no shared library, and it tells apart a list
+  newer than it knows and one it can't read; in each case it looks again when asked to refresh. Where Scrollkeeper
+  takes no requests, a title that isn't on disk brings Scrollkeeper forward for the user to download it there; an
+  app that only chooses not to ask for the list still asks for titles (R5.4).
 - R5.8 Each app keeps its own window. The library gives it the bridge's state, the system side of launching
   Scrollkeeper on the Mac, and a small cover thumbnail with a symbol to show when a title has no cover.
