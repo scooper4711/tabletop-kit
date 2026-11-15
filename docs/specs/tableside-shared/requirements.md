@@ -4,7 +4,9 @@ The Tableside Toolkit apps share files through one App Group. This library is
 the one place that says where that is and what Scrollkeeper puts there, so the
 writer (Scrollkeeper) and every reader (Mapsmith, Pluck, Pawn Shop, Field
 Guide, Turnkeeper) agree. Scrollkeeper's `docs/specs/app-handoff`
-(requirements 5 and 6) says what Scrollkeeper shares and when.
+(requirements 5 and 6) says what Scrollkeeper shares and when. The library also
+holds the one bridge through which an app lists and opens Scrollkeeper's titles
+(R5), so the handoff contract is defined once.
 
 ## R1 The App Group
 - R1.1 An app finds the group's folder without the team ID in its code: on the
@@ -42,3 +44,29 @@ Guide, Turnkeeper) agree. Scrollkeeper's `docs/specs/app-handoff`
   "On My iPad"), never as a path into the App Group or a container. This holds for the shared folder, for
   Scrollkeeper's folder before it ran in the sandbox, and on the iPad for an app's Documents folder.
 - R4.2 Other folders show their name and where they are, with the home folder shortened to `~`.
+
+## R5 The Scrollkeeper bridge
+- R5.1 An app lists the titles it can open from Scrollkeeper. It reads them from the library list (R2) when there
+  is one it understands, and otherwise asks Scrollkeeper, which stays in the background, to hand the list over as
+  a file (`scrollkeeper://index?app=<key>`). It refuses a handed-over list in a newer format, and tells apart a
+  list it can't read, a Scrollkeeper that isn't installed and one that couldn't send the list (with its reason).
+- R5.2 Each app configures the bridge: its key (`app=`), the scheme of the status links Scrollkeeper sends it,
+  which library titles it lists, which file types it opens, whether a title's kind shows under it, and whether it
+  sends one request at a time or several.
+- R5.3 The list is searched by title, kind (where shown) and series: every word must match, ignoring case and
+  accents.
+- R5.4 A title whose files are up to date in the shared download folder opens straight from there (R2.3), with no
+  request. Any other title is asked for by SKU: opened (`scrollkeeper://open?sku=…&app=<key>`), which downloads it
+  first when needed, or only downloaded (`scrollkeeper://download?…`).
+- R5.5 The bridge follows each request through Scrollkeeper's status links
+  (`<scheme>://handoff?sku=…&state=downloading|done|failed`, with a `fraction` or a `reason`): requested,
+  downloading with its progress, done or failed. A title whose download is done counts as on disk. Asking for the
+  list again forgets the requests that are done or failed and keeps those under way. An app that sends one request
+  at a time forgets the earlier one when it sends the next.
+- R5.6 A list read from the library list is read again when Scrollkeeper says it changed (R3); a handed-over list
+  is left alone.
+- R5.7 Where Scrollkeeper takes no requests (the iPad), the bridge only reads the library list: without one it
+  says there is no shared library, and looks again when asked to refresh; a title that isn't on disk brings
+  Scrollkeeper forward for the user to download it there.
+- R5.8 Each app keeps its own window. The library gives it the bridge's state, the system side of launching
+  Scrollkeeper on the Mac, and a small cover thumbnail with a symbol to show when a title has no cover.

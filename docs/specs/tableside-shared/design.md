@@ -38,3 +38,34 @@ and iOS 18 for it; the other libraries build there unchanged).
   components after the run, joined with " ▸ ". Any other folder is its last component, in its parent with the
   home folder shortened to `~`. `place(ofFile:)` gives "<title> · <location>" for a file's folder, and returns a
   place that isn't a path as it is.
+
+## The Scrollkeeper bridge (R5)
+
+Moved here from Mapsmith and Pluck, whose copies had grown apart.
+
+- **`ScrollkeeperIndex`.** The titles an app lists: the `Decodable` mirror of the title index Scrollkeeper hands
+  over (its `docs/specs/app-handoff/design.md`), `formatVersion`, `generatedAt` and `titles`. An `Entry` has the
+  SKU, title, optional `kind`, series, number and `downloaded`, plus `coverURL` and `localFiles`, which are not in
+  the handed-over file and are filled in from the library list. `subtitle` joins the kind and "series #number"
+  with " · "; `search(_:)` folds case and accents and wants every word in the title, kind or series.
+  `isIndexFile(_:)` tells the handed-over file (`.scrollkeeperindex`) from a document.
+- **`ScrollkeeperBridgeConfiguration`.** `appKey`, `statusScheme` (the key unless set), `lists` (a test of a
+  `ScrollkeeperLibrary.Title`), `opens` (a test of a `UTType`), `showsKind` and `sendsOneRequestAtATime`. Mapsmith
+  lists the titles of kind "Maps", opens PDFs and images and hides the kind; Pluck lists the titles that may hold
+  a PDF (`Title.mayHold(_:)`: an edition of an accepted type, or an unpacked archive), opens PDFs and sends one
+  request at a time.
+- **`ScrollkeeperBridge`.** `@MainActor @Observable`, made with a configuration, an `ApplicationLauncher` and
+  Scrollkeeper's folder (`ToolkitGroup.scrollkeeperFolder()`, nil outside the group). `state` is `idle`,
+  `notInstalled`, `noSharedLibrary`, `waiting`, `unsupportedVersion`, `unreadable`, `failed(reason)` or
+  `loaded(index)`; `requests` holds a `ScrollkeeperRequest` (SKU, whether it opens, phase) by SKU.
+  `requestIndex()` reads `library.json` first (`ScrollkeeperLibrary.index(in:for:)`) and otherwise opens the
+  index link in the background; `receive(_:)` reads the handed-over file, checking `formatVersion` before the
+  rest; `refreshLibrary()` reads the library list again while the list shown came from it, or there was none.
+  `open(_:)` passes `localFiles` to `openDocuments` when there are any, and otherwise sends a request, as
+  `download(_:)` does; `receiveStatus(_:)` takes the status links (`isStatusLink(_:)`), and an index failure
+  arrives as one with an empty SKU.
+- **`ApplicationLauncher`.** What the bridge needs from the system: `isInstalled`, `openInBackground`, `launch`
+  and `takesRequests` (true unless said otherwise). `WorkspaceLauncher` is the Mac's, on `NSWorkspace`; the iPad
+  app supplies its own, and tests a fake.
+- **`ScrollkeeperCoverThumbnail`.** A SwiftUI view of a cover, read with Image I/O off the main thread, or the
+  app's symbol when there is none.
