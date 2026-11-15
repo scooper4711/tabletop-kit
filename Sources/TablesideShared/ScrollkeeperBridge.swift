@@ -2,7 +2,8 @@ import Foundation
 import Observation
 
 /// Scrollkeeper as another toolkit app sees it: the app reads the list of titles from Scrollkeeper's folder in the
-/// App Group, or asks for it and has it handed over as a file (which a sandboxed app may then read), and asks
+/// App Group, or, unless it reads nothing else, asks for it and has it handed over as a file (which a sandboxed
+/// app may then read), and asks
 /// Scrollkeeper to download or open a title. A title already in the shared folder opens straight from there.
 /// Scrollkeeper stays in the background and reports how each request goes with status links.
 @MainActor
@@ -11,7 +12,7 @@ public final class ScrollkeeperBridge {
     public enum State: Equatable, Sendable {
         case idle
         case notInstalled
-        /// Scrollkeeper takes no requests and hasn't shared its library (yet).
+        /// Scrollkeeper isn't asked for the list and hasn't shared its library (yet).
         case noSharedLibrary
         /// Asked for the list; Scrollkeeper may still be starting or loading its library.
         case waiting
@@ -34,8 +35,8 @@ public final class ScrollkeeperBridge {
     @ObservationIgnored private let launcher: ApplicationLauncher
     /// Scrollkeeper's folder in the App Group; nil when the app isn't in the group.
     @ObservationIgnored private let libraryFolder: URL?
-    /// True while the list shown was read from the library list, which is read again when it changes.
-    @ObservationIgnored private var isShowingLibrary = false
+    /// True while what is shown came from the library list, which is read again when it changes.
+    @ObservationIgnored private var followsLibrary = false
 
     /// Three arguments: who the app is, the system it runs on, and where Scrollkeeper's folder is, if anywhere.
     public init(configuration: ScrollkeeperBridgeConfiguration, launcher: ApplicationLauncher,
@@ -48,17 +49,20 @@ public final class ScrollkeeperBridge {
     /// Whether Scrollkeeper can be asked to download a title; when not, the user downloads it in Scrollkeeper.
     public var takesRequests: Bool { launcher.takesRequests }
 
-    /// Reads the list of titles from Scrollkeeper's library list, or when there is none, asks Scrollkeeper,
-    /// staying in the background, to hand it over. Forgets the requests that are done or failed.
+    /// Reads the list of titles from Scrollkeeper's library list, or when there is none it can show, asks
+    /// Scrollkeeper, staying in the background, to hand it over; an app that doesn't ask says what it found
+    /// instead. Forgets the requests that are done or failed.
     public func requestIndex() {
         requests = requests.filter(\.value.phase.isUnderWay)
         guard launcher.isInstalled(Self.bundleIdentifier) else {
             state = .notInstalled
             return
         }
-        if readLibrary() { return }
-        guard launcher.takesRequests else {
-            state = .noSharedLibrary
+        let reading = readLibrary()
+        if case .loaded = reading { return }
+        followsLibrary = !asksForIndex
+        guard asksForIndex else {
+            state = Self.state(without: reading)
             return
         }
         state = .waiting
@@ -66,15 +70,15 @@ public final class ScrollkeeperBridge {
     }
 
     /// Reads the library list again after Scrollkeeper says it changed, or the app comes back to the foreground,
-    /// while the list shown came from it or there was none to show.
+    /// while what is shown came from it: a list, or the lack of one where Scrollkeeper isn't asked for it.
     public func refreshLibrary() {
-        guard isShowingLibrary || state == .noSharedLibrary else { return }
+        guard followsLibrary else { return }
         _ = readLibrary()
     }
 
     /// Reads the list Scrollkeeper handed over.
     public func receive(_ file: URL) {
-        isShowingLibrary = false
+        followsLibrary = false
         guard let data = try? Data(contentsOf: file),
               let header = try? Self.decoder.decode(FormatHeader.self, from: data) else {
             state = .unreadable
@@ -137,13 +141,27 @@ public final class ScrollkeeperBridge {
         launcher.launch(Self.bundleIdentifier)
     }
 
-    /// True when the library list was read: one this reader understands, in the App Group.
-    private func readLibrary() -> Bool {
-        guard let folder = libraryFolder, case let .loaded(library) = ScrollkeeperLibrary.read(from: folder)
-        else { return false }
-        state = .loaded(library.index(in: folder, for: configuration))
-        isShowingLibrary = true
-        return true
+    /// Whether Scrollkeeper is asked to hand the list over when there is no library list to show.
+    private var asksForIndex: Bool { launcher.takesRequests && configuration.asksForIndex }
+
+    /// Looks for the library list in the App Group and shows it when it is one this reader understands.
+    private func readLibrary() -> ScrollkeeperLibraryReading {
+        guard let folder = libraryFolder else { return .missing }
+        let reading = ScrollkeeperLibrary.read(from: folder)
+        if case let .loaded(library) = reading {
+            state = .loaded(library.index(in: folder, for: configuration))
+            followsLibrary = true
+        }
+        return reading
+    }
+
+    /// What to show for a library list that can't be shown, where Scrollkeeper isn't asked for the list.
+    private static func state(without reading: ScrollkeeperLibraryReading) -> State {
+        switch reading {
+        case .newerFormat: .unsupportedVersion
+        case .unreadable: .unreadable
+        case .missing, .loaded: .noSharedLibrary
+        }
     }
 
     private func send(_ request: ScrollkeeperRequest) {

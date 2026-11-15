@@ -15,6 +15,9 @@ public struct ScrollkeeperBridgeConfiguration: Sendable {
     public var showsKind = true
     /// True when a new request replaces the one before; false when several run side by side.
     public var sendsOneRequestAtATime = false
+    /// Whether the app asks Scrollkeeper to hand the list over when there is no library list it can read; false
+    /// for an app that reads only the library list.
+    public var asksForIndex = true
 
     /// A configuration whose status links use the app's key as their scheme.
     public init(appKey: String, lists: @escaping @Sendable (ScrollkeeperLibrary.Title) -> Bool,

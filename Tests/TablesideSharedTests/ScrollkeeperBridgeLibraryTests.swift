@@ -148,6 +148,68 @@ import UniformTypeIdentifiers
         bridge.requestIndex()
         #expect(bridge.state == .notInstalled)
     }
+
+    @Test func saysWhenTheLibraryIsNewerThanItKnows() throws {
+        try folder.writeRaw(#"{"formatVersion": 99}"#)
+        let bridge = bridge()
+        bridge.requestIndex()
+        #expect(bridge.state == .unsupportedVersion)
+    }
+}
+
+/// The bridge of an app that chooses not to ask for the list, where Scrollkeeper does take requests (R5.7).
+@MainActor @Suite struct ScrollkeeperBridgeWithoutIndexTests {
+    let launcher = FakeLauncher()
+    let folder = FakeScrollkeeperFolder()
+
+    private func askedBridge() -> ScrollkeeperBridge {
+        let bridge = ScrollkeeperBridge(configuration: .libraryOnlyMapper, launcher: launcher,
+                                        libraryFolder: folder.url)
+        bridge.requestIndex()
+        return bridge
+    }
+
+    @Test(arguments: [("", ScrollkeeperBridge.State.noSharedLibrary), ("not json", .unreadable),
+                      (#"{"formatVersion": 99}"#, .unsupportedVersion)])
+    func saysWhatItFoundInsteadOfAskingForTheList(list: String, expected: ScrollkeeperBridge.State) throws {
+        if !list.isEmpty { try folder.writeRaw(list) }
+
+        let bridge = askedBridge()
+
+        #expect(bridge.state == expected)
+        #expect(launcher.backgroundURLs.isEmpty)
+    }
+
+    @Test func readsTheLibraryOnceScrollkeeperWritesOneItCanRead() throws {
+        try folder.writeRaw("not json")
+        let bridge = askedBridge()
+        try folder.write(makeLibrary(titles: [makeTitle("MAP1")]))
+
+        bridge.refreshLibrary()
+
+        #expect(try bridge.loadedIndex().titles.map(\.sku) == ["MAP1"])
+    }
+
+    @Test func keepsTheListShownWhenTheLibraryCanNoLongerBeRead() throws {
+        try folder.write(makeLibrary(titles: [makeTitle("MAP1")]))
+        let bridge = askedBridge()
+        try folder.writeRaw("not json")
+
+        bridge.refreshLibrary()
+
+        #expect(try bridge.loadedIndex().titles.map(\.sku) == ["MAP1"])
+    }
+
+    @Test func stillAsksScrollkeeperForATitle() {
+        let bridge = askedBridge()
+        let entry = ScrollkeeperIndex.Entry(sku: "MAP1", title: "Forest", downloaded: false)
+
+        bridge.download(entry)
+
+        #expect(bridge.takesRequests)
+        #expect(launcher.backgroundURLs.map(\.absoluteString) == ["scrollkeeper://download?sku=MAP1&app=mapper"])
+        #expect(bridge.request(for: entry)?.phase == .requested)
+    }
 }
 
 @Suite struct ScrollkeeperCoverThumbnailTests {

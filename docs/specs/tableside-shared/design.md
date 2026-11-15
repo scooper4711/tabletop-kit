@@ -50,8 +50,8 @@ Moved here from Mapsmith and Pluck, whose copies had grown apart.
   with " · "; `search(_:)` folds case and accents and wants every word in the title, kind or series.
   `isIndexFile(_:)` tells the handed-over file (`.scrollkeeperindex`) from a document.
 - **`ScrollkeeperBridgeConfiguration`.** `appKey`, `statusScheme` (the key unless set), `lists` (a test of a
-  `ScrollkeeperLibrary.Title`), `opens` (a test of a `UTType`), `showsKind` and `sendsOneRequestAtATime`. Mapsmith
-  lists the titles of kind "Maps", opens PDFs and images and hides the kind; Pluck lists the titles that may hold
+  `ScrollkeeperLibrary.Title`), `opens` (a test of a `UTType`), `showsKind`, `sendsOneRequestAtATime` and `asksForIndex`.
+  Mapsmith lists the titles of kind "Maps", opens PDFs and images, hides the kind and doesn't ask for the index; Pluck lists the titles that may hold
   a PDF (`Title.mayHold(_:)`: an edition of an accepted type, or an unpacked archive), opens PDFs and sends one
   request at a time.
 - **`ScrollkeeperBridge`.** `@MainActor @Observable`, made with a configuration, an `ApplicationLauncher` and
@@ -59,8 +59,10 @@ Moved here from Mapsmith and Pluck, whose copies had grown apart.
   `notInstalled`, `noSharedLibrary`, `waiting`, `unsupportedVersion`, `unreadable`, `failed(reason)` or
   `loaded(index)`; `requests` holds a `ScrollkeeperRequest` (SKU, whether it opens, phase) by SKU.
   `requestIndex()` reads `library.json` first (`ScrollkeeperLibrary.index(in:for:)`) and otherwise opens the
-  index link in the background; `receive(_:)` reads the handed-over file, checking `formatVersion` before the
-  rest; `refreshLibrary()` reads the library list again while the list shown came from it, or there was none.
+  index link in the background, or, where the launcher takes no requests or the configuration doesn't ask for the
+  index, shows what the reading found: `noSharedLibrary`, `unsupportedVersion` or `unreadable`; `receive(_:)` reads the handed-over file, checking `formatVersion` before the
+  rest; `refreshLibrary()` reads the library list again while what is shown came from it: a list, or the lack of
+  one where the index isn't asked for.
   `open(_:)` passes `localFiles` to `openDocuments` when there are any, and otherwise sends a request, as
   `download(_:)` does; `receiveStatus(_:)` takes the status links (`isStatusLink(_:)`), and an index failure
   arrives as one with an empty SKU.

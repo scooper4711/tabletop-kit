@@ -32,6 +32,13 @@ extension ScrollkeeperBridgeConfiguration {
         configuration.showsKind = false
         return configuration
     }
+
+    /// The same, for an app that reads only the library list and never asks Scrollkeeper for it.
+    static var libraryOnlyMapper: ScrollkeeperBridgeConfiguration {
+        var configuration = mapper
+        configuration.asksForIndex = false
+        return configuration
+    }
 }
 
 /// The file Scrollkeeper hands over, in a temporary directory.
