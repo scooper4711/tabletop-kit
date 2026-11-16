@@ -69,7 +69,10 @@ holds the one bridge through which an app lists and opens Scrollkeeper's titles
 - R5.7 Where Scrollkeeper takes no requests (the iPad), or the app chooses not to ask for the list (Mapsmith), the
   bridge only reads the library list: without one it says there is no shared library, and it tells apart a list
   newer than it knows and one it can't read; in each case it looks again when asked to refresh. Where Scrollkeeper
-  takes no requests, a title that isn't on disk brings Scrollkeeper forward for the user to download it there; an
-  app that only chooses not to ask for the list still asks for titles (R5.4).
+  takes no requests, asking for a title that isn't on disk opens its download link
+  (`scrollkeeper://download?sku=…&app=<key>`) in the foreground, whether the app asked to open or only to
+  download it: Scrollkeeper comes forward and downloads it there, and the title shows up in the library list once
+  it is on disk. Such a request isn't followed (R5.5). An app that only chooses not to ask for the list still asks
+  for titles (R5.4).
 - R5.8 Each app keeps its own window. The library gives it the bridge's state, the system side of launching
   Scrollkeeper on the Mac, and a small cover thumbnail with a symbol to show when a title has no cover.

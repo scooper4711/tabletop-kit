@@ -8,10 +8,12 @@ final class FakeLauncher: ApplicationLauncher {
     var installed = true
     var takesRequests = true
     private(set) var backgroundURLs: [URL] = []
+    private(set) var foregroundURLs: [URL] = []
     private(set) var launched: [String] = []
 
     func isInstalled(_ bundleIdentifier: String) -> Bool { installed }
     func openInBackground(_ url: URL) { backgroundURLs.append(url) }
+    func openInForeground(_ url: URL) { foregroundURLs.append(url) }
     func launch(_ bundleIdentifier: String) { launched.append(bundleIdentifier) }
 }
 
