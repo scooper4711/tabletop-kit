@@ -64,10 +64,12 @@ Moved here from Mapsmith and Pluck, whose copies had grown apart.
   rest; `refreshLibrary()` reads the library list again while what is shown came from it: a list, or the lack of
   one where the index isn't asked for.
   `open(_:)` passes `localFiles` to `openDocuments` when there are any, and otherwise sends a request, as
-  `download(_:)` does; `receiveStatus(_:)` takes the status links (`isStatusLink(_:)`), and an index failure
+  `download(_:)` does; where the launcher takes no requests, both open the download link with `openInForeground`
+  and record no request; `receiveStatus(_:)` takes the status links (`isStatusLink(_:)`), and an index failure
   arrives as one with an empty SKU.
-- **`ApplicationLauncher`.** What the bridge needs from the system: `isInstalled`, `openInBackground`, `launch`
-  and `takesRequests` (true unless said otherwise). `WorkspaceLauncher` is the Mac's, on `NSWorkspace`; the iPad
+- **`ApplicationLauncher`.** What the bridge needs from the system: `isInstalled`, `openInBackground`,
+  `openInForeground` (which by default only launches Scrollkeeper), `launch` and `takesRequests` (true unless
+  said otherwise). `WorkspaceLauncher` is the Mac's, on `NSWorkspace`; the iPad
   app supplies its own, and tests a fake.
 - **`ScrollkeeperCoverThumbnail`.** A SwiftUI view of a cover, read with Image I/O off the main thread, or the
   app's symbol when there is none.
