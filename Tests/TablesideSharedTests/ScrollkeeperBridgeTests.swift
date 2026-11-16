@@ -180,6 +180,18 @@ import Testing
         #expect(PlainLauncher().takesRequests)
     }
 
+    @Test func bringsScrollkeeperForwardWhereTheLauncherOpensNoLinkInTheForeground() throws {
+        final class PlainLauncher: ApplicationLauncher {
+            var launched: [String] = []
+            func isInstalled(_ bundleIdentifier: String) -> Bool { true }
+            func openInBackground(_ url: URL) {}
+            func launch(_ bundleIdentifier: String) { launched.append(bundleIdentifier) }
+        }
+        let launcher = PlainLauncher()
+        launcher.openInForeground(try #require(URL(string: "scrollkeeper://download?sku=A&app=reader")))
+        #expect(launcher.launched == [ScrollkeeperBridge.bundleIdentifier])
+    }
+
     #if os(macOS)
     @Test func findsTheAppsTheMacHasInstalled() {
         #expect(WorkspaceLauncher().isInstalled("com.apple.finder"))

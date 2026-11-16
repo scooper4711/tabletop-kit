@@ -130,14 +130,36 @@ import UniformTypeIdentifiers
         #expect(try bridge.loadedIndex().titles.map(\.sku) == ["MAP1"])
     }
 
-    @Test func bringsScrollkeeperForwardForATitleNotDownloaded() {
+    /// The user downloads a title in Scrollkeeper and comes back to the open list, which then shows it on disk.
+    @Test func showsATitleDownloadedInScrollkeeperOnceTheListIsReadAgain() throws {
+        try folder.write(makeLibrary(titles: [makeTitle("MAP1", editions: [makeEdition("MAP1/Map.pdf",
+                                                                                       downloaded: false)])]))
+        let bridge = bridge()
+        bridge.requestIndex()
+        let entry = try #require(try bridge.loadedIndex().titles.first)
+        bridge.download(entry)
+        #expect(!entry.downloaded)
+
+        try folder.addFile("MAP1/Map.pdf")
+        var downloaded = makeTitle("MAP1", editions: [makeEdition("MAP1/Map.pdf")])
+        downloaded.downloaded = true
+        try folder.write(makeLibrary(titles: [downloaded]))
+        bridge.refreshLibrary()
+
+        let refreshed = try #require(try bridge.loadedIndex().titles.first)
+        #expect(refreshed.downloaded)
+        #expect(!refreshed.localFiles.isEmpty)
+    }
+
+    @Test func bringsScrollkeeperForwardToDownloadATitleNotDownloaded() {
         let bridge = bridge()
         let entry = ScrollkeeperIndex.Entry(sku: "PZO1", title: "Forest", downloaded: false)
 
         bridge.open(entry)
         bridge.download(entry)
 
-        #expect(launcher.launched == [ScrollkeeperBridge.bundleIdentifier, ScrollkeeperBridge.bundleIdentifier])
+        let download = bridge.requestURL(host: "download", sku: "PZO1")
+        #expect(launcher.foregroundURLs == [download, download])
         #expect(launcher.backgroundURLs.isEmpty)
         #expect(bridge.request(for: entry) == nil)
     }

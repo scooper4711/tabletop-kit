@@ -96,7 +96,8 @@ public final class ScrollkeeperBridge {
     }
 
     /// Opens the title's files when they are in the shared folder; otherwise asks Scrollkeeper to download the
-    /// title when needed and open it in the app, or where Scrollkeeper takes no requests, brings it forward.
+    /// title when needed and open it in the app, or where Scrollkeeper takes no requests, brings it forward to
+    /// download the title there.
     public func open(_ entry: ScrollkeeperIndex.Entry) {
         guard entry.localFiles.isEmpty else {
             openDocuments(entry.localFiles)
@@ -166,7 +167,9 @@ public final class ScrollkeeperBridge {
 
     private func send(_ request: ScrollkeeperRequest) {
         guard launcher.takesRequests else {
-            launchScrollkeeper()
+            // Scrollkeeper can't send the files back or report how the download goes, so it is only asked to
+            // download, and the request isn't tracked: the title shows up in the shared library once downloaded.
+            launcher.openInForeground(requestURL(host: "download", sku: request.sku))
             return
         }
         if configuration.sendsOneRequestAtATime { requests = [:] }
