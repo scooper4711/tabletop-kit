@@ -356,6 +356,10 @@ everything about campaigns and fights stay in Turnkeeper.
 - `AboutView` is a `Form` of the description, the notices, the credits and the links, for an iPad sheet.
 - On the Mac, `AboutCommands` replaces the app menu's About item with the standard About panel, whose credits are
   `AboutInfo.panelText`: the same content as plain text, links written out, then each license's full text.
+- On the iPad, `AboutCommands` replaces the same item, whose default opens an empty window, with one that opens
+  `AboutWindow`: a scene the app adds beside its own, showing `AboutView` with a Done button that closes the
+  window. It takes no links or files (`handlesExternalEvents(matching: [])`), so they still reach the app's
+  windows.
 - `AboutInfo.licenses` are `LicenseText`s (title and full text). `LicenseText.all(in:)` reads every `.md` and
   `.txt` file in a folder the app bundles, sorted by name, each titled by its file name; `AboutView` lists them in
   a Licenses section, each opening on its own page. Both the panel and `AboutView` show text as it is, so
