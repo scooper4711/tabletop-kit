@@ -166,6 +166,10 @@ keeping its API so Turnkeeper and Field Guide change only how they create it. Pa
   9 seconds and draws in 5.
 - **Watched folders, removing a PDF, missing PDFs** work as in `ArtLibrary`, per app: each app watches its own
   folders, and a PDF counts as missing for an app that can't reach it and has no picture.
+- **`CreatureArtStore`** keeps the app's own library (`init(folder:)`) or opens the shared one
+  (`init(sharedLibraryFor:fallback:)`), whose `moveIn` an app calls at launch; an app whose move fails keeps its
+  own (R6.5). On the shared library, `picture(id:)` also finds art by an alias, and a PDF this app can't reach is
+  listed as read by the apps that can (R3.6), its art shown from its pictures.
 - **Pawn Shop's move.** `LibraryMove` also takes art, sources, aliases and notes already keyed, which Pawn Shop
   makes from `library.json` version 2 in pawn-shop#27. `notes` arrives with it (schema version 2).
 

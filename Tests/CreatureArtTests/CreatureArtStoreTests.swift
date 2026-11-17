@@ -2,6 +2,7 @@ import ArtExtractionTestSupport
 import Bestiary
 import CoreGraphics
 import Foundation
+import SharedLibraries
 import Testing
 @testable import CreatureArt
 
@@ -63,6 +64,21 @@ struct CreatureArtStoreTests {
         #expect(await store.picture(id: UUID(), maxPixels: 64) == nil)
         try await store.removeSource(id: try #require(catalog.sources.first?.id))
         #expect(await store.catalog().art.isEmpty)
+    }
+
+    @Test("An app's own library has nothing to move")
+    func movesNothingIntoItsOwnLibrary() async throws {
+        let store = try store()
+        #expect(try await store.moveIn(LibraryMove(app: .turnkeeper, artFolder: nil)) == nil)
+        await store.close()
+    }
+
+    @Test("The shared library outside the group is in the fallback folder")
+    func opensTheSharedLibraryInItsFallback() async throws {
+        let fallback = folder.appendingPathComponent("Shared")
+        let store = try CreatureArtStore(sharedLibraryFor: .fieldGuide, fallback: fallback)
+        #expect(await store.catalog().art.isEmpty)
+        #expect(FileManager.default.fileExists(atPath: folder.appendingPathComponent("Shared/Library.sqlite").path))
     }
 
     @Test("A folder can stop being watched")

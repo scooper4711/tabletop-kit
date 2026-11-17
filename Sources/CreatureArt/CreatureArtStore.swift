@@ -1,4 +1,5 @@
 import ArtExtraction
+import SharedLibraries
 import Bestiary
 import CoreGraphics
 import Foundation
@@ -44,41 +45,57 @@ public struct ArtImportSummary: Sendable {
     }
 }
 
-/// The creature art from the user's own Paizo PDFs, kept by the art library in a folder the app chooses, and the
-/// catalog the apps match creatures against (`LibraryArtMatcher`). Reading PDFs and drawing art take a while, so
+/// The creature art from the user's own Paizo PDFs, and the catalog the apps match creatures against
+/// (`LibraryArtMatcher`): kept in the library the three apps share (`SharedLibrary`), or in an art library of the
+/// app's own (`ArtLibrary`) until the app moves into the shared one. Reading PDFs and drawing art take a while, so
 /// they happen here, off the main thread.
 public actor CreatureArtStore {
     /// Products whose art is the remastered art.
     public static let remasteredProducts = ["Monster Core", "NPC Core", "Alien Core", "Howl of the Wild",
                                             "Rage of Elements"]
 
-    private let library: ArtLibrary
+    enum Library {
+        case own(ArtLibrary)
+        case shared(SharedLibrary)
+    }
+
+    let library: Library
     private let pictures = NSCache<NSString, CGImage>()
 
+    /// The app's own art library in `folder`.
     public init(folder: URL) throws {
-        library = try ArtLibrary(folder: folder)
+        library = .own(try ArtLibrary(folder: folder))
+    }
+
+    /// The shared library in `folder` (shared libraries R1), for `app`.
+    public init(sharedLibraryIn folder: URL, app: TablesideApp) throws {
+        library = .shared(try SharedLibrary(folder: folder, app: app))
+    }
+
+    /// The shared library in the App Group's `Tableside` folder, or in `fallback` outside the group (R1.2).
+    public init(sharedLibraryFor app: TablesideApp, fallback: URL) throws {
+        library = .shared(try SharedLibrary.standard(app: app, fallback: fallback))
+    }
+
+    /// Moves the app's own library into the shared one (R6); nil when it has moved in already, or when this store
+    /// keeps the app's own library.
+    public func moveIn(_ move: LibraryMove) throws -> MoveReport? {
+        guard case .shared(let library) = library else { return nil }
+        pictures.removeAllObjects()
+        return try library.moveIn(move)
+    }
+
+    /// Closes the shared library's database while the app is in the background (R5.4).
+    public func close() {
+        if case .shared(let library) = library { library.close() }
     }
 
     /// What the library holds now, each PDF checked again for whether it is still there.
     public func catalog() -> ArtCatalog {
-        library.refreshStatuses()
-        let sourcesByID = Dictionary(uniqueKeysWithValues: library.sources.map { ($0.id, $0) })
-        let art = library.entries.map { entry in
-            let titles = Set(entry.prints.compactMap { sourcesByID[$0.sourceID]?.title }).sorted()
-            let game: Game = entry.game == .starfinder ? .starfinder : .pathfinder
-            return LibraryArt(id: entry.id, name: entry.name, game: game,
-                              isRemastered: titles.contains { title in
-                                  Self.remasteredProducts.contains { title.localizedCaseInsensitiveContains($0) }
-                              },
-                              isToken: entry.prints.first?.kind == .token,
-                              isAvailable: library.isAvailable(entry), sourceTitles: titles, isItem: entry.isItem)
+        switch library {
+        case .own(let library): Self.catalog(of: library)
+        case .shared(let library): Self.catalog(of: library)
         }
-        let sources = library.sources.map { source in
-            ArtSourceSummary(id: source.id, title: source.title, place: Self.place(of: source),
-                             isMissing: library.status(of: source) == .missing,
-                             artCount: library.entries(from: source).count)
-        }.sorted { $0.title.localizedStandardCompare($1.title) == .orderedAscending }
-        return ArtCatalog(art: art, sources: sources, watchedFolders: library.watchedFolders.map(\.path))
     }
 
     /// Watches `folder` (Scrollkeeper's downloads) and adds its PDFs of art by reference.
@@ -86,7 +103,10 @@ public actor CreatureArtStore {
         let accessing = folder.startAccessingSecurityScopedResource()
         defer { if accessing { folder.stopAccessingSecurityScopedResource() } }
         do {
-            try library.watch(folder)
+            switch library {
+            case .own(let library): try library.watch(folder)
+            case .shared(let library): try library.watch(folder)
+            }
         } catch {
             return ArtImportSummary(failures: [error.localizedDescription])
         }
@@ -95,8 +115,12 @@ public actor CreatureArtStore {
 
     /// Adds the PDFs that have appeared in the watched folders since they were last read.
     public func addNewFiles(progress: @Sendable (String) -> Void = { _ in }) -> ArtImportSummary {
+        let results = switch library {
+        case .own(let library): library.addNewFiles(progress: progress)
+        case .shared(let library): library.addNewFiles(progress: progress)
+        }
         var summary = ArtImportSummary()
-        for result in library.addNewFiles(progress: progress) {
+        for result in results {
             summary.pdfs += 1
             switch result {
             case .success(let report): summary.added += report.added
@@ -114,7 +138,10 @@ public actor CreatureArtStore {
             let accessing = file.startAccessingSecurityScopedResource()
             defer { if accessing { file.stopAccessingSecurityScopedResource() } }
             do {
-                let report = try library.add(file, keeping: true)
+                let report = switch library {
+                case .own(let library): try library.add(file, keeping: true)
+                case .shared(let library): try library.add(file, keeping: true)
+                }
                 if !report.wasImported { summary.pdfs += 1 }
                 summary.added += report.added
             } catch {
@@ -126,30 +153,37 @@ public actor CreatureArtStore {
 
     /// Takes a PDF and the art only it prints out of the library.
     public func removeSource(id: String) throws {
-        guard let source = library.source(id: id) else { return }
-        try library.remove(source)
+        switch library {
+        case .own(let library):
+            guard let source = library.source(id: id) else { return }
+            try library.remove(source)
+        case .shared(let library):
+            try library.remove(sourceID: id)
+        }
         pictures.removeAllObjects()
     }
 
     public func unwatch(_ path: String) throws {
-        for folder in library.watchedFolders where folder.path == path { try library.unwatch(folder) }
+        switch library {
+        case .own(let library):
+            for folder in library.watchedFolders where folder.path == path { try library.unwatch(folder) }
+        case .shared(let library):
+            try library.unwatch(path: path)
+        }
     }
 
     /// A piece of art drawn alone and upright, at most `maxPixels` on its long side; nil when it can't be drawn.
+    /// In the shared library, `id` can be an ID the app gave the art before it moved in.
     public func picture(id: UUID, maxPixels: Int) -> CGImage? {
         let key = "\(id.uuidString)#\(maxPixels)" as NSString
         if let cached = pictures.object(forKey: key) { return cached }
-        guard let entry = library.entries.first(where: { $0.id == id }),
-              let image = library.picture(of: entry, maxPixels: maxPixels) else { return nil }
-        pictures.setObject(image, forKey: key)
-        return image
-    }
-
-    private static func place(of source: ArtSource) -> String {
-        switch source.location {
-        case .kept: "Kept in the app"
-        case .referenced(let reference): reference.path
-        case .inFolder(let folder, let relativePath): (folder.path as NSString).appendingPathComponent(relativePath)
+        let image: CGImage? = switch library {
+        case .own(let library):
+            library.entries.first { $0.id == id }.flatMap { library.picture(of: $0, maxPixels: maxPixels) }
+        case .shared(let library):
+            (try? library.artEntry(id: id)).flatMap { $0 }.flatMap { library.picture(of: $0, maxPixels: maxPixels) }
         }
+        if let image { pictures.setObject(image, forKey: key) }
+        return image
     }
 }
