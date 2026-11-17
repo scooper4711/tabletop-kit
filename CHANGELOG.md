@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.9.0] - 2026-11-17
+
+### Added
+- Merge a Battle Card with a pawn naming more of its family
+- Keep tokens' back pictures in the shared library
+- Keep art printed without a name in the shared library
+
+### Fixed
+- Merge a Battle Card only with the same images or colors
+- Keep every product printing one picture under one name
+- Keep the note of art a reread leaves without prints
+
+### Changed
+- Keep art printed without a name in the shared library
+
+[1.9.0]: https://github.com/scooper4711/tabletop-kit/releases/tag/v1.9.0
+
 ## [1.8.1] - 2026-11-17
 
 ### Fixed
