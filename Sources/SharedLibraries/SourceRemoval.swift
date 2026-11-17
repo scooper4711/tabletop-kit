@@ -23,16 +23,21 @@ extension LibraryWriter {
     }
 
     /// After a PDF is read again: each old print the new reader found in the same place answers, with its old
-    /// entry, to the new print's art (R2.7); art left without prints goes. Returns the pictures to delete.
+    /// entry, to the new print's art (R2.7). An old entry left without prints hands its note, aliases and creatures
+    /// to that art; art left without prints goes. Returns the pictures to delete.
     @discardableResult
     func retire(_ older: [RemovedPrint], app: TablesideApp) throws -> [String] {
         let newer = try older.first.map { try prints(of: $0.sourceID) } ?? []
-        for old in older where try ArtRows.entryID(answeringTo: old.key, in: database) == nil {
+        let newerKeys = Set(newer.map(\.key))
+        for old in older where !newerKeys.contains(old.key) {
             guard let match = newer.first(where: { Self.isSamePlace($0.face, old.face) }) else { continue }
-            try addAlias(old.key, app: app, entry: match.entryID)
-            guard try ArtRows.entryID(answeringTo: old.entryID, in: database) == nil else { continue }
-            try addAlias(old.entryID, app: app, entry: match.entryID)
-            try repoint(old.entryID, to: match.entryID)
+            if old.entryID != match.entryID, try isLeftWithoutPrints(old.entryID) {
+                try addAlias(old.entryID, app: app, entry: match.entryID)
+                try repoint(old.entryID, to: match.entryID)
+            }
+            if try ArtRows.entryID(answeringTo: old.key, in: database) == nil {
+                try addAlias(old.key, app: app, entry: match.entryID)
+            }
         }
         return try dropArtWithoutPrints()
     }
@@ -47,6 +52,13 @@ extension LibraryWriter {
     }
 
     // MARK: Helpers
+
+    /// True when art `id` is gone, or still there with no prints.
+    private func isLeftWithoutPrints(_ id: UUID) throws -> Bool {
+        guard try ArtRows.entryID(answeringTo: id, in: database) != nil else { return true }
+        return try database.rows("SELECT 1 FROM prints WHERE entry = ? LIMIT 1", [.text(id.uuidString)]).isEmpty
+            && !(try database.rows("SELECT 1 FROM art WHERE id = ?", [.text(id.uuidString)]).isEmpty)
+    }
 
     private func prints(of sourceID: String) throws -> [RemovedPrint] {
         try database.rows("SELECT key, entry, front FROM prints WHERE source = ?", [.text(sourceID)])

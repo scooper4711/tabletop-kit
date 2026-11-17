@@ -158,7 +158,9 @@ keeping its API so Turnkeeper and Field Guide change only how they create it. Pa
 - **Adding a PDF.** `ArtLibrary.prepare` reads it outside any transaction. The app claims it first (R5.3) and
   skips it when another app holds the claim. `commit` then writes, in one transaction, the source, its access
   for this app, and each piece of art found; a PDF read by the current reader is skipped, one read by an older
-  reader is read afresh, its old prints replaced and their keys kept as aliases of the entries they joined.
+  reader is read afresh, its old prints replaced and their keys kept as aliases of the entries they joined. Art an
+  old print leaves without prints hands its note, aliases and creatures to the art printed in its place, so a
+  pawn whose ID is that print's key keeps its tags.
 - **Merging** (`ArtMerger`'s rules over the store). A print whose key the library has joins that entry.
   Otherwise, among the entries with the same folded name, game and kind of art (item or creature): one whose
   fingerprint matches, or, when either is a figure, whose colors match (`Figure.palette`, measured once and kept).
