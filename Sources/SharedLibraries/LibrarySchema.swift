@@ -9,7 +9,7 @@ import ArtExtraction
 /// `compatibility.oldestWriter` to itself, and older apps then only read the library until they are updated.
 enum LibrarySchema {
     /// Each version's statements, applied in order to a database at an older version.
-    static let versions: [String] = [version1, version2, version3, version4, version5]
+    static let versions: [String] = [version1, version2, version3, version4, version5, version6]
 
     private static let version1 = """
         CREATE TABLE counter (id INTEGER PRIMARY KEY CHECK (id = 1), value INTEGER NOT NULL);
@@ -77,6 +77,23 @@ enum LibrarySchema {
         CREATE INDEX printsByEntry ON prints (entry);
         CREATE INDEX printsBySource ON prints (source);
         UPDATE compatibility SET oldestWriter = 5;
+        """
+
+    /// What syncing through iCloud needs (library sync): what each record's copy in the cloud looks like, notes that
+    /// arrived before their art, the engine's saved state, and the pictures downloaded; and when the user last
+    /// changed each row they make, for settling edits made on two devices. All additions, so older apps carry on.
+    private static let version6 = """
+        CREATE TABLE cloudRecords (zone TEXT NOT NULL, name TEXT NOT NULL, kind TEXT NOT NULL, rowKey TEXT NOT NULL,
+            systemFields BLOB, sentChanged INTEGER NOT NULL, digest TEXT NOT NULL, PRIMARY KEY (zone, name));
+        CREATE TABLE parkedRecords (name TEXT PRIMARY KEY, kind TEXT NOT NULL, payload BLOB NOT NULL,
+            systemFields BLOB NOT NULL);
+        CREATE TABLE syncState (key TEXT PRIMARY KEY, value BLOB NOT NULL);
+        CREATE TABLE fetchedPictures (name TEXT PRIMARY KEY, bytes INTEGER NOT NULL, shown REAL NOT NULL);
+        CREATE INDEX aliasesByEntry ON aliases (entry);
+        ALTER TABLE notes ADD COLUMN modified REAL NOT NULL DEFAULT 0;
+        ALTER TABLE creatureArt ADD COLUMN modified REAL NOT NULL DEFAULT 0;
+        ALTER TABLE customCreatures ADD COLUMN modified REAL NOT NULL DEFAULT 0;
+        ALTER TABLE customArt ADD COLUMN modified REAL NOT NULL DEFAULT 0;
         """
 
     /// Brings `database` up to this app's version, in one transaction, and tells whether this app may write it:

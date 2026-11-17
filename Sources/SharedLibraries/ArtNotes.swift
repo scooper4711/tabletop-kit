@@ -47,20 +47,26 @@ extension SharedLibrary {
 }
 
 extension LibraryWriter {
-    func upsert(_ note: ArtNote, for entry: UUID) throws {
+    /// Saves a note; `modified` is the time of the user's change (library sync).
+    func upsert(_ note: ArtNote, for entry: UUID, modified: Date = Date()) throws {
         try upsert(.notes, [("entry", .text(entry.uuidString)), ("userName", note.userName.map { .text($0) } ?? .null),
                             ("tags", try ArtRows.encoded(note.tags)), ("tagModel", .text(note.tagModel)),
                             ("suggestedName", .text(note.suggestedName)),
-                            ("corrected", .integer(note.isCorrected ? 1 : 0))])
+                            ("corrected", .integer(note.isCorrected ? 1 : 0)), Self.modified(modified)])
     }
 
-    /// Moves the note about art `old` to art `new`, unless `new` has a note the user corrected.
+    /// Moves the note about art `old` to art `new`, unless `new` has a note the user corrected. The note keeps
+    /// the time the user changed it.
     func moveNote(from old: UUID, to new: UUID) throws {
         guard let moved = try ArtRows.notes(in: database, where: "entry = ?", [.text(old.uuidString)])[old] else {
             return
         }
         let kept = try ArtRows.notes(in: database, where: "entry = ?", [.text(new.uuidString)])[new]
-        if kept?.isCorrected != true { try upsert(moved, for: new) }
+        if kept?.isCorrected != true {
+            let modified = try database.rows("SELECT modified FROM notes WHERE entry = ?", [.text(old.uuidString)])
+                .first?.real("modified") ?? 0
+            try upsert(moved, for: new, modified: SharedLibrary.date(modified))
+        }
         try delete(from: .notes, where: "entry = ?", [.text(old.uuidString)])
     }
 }
