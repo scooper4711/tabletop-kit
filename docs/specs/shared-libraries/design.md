@@ -163,8 +163,9 @@ keeping its API so Turnkeeper and Field Guide change only how they create it. Pa
   pawn whose ID is that print's key keeps its tags.
 - **Merging** (`ArtMerger`'s rules over the store). A print whose key the library has joins that entry.
   Otherwise, among the entries with the same folded name, game and kind of art (item or creature): one whose
-  fingerprint matches, or, when either is a figure, whose colors match (`Figure.palette`, measured once and kept).
-  `art.foldedName`, indexed, finds them (schema version 2). When a figure is involved, the colors are also compared
+  fingerprint matches, or, when either is a figure, whose colors match (`Figure.palette`, measured once and kept);
+  with a figure only the same images count as a matching fingerprint, since the thumbnails of any two paintings
+  of one shape look alike. `art.foldedName`, indexed, finds them (schema version 2). When a figure is involved, the colors are also compared
   with named creature art whose name gives more or less of the creature's family (`CreatureName.matches`, as Pawn
   Shop merged Battle Cards: "Imp" and "Devil, Imp", but not "Giant, Wood" and "Golem, Wood"), found by
   `art.nameKey`, the folded part after the name's last comma (schema version 5).

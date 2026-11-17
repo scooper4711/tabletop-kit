@@ -98,6 +98,16 @@ import Testing
         #expect(imp.prints.map(\.print.kind) == [.figure, .pawn])
     }
 
+    @Test func keepsADifferentPaintingOfACardsCreatureApart() throws {
+        let library = try library()
+        let otherGoblin = DrawnPawn(rect: goblin.rect, art: creatureArt(variant: 2), name: "GOBLIN WARRIOR")
+        try library.add(try pawnBox([otherGoblin]), keeping: true)
+        let deck = [DrawnCard(name: "GOBLIN WARRIOR", creature: creatureArt(variant: 0, scale: 4))]
+        let report = try library.add(try writeCardDeck(deck, in: folder), keeping: true)
+        #expect(report.added == 1 && report.alreadyKnown == 0)
+        #expect(try library.artEntries().count == 2)
+    }
+
     @Test func keepsEveryProductPrintingOnePictureUnderOneName() throws {
         let library = try library()
         var reprint = goblin

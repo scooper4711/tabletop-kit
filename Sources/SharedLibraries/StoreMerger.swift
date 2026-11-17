@@ -108,7 +108,7 @@ struct StoreMerger {
         let candidates = try ArtRows.entries(in: writer.database, where: "foldedName = ? AND game = ?",
                                              [.text(ArtKey.foldedName(found.name)), .text(source.game.rawValue)])
             .filter { $0.artEntry.isItem == isItem }
-        if let match = candidates.first(where: { $0.fingerprint.matches(found.fingerprint) }) { return match }
+        if let match = candidates.first(where: { isSameImage($0, found, print: print) }) { return match }
         let involved = try (candidates + family(of: found, isItem: isItem, besides: candidates)).filter { candidate in
             print.print.kind == .figure || candidate.prints.contains { $0.print.kind == .figure }
         }
@@ -121,6 +121,16 @@ struct StoreMerger {
             }
         }
         return nil
+    }
+
+    /// True when `found` shows `candidate`'s images. A Battle Card's picture and a pawn's are compared as paintings,
+    /// by their colors, so between them only the same images count: their thumbnails look alike for any two
+    /// paintings of one shape.
+    private func isSameImage(_ candidate: SharedArtEntry, _ found: ExtractedPawn, print: SharedPrint) -> Bool {
+        let involvesFigure = print.print.kind == .figure || candidate.prints.contains { $0.print.kind == .figure }
+        guard involvesFigure else { return candidate.fingerprint.matches(found.fingerprint) }
+        return !found.fingerprint.imageDigests.isEmpty
+            && candidate.fingerprint.imageDigests == found.fingerprint.imageDigests
     }
 
     /// Named art of the same family as `found` under another name, such as "Devil, Imp" for "Imp".
