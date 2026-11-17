@@ -45,10 +45,9 @@ extension SharedLibrary {
 
     /// Remembers that the cloud now holds `sent`, with the fields it answered with.
     public func markSent(_ sent: OutgoingRecord, systemFields: Data) throws {
-        try connection().run("INSERT OR REPLACE INTO cloudRecords (zone, name, kind, rowKey, systemFields, "
-                             + "sentChanged, digest) VALUES (?, ?, ?, ?, ?, ?, ?)",
-                             [.text(SyncZone.library), .text(sent.record.id.name), .text(sent.record.id.kind.rawValue),
-                              .text(sent.rowKey), .blob(systemFields), .integer(sent.changed), .text(sent.digest)])
+        try storeCloudRecord(CloudRecord(name: sent.record.id.name, kind: sent.record.id.kind.rawValue,
+                                         rowKey: sent.rowKey, systemFields: systemFields,
+                                         sentChanged: sent.changed, digest: sent.digest), in: connection())
     }
 
     /// Remembers that the cloud no longer holds the record.
@@ -77,14 +76,22 @@ extension SharedLibrary {
     // MARK: Helpers
 
     func cloudRecords(inZone zone: String, in database: SQLiteDatabase) throws -> [String: CloudRecord] {
-        var records: [String: CloudRecord] = [:]
-        for row in try database.rows("SELECT * FROM cloudRecords WHERE zone = ?", [.text(zone)]) {
-            guard let name = row.text("name") else { continue }
-            records[name] = CloudRecord(name: name, kind: row.text("kind") ?? "", rowKey: row.text("rowKey") ?? "",
-                                        systemFields: row.blob("systemFields"),
-                                        sentChanged: row.integer("sentChanged") ?? 0, digest: row.text("digest") ?? "")
-        }
-        return records
+        let rows = try database.rows("SELECT * FROM cloudRecords WHERE zone = ?", [.text(zone)])
+        return Dictionary(rows.compactMap(CloudRecord.init(row:)).map { ($0.name, $0) }) { first, _ in first }
+    }
+
+    func storeCloudRecord(_ record: CloudRecord, in database: SQLiteDatabase) throws {
+        try database.run("INSERT OR REPLACE INTO cloudRecords (zone, name, kind, rowKey, systemFields, "
+                         + "sentChanged, digest) VALUES (?, ?, ?, ?, ?, ?, ?)",
+                         [.text(SyncZone.library), .text(record.name), .text(record.kind), .text(record.rowKey),
+                          record.systemFields.map { .blob($0) } ?? .null, .integer(record.sentChanged),
+                          .text(record.digest)])
+    }
+
+    /// What this device knows of the library's record `name` in the cloud.
+    func cloudRecord(named name: String, in database: SQLiteDatabase) throws -> CloudRecord? {
+        try database.rows("SELECT * FROM cloudRecords WHERE zone = ? AND name = ?",
+                          [.text(SyncZone.library), .text(name)]).first.flatMap(CloudRecord.init(row:))
     }
 }
 
@@ -101,5 +108,14 @@ struct CloudRecord {
     /// True when the cloud has the record and the row hasn't changed since it agreed.
     func isInStep(at changed: Int64) -> Bool {
         systemFields != nil && changed <= sentChanged
+    }
+}
+
+extension CloudRecord {
+    init?(row: SQLRow) {
+        guard let name = row.text("name") else { return nil }
+        self.init(name: name, kind: row.text("kind") ?? "", rowKey: row.text("rowKey") ?? "",
+                  systemFields: row.blob("systemFields"), sentChanged: row.integer("sentChanged") ?? 0,
+                  digest: row.text("digest") ?? "")
     }
 }
