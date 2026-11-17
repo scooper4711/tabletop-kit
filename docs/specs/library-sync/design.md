@@ -92,8 +92,12 @@ that art, in one statement. No writer has to change.
 3. **A source saved.** A local reading by a newer reader stays, and is uploaded over the incoming one. An older
    local reading is taken out (`takeOutPrints`) and the incoming one merged: each group becomes a `SharedArtEntry`
    merged with `merge(_:joining:)`, which also finds art by the group's other keys, so art the sender had as one
-   piece becomes one piece here (R3.4); its aliases are added unless they already answer to art. The old prints
-   are then retired, their keys becoming aliases (R3.3), and their pictures deleted after the transaction.
+   piece becomes one piece here (R3.4). The old prints are then retired, their keys becoming aliases (R3.3), and
+   their pictures deleted after the transaction. Last, the incoming aliases are added unless they already find
+   art. For an alias this device holds too, both devices settle on one row whichever applies the other's first:
+   the app whose name sorts first and, when they name different art, the ID that sorts first; otherwise each
+   would send its reading over the other's for ever. A reading leaves out an alias that is also art's ID or a
+   print's key.
    `sourceAccess` is never written, and `kept` stays as it was.
 4. **A source deleted.** The PDF is removed as `SharedLibrary.remove(sourceID:)` does, its kept copy and the
    pictures nothing names any more deleted after the transaction: a PDF downloaded afresh has other bytes and so

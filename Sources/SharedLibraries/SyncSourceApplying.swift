@@ -16,8 +16,12 @@ extension RemoteApplication {
         let older = knownVersion.map { $0 < reading.readerVersion } == true
             ? try writer.takeOutPrints(of: reading.id) : []
         try upsert(reading, kept: known?.integer("kept") ?? 0)
-        for group in reading.groups { try merge(group, source: reading.id) }
+        let merged = try reading.groups.map { group in (group: group, entry: try merge(group, source: reading.id)) }
         if !older.isEmpty { addPicturesToDelete(try writer.retire(older, app: library.app)) }
+        // After retiring, which records the old IDs under this app: the incoming aliases then settle them.
+        for (group, entry) in merged {
+            for alias in group.aliases { try settle(alias, ofArt: entry) }
+        }
         addAppliedSource(incoming)
         countApplied()
     }
@@ -42,17 +46,33 @@ extension RemoteApplication {
                                      ("artFound", .integer(Int64(reading.artFound))), ("kept", .integer(kept))])
     }
 
-    /// Merges one piece of art, with the other art it is printed as, and adds the IDs it was known by.
-    private func merge(_ group: ReadingGroup, source: String) throws {
+    /// Merges one piece of art, with the other art it is printed as. Returns its ID here.
+    private func merge(_ group: ReadingGroup, source: String) throws -> UUID {
         let art = ArtEntry(id: group.entry, name: group.name, game: group.game, size: group.size,
                            traits: group.traits, fingerprint: group.fingerprint, prints: [], palette: group.palette)
         var entry = SharedArtEntry(art, prints: group.prints.map { Self.print($0, source: source) },
                                    picture: group.picture)
         entry.needsName = group.needsName
-        let merged = try writer.merge(entry, joining: group.keys)
-        for alias in group.aliases where try ArtRows.entryID(answeringTo: alias.oldID, in: database) == nil {
-            try writer.addAlias(alias.oldID, app: alias.app, entry: merged)
+        return try writer.merge(entry, joining: group.keys)
+    }
+
+    /// Adds an ID the art was known by, unless it finds art here already. Where this device holds the alias too,
+    /// both devices settle on one row whichever applies the other's first: the app whose name sorts first and,
+    /// when they name different art, the ID that sorts first. Otherwise each would send its own over the other's
+    /// for ever.
+    private func settle(_ alias: ReadingAlias, ofArt entry: UUID) throws {
+        let oldID = alias.oldID.uuidString
+        guard let known = try database.rows("SELECT app, entry FROM aliases WHERE oldID = ?", [.text(oldID)]).first
+        else {
+            if try ArtRows.entryID(answeringTo: alias.oldID, in: database) == nil {
+                try writer.addAlias(alias.oldID, app: alias.app, entry: entry)
+            }
+            return
         }
+        let app = min(known.text("app") ?? alias.app.rawValue, alias.app.rawValue)
+        let art = min(known.text("entry") ?? entry.uuidString, entry.uuidString)
+        guard app != known.text("app") || art != known.text("entry") else { return }
+        try writer.upsert(.aliases, [("oldID", .text(oldID)), ("app", .text(app)), ("entry", .text(art))])
     }
 
     private static func print(_ print: ReadingPrint, source: String) -> SharedPrint {

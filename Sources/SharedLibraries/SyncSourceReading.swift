@@ -29,11 +29,15 @@ extension SharedLibrary {
 
     // MARK: Helpers
 
+    /// The aliases of the art the PDF prints, by art. An alias that is also art's ID or a print's key is left out:
+    /// it finds its art without the alias, and a device that has that print wouldn't keep it.
     private func readingAliases(ofArtPrintedBy sourceID: String,
                                 in database: SQLiteDatabase) throws -> [UUID: [ReadingAlias]] {
         var aliases: [UUID: [ReadingAlias]] = [:]
         let rows = try database.rows("SELECT oldID, app, entry FROM aliases WHERE entry IN "
-                                     + "(SELECT entry FROM prints WHERE source = ?) ORDER BY oldID", [.text(sourceID)])
+                                     + "(SELECT entry FROM prints WHERE source = ?) AND oldID NOT IN "
+                                     + "(SELECT id FROM art) AND oldID NOT IN (SELECT key FROM prints) "
+                                     + "ORDER BY oldID", [.text(sourceID)])
         for row in rows {
             guard let oldID = row.uuid("oldID"), let entry = row.uuid("entry"),
                   let app = row.text("app").flatMap(TablesideApp.init(rawValue:)) else { continue }

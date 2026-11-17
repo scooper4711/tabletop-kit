@@ -145,4 +145,84 @@ import Testing
         #expect(throws: SharedLibraryError.self) { try second.applyRemote([.saved(bad, systemFields: Data([1]))]) }
         #expect(try second.sources().isEmpty)
     }
+
+    @Test func settlesOnOneAppForAnAliasBothDevicesHold() throws {
+        try first.add(devices.first.pawnBox(), keeping: false)
+        try devices.exchange()
+        let art = try #require(try first.artIDs().first)
+        let oldID = UUID()
+        try first.write { writer in try writer.addAlias(oldID, app: .turnkeeper, entry: art) }
+        try second.write { writer in try writer.addAlias(oldID, app: .pawnShop, entry: art) }
+
+        try devices.exchange()
+        #expect(try first.aliasApps() == second.aliasApps())
+        #expect(try first.aliasApps()[oldID.uuidString] == "Pawn Shop")
+    }
+
+    @Test func settlesTheAliasOfArtWhoseIDANewerReadingReplaces() throws {
+        let oldKey = SyncFixture.figureKey, newKey = SyncFixture.pawnKey
+        try first.write { writer in
+            try SyncFixture.addSource("pawns", to: writer, readerVersion: 5)
+            try writer.merge(SyncFixture.entry([.init(.pawn, newKey, "pawns")]))
+            try writer.addAlias(oldKey, app: .pawnShop, entry: newKey)
+        }
+        try second.write { writer in
+            try SyncFixture.addSource("pawns", to: writer)
+            try writer.merge(SyncFixture.entry([.init(.pawn, oldKey, "pawns")]))
+            try writer.upsert(ArtNote(tags: ["club"]), for: oldKey)
+        }
+
+        try devices.exchange()
+        #expect(try second.artEntries().map(\.id) == [newKey] && second.artEntry(id: oldKey)?.id == newKey)
+        #expect(try second.notes() == [newKey: ArtNote(tags: ["club"])])
+        #expect(try first.aliasApps() == second.aliasApps())
+    }
+
+    @Test func leavesOutAnAliasThatIsAlsoAPrintsKey() throws {
+        let pawn = SyncFixture.pawnKey, figure = SyncFixture.figureKey
+        try first.write { writer in
+            try SyncFixture.addSource("pawns", to: writer)
+            try writer.merge(SyncFixture.entry([.init(.pawn, pawn, "pawns")]))
+            try writer.addAlias(figure, app: .pawnShop, entry: pawn)
+            try SyncFixture.addSource("cards", to: writer)
+            try writer.merge(SyncFixture.entry([.init(.pawn, pawn, "pawns"), .init(.figure, figure, "cards")]))
+        }
+        try devices.exchange()
+        #expect(try second.aliasApps().isEmpty && second.artEntry(id: figure)?.id == pawn)
+    }
+
+    @Test func keepsThePicturesOfArtAnotherPDFStillPrintsInTheSameBatch() throws {
+        try first.add(devices.first.pawnBox(), keeping: false)
+        try devices.exchange()
+        let names = try second.artEntries().compactMap(\.picture)
+        for name in names { try Data([1]).write(to: second.pictureFile(name)) }
+        let sourceID = try #require(try first.sources().first).id
+        let id = SyncRecordID(kind: .source, name: "source-\(sourceID)")
+        try first.forgetSystemFields(of: id)
+        let outgoing = try #require(try first.outgoingRecord(id))
+        var reading = try JSONDecoder().decode(SourceReading.self, from: outgoing.record.payload)
+        reading.id = "redownloaded"
+        let again = SyncRecord(id: SyncRecordID(kind: .source, name: "source-redownloaded"),
+                               payload: try SyncPayloads.encode(reading), title: reading.title)
+
+        try second.applyRemote([.saved(again, systemFields: Data([1])), .deleted(id)])
+        #expect(try second.artEntries().count == 2 && second.sources().map(\.id) == ["redownloaded"])
+        #expect(names.count == 2)
+        #expect(names.allSatisfy { FileManager.default.fileExists(atPath: second.pictureFile($0).path) })
+    }
+
+    @Test func forgetsTheCachedPicturesOfARemovedPDF() throws {
+        try first.add(devices.first.pawnBox(), keeping: false)
+        try devices.exchange()
+        for name in try second.artEntries().compactMap(\.picture) {
+            let file = devices.second.root.appending(path: "download-\(name)")
+            try Data(count: 100).write(to: file)
+            try second.storeFetchedPicture(named: name, from: file)
+        }
+        #expect(try second.fetchedPicturesByteCount() == 200)
+
+        try first.remove(sourceID: try #require(try first.sources().first).id)
+        try devices.exchange()
+        #expect(try second.fetchedPicturesByteCount() == 0)
+    }
 }

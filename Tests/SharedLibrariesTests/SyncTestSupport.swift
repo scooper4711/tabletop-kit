@@ -172,9 +172,9 @@ enum SyncFixture {
     static let figureKey = UUID(uuidString: "00000000-0000-5000-8000-000000000001")!
     static let pawnKey = UUID(uuidString: "FFFFFFFF-0000-5000-8000-000000000002")!
 
-    static func addSource(_ id: String, to writer: LibraryWriter) throws {
+    static func addSource(_ id: String, to writer: LibraryWriter, readerVersion: Int = 4) throws {
         try writer.add(ArtSource(id: id, title: id, game: .pathfinder, location: .kept, byteCount: 1,
-                                 readerVersion: 4, artFound: 1), for: .turnkeeper)
+                                 readerVersion: readerVersion, artFound: 1), for: .turnkeeper)
     }
 
     /// A print of the art: its kind, its key and the PDF printing it.
@@ -206,5 +206,16 @@ enum SyncFixture {
 func savedRecords(_ changes: [RemoteChange], of kind: SyncKind) -> [RemoteChange] {
     changes.filter { change in
         if case .saved(let record, _) = change { record.id.kind == kind } else { false }
+    }
+}
+
+extension SharedLibrary {
+    /// The app recorded with each alias, by old ID.
+    func aliasApps() throws -> [String: String] {
+        var apps: [String: String] = [:]
+        for row in try connection().rows("SELECT oldID, app FROM aliases") {
+            if let oldID = row.text("oldID") { apps[oldID] = row.text("app") }
+        }
+        return apps
     }
 }
