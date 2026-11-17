@@ -52,6 +52,8 @@ public struct SharedArtEntry: Identifiable, Hashable, Sendable {
     public var prints: [SharedPrint]
     /// Its picture's file in the library's `Pictures` folder (R3.2), once drawn.
     public var picture: String?
+    /// True while the art has a stand-in name because none was printed (R2.3a).
+    public var needsName = false
 
     /// The entry with its prints' keys left out, as the apps' art library holds it.
     public var artEntry: ArtEntry {

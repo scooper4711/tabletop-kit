@@ -18,6 +18,10 @@ struct StoreMerger {
     private(set) var pictures: [PictureJob] = []
     private let document: CGPDFDocument?
     private var pages: [Int: [ImagePlacement]] = [:]
+    /// The game's named creature art, read once when nameless art looks for its name (`StoreMerger+Nameless`).
+    var namedCreatures: [SharedArtEntry]?
+    /// The IDs of the sources from products that print no names, read once when needed.
+    var namelessSources: Set<String>?
 
     init(writer: LibraryWriter, library: SharedLibrary, source: ArtSource, file: URL) {
         self.writer = writer
@@ -26,28 +30,49 @@ struct StoreMerger {
         document = CGPDFDocument(file as CFURL)
     }
 
-    /// Merges each named piece of art the PDF prints.
+    /// Merges each piece of art the PDF prints, but items printed without a name (R2.3a).
     mutating func merge(_ found: [ExtractedPawn], into report: inout ArtImportReport) throws {
-        let named = found.filter { !$0.name.isEmpty }
-        report.unnamed += found.count - named.count
-        let keys = ArtKey.keys(for: named.map { pawn in
+        let kept = found.filter { !$0.name.isEmpty || !Self.isItem($0) }
+        report.unnamed += found.count - kept.count
+        let keys = ArtKey.keys(for: kept.map { pawn in
             ArtKeyInput(sourceID: source.id, name: pawn.name, size: pawn.size, fingerprint: pawn.fingerprint,
                         face: pawn.front)
         })
-        for (pawn, key) in zip(named, keys) { try merge(pawn, key: key, into: &report) }
+        for (pawn, key) in zip(kept, keys) { try merge(pawn, key: key, into: &report) }
     }
 
     // MARK: Helpers
 
     private mutating func merge(_ found: ExtractedPawn, key: UUID, into report: inout ArtImportReport) throws {
         let print = try makePrint(of: found, key: key)
-        let known = try entry(withKey: key) ?? sameArt(as: found, print: print)
-        var entry = known.map { joined(print, of: found, to: $0) } ?? newEntry(found, print: print)
-        if known == nil { report.added += 1 } else { report.alreadyKnown += 1 }
+        var entry = try placed(found, print: print, into: &report)
         let drawsPicture = entry.picture == nil || (print.print.kind == .figure && !isDrawnFromFigure(entry))
         if drawsPicture, let kept = print.print.tokenFile { entry.picture = kept }
         try writer.merge(entry)
         if drawsPicture, print.print.tokenFile == nil { pictures.append(PictureJob(print: print)) }
+    }
+
+    /// The entry `found` joins, or a new one, counted in `report`.
+    private mutating func placed(_ found: ExtractedPawn, print: SharedPrint,
+                                 into report: inout ArtImportReport) throws -> SharedArtEntry {
+        if let known = try entry(withKey: print.key) {
+            report.alreadyKnown += 1
+            return joined(print, of: found, to: known)
+        }
+        if found.name.isEmpty { return try placedNameless(found, print: print, into: &report) }
+        if let known = try sameArt(as: found, print: print) ?? waitingForName(sameArtAs: found) {
+            report.alreadyKnown += 1
+            return joined(print, of: found, to: known)
+        }
+        report.added += 1
+        return newEntry(found, print: print)
+    }
+
+    private static func isItem(_ found: ExtractedPawn) -> Bool {
+        switch found.shape {
+        case .item, .drawnItem: true
+        case .pawn, .card, .token: false
+        }
     }
 
     private func makePrint(of found: ExtractedPawn, key: UUID) throws -> SharedPrint {
@@ -65,7 +90,7 @@ struct StoreMerger {
         return SharedPrint(key: key, print: ArtPrint(found: found, sourceID: source.id, pictureFile: file), back: back)
     }
 
-    private func entry(withKey key: UUID) throws -> SharedArtEntry? {
+    func entry(withKey key: UUID) throws -> SharedArtEntry? {
         try ArtRows.entries(in: writer.database, where: "id IN (SELECT entry FROM prints WHERE key = ?)",
                             [.text(key.uuidString)]).first
     }
@@ -91,8 +116,13 @@ struct StoreMerger {
         return nil
     }
 
-    private func joined(_ print: SharedPrint, of found: ExtractedPawn, to known: SharedArtEntry) -> SharedArtEntry {
+    /// `known` with `print` added; art waiting for a name takes `found`'s.
+    func joined(_ print: SharedPrint, of found: ExtractedPawn, to known: SharedArtEntry) -> SharedArtEntry {
         var entry = known
+        if entry.needsName && !found.name.isEmpty {
+            entry.name = found.name
+            entry.needsName = false
+        }
         entry.prints.removeAll { known in
             known.key == print.key || (known.print.sourceID == source.id && known.print.face == print.print.face)
         }
@@ -102,7 +132,7 @@ struct StoreMerger {
         return entry
     }
 
-    private func newEntry(_ found: ExtractedPawn, print: SharedPrint) -> SharedArtEntry {
+    func newEntry(_ found: ExtractedPawn, print: SharedPrint) -> SharedArtEntry {
         let art = ArtEntry(id: print.key, name: found.name, game: source.game, size: found.size, traits: found.traits,
                            fingerprint: found.fingerprint, prints: [], palette: [])
         var entry = SharedArtEntry(art, keys: [])

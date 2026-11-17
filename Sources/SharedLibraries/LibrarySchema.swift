@@ -9,7 +9,7 @@ import ArtExtraction
 /// `compatibility.oldestWriter` to itself, and older apps then only read the library until they are updated.
 enum LibrarySchema {
     /// Each version's statements, applied in order to a database at an older version.
-    static let versions: [String] = [version1, version2, version3, version4]
+    static let versions: [String] = [version1, version2, version3, version4, version5]
 
     private static let version1 = """
         CREATE TABLE counter (id INTEGER PRIMARY KEY CHECK (id = 1), value INTEGER NOT NULL);
@@ -57,6 +57,11 @@ enum LibrarySchema {
     private static let version4 = """
         CREATE TABLE compatibility (id INTEGER PRIMARY KEY CHECK (id = 1), oldestWriter INTEGER NOT NULL);
         INSERT INTO compatibility VALUES (1, 1);
+        """
+
+    /// Art printed without a name, kept under a stand-in name until it is named (R2.3a).
+    private static let version5 = """
+        ALTER TABLE art ADD COLUMN needsName INTEGER NOT NULL DEFAULT 0;
         """
 
     /// Brings `database` up to this app's version, in one transaction, and tells whether this app may write it:

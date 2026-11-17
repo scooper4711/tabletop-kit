@@ -64,6 +64,7 @@ enum ArtRows {
         shared.prints = prints
         shared.sortPrints()
         shared.picture = row.text("picture")
+        shared.needsName = row.integer("needsName") == 1
         return shared
     }
 

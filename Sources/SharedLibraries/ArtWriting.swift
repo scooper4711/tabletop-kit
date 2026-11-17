@@ -28,8 +28,9 @@ extension LibraryWriter {
     }
 
     /// Adds a piece of art, merging it by key (R2.5): a print whose key the library has joins that entry, with every
-    /// print of both, and `incoming`'s name, size and prints over the entry's. The merged entry takes the ID its
-    /// prints give it, and what pointed at an entry it replaces points at it. Returns its ID.
+    /// print of both, and `incoming`'s name, size and prints over the entry's; a name the entry has wins over a
+    /// stand-in (R2.3a). The merged entry takes the ID its prints give it, and what pointed at an entry it replaces
+    /// points at it. Returns its ID.
     @discardableResult
     func merge(_ incoming: SharedArtEntry) throws -> UUID {
         let known = try entries(withPrintKeys: incoming.prints.map(\.key))
@@ -40,6 +41,10 @@ extension LibraryWriter {
             merged.traits += other.traits.filter { !merged.traits.contains($0) }
             let keys = Set(merged.prints.map(\.key))
             merged.prints += other.prints.filter { !keys.contains($0.key) }
+        }
+        if merged.needsName, let named = known.first(where: { !$0.needsName }) {
+            merged.name = named.name
+            merged.needsName = false
         }
         merged.sortPrints()
         merged.id = merged.keyedID
@@ -82,7 +87,8 @@ extension LibraryWriter {
                           ("fingerprint", try ArtRows.encoded(entry.fingerprint)),
                           ("palette", try ArtRows.encoded(entry.palette)),
                           ("picture", entry.picture.map { .text($0) } ?? .null),
-                          ("foldedName", .text(ArtKey.foldedName(entry.name)))])
+                          ("foldedName", .text(ArtKey.foldedName(entry.name))),
+                          ("needsName", .integer(entry.needsName ? 1 : 0))])
         for print in entry.prints {
             try upsert(.prints, [("key", .text(print.key.uuidString)), ("entry", .text(entry.id.uuidString)),
                                  ("source", .text(print.print.sourceID)), ("kind", .text(print.print.kind.rawValue)),
