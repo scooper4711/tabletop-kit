@@ -13,6 +13,18 @@ public struct LibraryMove: Sendable {
     public var customArtFolder: URL?
     /// The art chosen for creatures, by bestiary key or `custom.<id>`, with library art by its old ID.
     public var creatureArt: [String: CreatureArtChoice] = [:]
+    /// Art the app has keyed itself, such as Pawn Shop's pawns (`library.json` version 2), moved in as it is.
+    public var keyedArt: [SharedArtEntry] = []
+    /// The PDFs the keyed art comes from, as the app reaches them.
+    public var keyedSources: [ArtSource] = []
+    /// Other IDs the keyed art answers to (R2.7): each old ID, with the ID or print key of the art it names.
+    public var aliases: [UUID: UUID] = [:]
+    /// What the app has learned about art, by the art's ID, print key or alias (R3.3).
+    public var notes: [UUID: ArtNote] = [:]
+    /// Kept PDFs to move in, by source ID.
+    public var keptPDFs: [String: URL] = [:]
+    /// Pictures to move into the library's `Pictures` folder, by their name there (`SharedPrint.print.tokenFile`).
+    public var pictureFiles: [String: URL] = [:]
 
     public init(app: TablesideApp, artFolder: URL?) {
         self.app = app
@@ -46,7 +58,7 @@ extension SharedLibrary {
         let stage = try moveStage(of: move.app)
         guard stage != .finished else { return nil }
         let plan = try MovePlan(move: move, library: self)
-        var report = MoveReport(art: plan.entries.count)
+        var report = MoveReport(art: plan.entries.count + move.keyedArt.count)
         if stage == nil {
             try write { writer in try plan.record(with: writer) }
         }
