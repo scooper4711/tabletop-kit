@@ -141,8 +141,12 @@ public struct ArtImportReport: Equatable, Sendable {
     public var added = 0
     /// Art already in the library from another product, now printed by this one too.
     public var alreadyKnown = 0
-    /// Art with no name printed, left out.
+    /// Art with no name printed, left out: all of it in `ArtLibrary`, only items in the shared library.
     public var unnamed = 0
+    /// New art with no name printed, kept under a stand-in name until it is named (shared libraries R2.3a).
+    public var needingNames = 0
+    /// Art with no name printed that took the name of the same picture in another product.
+    public var namedFromOtherProducts = 0
     /// Pages printed as one flattened picture (zero-based).
     public var unreadablePages: [Int] = []
     /// True when the PDF was in the library already, so nothing changed.

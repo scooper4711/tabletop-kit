@@ -62,6 +62,25 @@ import Testing
         #expect(source.readerVersion == 2 && source.artFound == 5)
     }
 
+    @Test func artLeftWithoutPrintsHandsItsNoteToTheArtInItsPlace() throws {
+        let oldKey = UUID(), newKey = UUID(), oldID = UUID()
+        try library.write { writer in try writer.merge(entry([(.figure, oldKey)])) }
+        try library.setNote(ArtNote(tags: ["club"], isCorrected: true), forArt: oldKey)
+        try library.write { writer in try writer.addAlias(oldID, app: .pawnShop, entry: oldKey) }
+
+        try library.write { writer in
+            let older = try writer.takeOutPrints(of: "pdf")
+            var reread = entry([(.figure, newKey)])
+            reread.name = "Ogre Brute"
+            try writer.merge(reread)
+            try writer.retire(older, app: .pawnShop)
+        }
+        #expect(try library.artEntries().map(\.id) == [newKey])
+        #expect(try library.notes()[newKey]?.tags == ["club"])
+        #expect(try library.artEntry(id: oldKey)?.id == newKey)
+        #expect(try library.artEntry(id: oldID)?.id == newKey)
+    }
+
     @Test func findsNothingForAnUnknownID() throws {
         #expect(try library.artEntry(id: UUID()) == nil)
         try library.write { writer in try writer.addAlias(figureKey, app: .pawnShop, entry: figureKey) }

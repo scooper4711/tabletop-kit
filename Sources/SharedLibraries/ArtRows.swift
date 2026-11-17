@@ -64,6 +64,7 @@ enum ArtRows {
         shared.prints = prints
         shared.sortPrints()
         shared.picture = row.text("picture")
+        shared.needsName = row.integer("needsName") == 1
         return shared
     }
 
@@ -74,7 +75,8 @@ enum ArtRows {
         let print = ArtPrint(sourceID: source, kind: kind, face: front,
                              imageIndex: row.integer("imageIndex").map(Int.init), tokenFile: row.text("picture"),
                              copies: Int(row.integer("copies") ?? 1))
-        return SharedPrint(key: key, print: print, back: try decoded(PawnFace.self, row.blob("back")))
+        return SharedPrint(key: key, print: print, back: try decoded(PawnFace.self, row.blob("back")),
+                           backPicture: row.text("backPicture"))
     }
 
     private static func decoded<Value: Decodable>(_ type: Value.Type, _ data: Data?) throws -> Value? {

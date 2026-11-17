@@ -84,6 +84,51 @@ import Testing
         #expect(try library.artEntries().filter { $0.name == "Ogre" }.count == 2)
     }
 
+    @Test func mergesACardsCreatureWithAPawnNamingMoreOfItsFamily() throws {
+        let library = try library()
+        let devilImp = DrawnPawn(rect: goblin.rect, art: creatureArt(variant: 0), name: "DEVIL, IMP")
+        let golemWood = DrawnPawn(rect: ogre.rect, art: creatureArt(variant: 2), name: "GOLEM, WOOD")
+        try library.add(try pawnBox([devilImp, golemWood]), keeping: true)
+        let deck = [DrawnCard(name: "IMP", creature: creatureArt(variant: 0, scale: 4)),
+                    DrawnCard(name: "GIANT, WOOD", creature: creatureArt(variant: 2, scale: 4))]
+
+        let report = try library.add(try writeCardDeck(deck, in: folder), keeping: true)
+        #expect(report.alreadyKnown == 1 && report.added == 1)
+        let imp = try #require(try library.artEntries().first { $0.name == "Devil, Imp" })
+        #expect(imp.prints.map(\.print.kind) == [.figure, .pawn])
+    }
+
+    @Test func keepsADifferentPaintingOfACardsCreatureApart() throws {
+        let library = try library()
+        let otherGoblin = DrawnPawn(rect: goblin.rect, art: creatureArt(variant: 2), name: "GOBLIN WARRIOR")
+        try library.add(try pawnBox([otherGoblin]), keeping: true)
+        let deck = [DrawnCard(name: "GOBLIN WARRIOR", creature: creatureArt(variant: 0, scale: 4))]
+        let report = try library.add(try writeCardDeck(deck, in: folder), keeping: true)
+        #expect(report.added == 1 && report.alreadyKnown == 0)
+        #expect(try library.artEntries().count == 2)
+    }
+
+    @Test func keepsEveryProductPrintingOnePictureUnderOneName() throws {
+        let library = try library()
+        var reprint = goblin
+        reprint.rect.origin.x = 300
+        try library.add(try pawnBox([goblin]), keeping: true)
+        let other = try writePawnPDF([reprint, ogre], named: "Pathfinder Other Pawn Box PDF.pdf", in: folder)
+        #expect(try library.add(other, keeping: true).alreadyKnown == 1)
+        let entry = try #require(try library.artEntries().first { $0.name == "Goblin Warrior" })
+        #expect(entry.prints.count == 2 && Set(entry.prints.map(\.key)).count == 1)
+        #expect(Set(entry.prints.map(\.print.sourceID)).count == 2)
+        try library.remove(sourceID: try #require(entry.prints.first?.print.sourceID))
+        #expect(try library.artEntry(id: entry.id)?.prints.count == 1)
+    }
+
+    @Test func matchesNamesThatPrintMoreOrLessOfTheFamily() {
+        #expect(CreatureName.matches("Elemental, Air, Invisible Stalker", "Elemental, Invisible Stalker"))
+        #expect(CreatureName.matches("Invisible Stalker", "Elemental, Air, Invisible Stalker"))
+        #expect(!CreatureName.matches("Giant, Wood", "Golem, Wood") && !CreatureName.matches("Ghoul", "Ghast"))
+        #expect(CreatureName.familyKey("Elemental, Air, Invisible Stalker ") == "invisiblestalker")
+    }
+
     @Test func keepsATokensPictureAsDrawnAtImport() throws {
         let library = try library()
         let url = folder.appending(path: "Starfinder Test Token Box.pdf")
@@ -179,7 +224,7 @@ import Testing
                              + "VALUES ('a', 'Demon, Brimorak', 'pathfinder', 'medium', '', '', '', 1)")
         }
         let library = try library()
-        let folded = try library.connection().rows("SELECT foldedName FROM art").first?.text("foldedName")
-        #expect(folded == "demonbrimorak")
+        let row = try library.connection().rows("SELECT foldedName, nameKey FROM art").first
+        #expect(row?.text("foldedName") == "demonbrimorak" && row?.text("nameKey") == "brimorak")
     }
 }

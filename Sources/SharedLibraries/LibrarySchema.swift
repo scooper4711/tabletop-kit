@@ -9,7 +9,7 @@ import ArtExtraction
 /// `compatibility.oldestWriter` to itself, and older apps then only read the library until they are updated.
 enum LibrarySchema {
     /// Each version's statements, applied in order to a database at an older version.
-    static let versions: [String] = [version1, version2, version3, version4]
+    static let versions: [String] = [version1, version2, version3, version4, version5]
 
     private static let version1 = """
         CREATE TABLE counter (id INTEGER PRIMARY KEY CHECK (id = 1), value INTEGER NOT NULL);
@@ -59,6 +59,26 @@ enum LibrarySchema {
         INSERT INTO compatibility VALUES (1, 1);
         """
 
+    /// Art printed without a name, kept under a stand-in name until it is named (R2.3a); art found by the last part
+    /// of its name (`CreatureName.familyKey`), for matching a Battle Card's painting to a pawn's; tokens' backs drawn
+    /// alone at import, which Pawn Shop prints; and prints by key and PDF, as two products printing one picture
+    /// under one name give their prints one key (R3.1). Older apps wrote prints by key alone, so they only read.
+    private static let version5 = """
+        ALTER TABLE art ADD COLUMN needsName INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE art ADD COLUMN nameKey TEXT NOT NULL DEFAULT '';
+        CREATE INDEX artByNameKey ON art (nameKey, game);
+        CREATE TABLE printsByKeyAndSource (key TEXT NOT NULL, entry TEXT NOT NULL, source TEXT NOT NULL,
+            kind TEXT NOT NULL, front BLOB NOT NULL, back BLOB, imageIndex INTEGER, picture TEXT,
+            copies INTEGER NOT NULL, changed INTEGER NOT NULL, backPicture TEXT, PRIMARY KEY (key, source));
+        INSERT INTO printsByKeyAndSource (key, entry, source, kind, front, back, imageIndex, picture, copies, changed)
+            SELECT key, entry, source, kind, front, back, imageIndex, picture, copies, changed FROM prints;
+        DROP TABLE prints;
+        ALTER TABLE printsByKeyAndSource RENAME TO prints;
+        CREATE INDEX printsByEntry ON prints (entry);
+        CREATE INDEX printsBySource ON prints (source);
+        UPDATE compatibility SET oldestWriter = 5;
+        """
+
     /// Brings `database` up to this app's version, in one transaction, and tells whether this app may write it:
     /// a library a newer app has changed stays at its version, writable unless that version said otherwise.
     static func migrate(_ database: SQLiteDatabase) throws -> Bool {
@@ -72,6 +92,7 @@ enum LibrarySchema {
                 try database.execute(versions[version])
             }
             if current < 2 { try foldNames(in: database) }
+            if current < 5 { try keyNames(in: database) }
             try database.execute("PRAGMA user_version = \(versions.count)")
             return true
         }
@@ -88,6 +109,17 @@ extension LibrarySchema {
     }
 }
 
+extension LibrarySchema {
+    /// Fills in `art.nameKey` for art written before version 5.
+    static func keyNames(in database: SQLiteDatabase) throws {
+        for row in try database.rows("SELECT id, name FROM art") {
+            guard let id = row.text("id"), let name = row.text("name") else { continue }
+            try database.run("UPDATE art SET nameKey = ? WHERE id = ?",
+                             [.text(CreatureName.familyKey(name)), .text(id)])
+        }
+    }
+}
+
 /// A table whose rows sync, and how its rows are named in `deletions` and `LibraryChanges`.
 public enum LibraryTable: String, CaseIterable, Sendable {
     case sources, sourceAccess, watchedFolders, art, prints, aliases, creatureArt, customCreatures, customArt, moves,
@@ -99,7 +131,7 @@ public enum LibraryTable: String, CaseIterable, Sendable {
         case .sources, .art, .customCreatures, .customArt: ["id"]
         case .sourceAccess: ["source", "app"]
         case .watchedFolders: ["app", "path"]
-        case .prints: ["key"]
+        case .prints: ["key", "source"]
         case .aliases: ["oldID"]
         case .creatureArt: ["subject"]
         case .notes: ["entry"]
