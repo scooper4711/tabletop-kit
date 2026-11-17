@@ -142,7 +142,7 @@ struct StoreMerger {
             entry.needsName = false
         }
         entry.prints.removeAll { known in
-            known.key == print.key || (known.print.sourceID == source.id && known.print.face == print.print.face)
+            known.print.sourceID == source.id && (known.key == print.key || known.print.face == print.print.face)
         }
         entry.prints.append(print)
         entry.traits += found.traits.filter { !entry.traits.contains($0) }

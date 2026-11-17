@@ -23,7 +23,8 @@ public struct SharedSource: Identifiable, Hashable, Sendable {
     }
 }
 
-/// Where one product prints a piece of art, with its key (R2).
+/// Where one product prints a piece of art, with its key (R2). Products printing one picture under one name give
+/// their prints one key, so a print is the key and the PDF.
 public struct SharedPrint: Hashable, Sendable {
     public var key: UUID
     /// For tokens and items drawn at import, `tokenFile` names the picture in the library's `Pictures` folder.
@@ -33,6 +34,9 @@ public struct SharedPrint: Hashable, Sendable {
     /// A token's back drawn alone at import, in the `Pictures` folder, when it shows art of its own; nil when the
     /// back is the front mirrored.
     public var backPicture: String?
+
+    /// The print's key and PDF, as the library tells prints apart.
+    public var id: String { "\(key.uuidString)|\(print.sourceID)" }
 
     public init(key: UUID, print: ArtPrint, back: PawnFace? = nil, backPicture: String? = nil) {
         self.key = key
@@ -88,8 +92,7 @@ public struct SharedArtEntry: Identifiable, Hashable, Sendable {
     /// Puts the prints in order: figures first, then by key.
     mutating func sortPrints() {
         prints.sort { first, second in
-            first.print.kind == second.print.kind ? first.key.uuidString < second.key.uuidString
-                                                  : first.print.kind < second.print.kind
+            first.print.kind == second.print.kind ? first.id < second.id : first.print.kind < second.print.kind
         }
     }
 

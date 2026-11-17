@@ -39,8 +39,8 @@ extension LibraryWriter {
             if merged.palette.isEmpty { merged.palette = other.palette }
             if merged.picture == nil { merged.picture = other.picture }
             merged.traits += other.traits.filter { !merged.traits.contains($0) }
-            let keys = Set(merged.prints.map(\.key))
-            merged.prints += other.prints.filter { !keys.contains($0.key) }
+            let known = Set(merged.prints.map(\.id))
+            merged.prints += other.prints.filter { !known.contains($0.id) }
         }
         if merged.needsName, let named = known.first(where: { !$0.needsName }) {
             merged.name = named.name

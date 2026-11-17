@@ -59,14 +59,24 @@ enum LibrarySchema {
         INSERT INTO compatibility VALUES (1, 1);
         """
 
-    /// Art printed without a name, kept under a stand-in name until it is named (R2.3a); tokens' backs drawn
-    /// alone at import, which Pawn Shop prints; and art found by the last part of its name
-    /// (`CreatureName.familyKey`), for matching a Battle Card's painting to a pawn's.
+    /// Art printed without a name, kept under a stand-in name until it is named (R2.3a); art found by the last part
+    /// of its name (`CreatureName.familyKey`), for matching a Battle Card's painting to a pawn's; tokens' backs drawn
+    /// alone at import, which Pawn Shop prints; and prints by key and PDF, as two products printing one picture
+    /// under one name give their prints one key (R3.1). Older apps wrote prints by key alone, so they only read.
     private static let version5 = """
         ALTER TABLE art ADD COLUMN needsName INTEGER NOT NULL DEFAULT 0;
-        ALTER TABLE prints ADD COLUMN backPicture TEXT;
         ALTER TABLE art ADD COLUMN nameKey TEXT NOT NULL DEFAULT '';
         CREATE INDEX artByNameKey ON art (nameKey, game);
+        CREATE TABLE printsByKeyAndSource (key TEXT NOT NULL, entry TEXT NOT NULL, source TEXT NOT NULL,
+            kind TEXT NOT NULL, front BLOB NOT NULL, back BLOB, imageIndex INTEGER, picture TEXT,
+            copies INTEGER NOT NULL, changed INTEGER NOT NULL, backPicture TEXT, PRIMARY KEY (key, source));
+        INSERT INTO printsByKeyAndSource (key, entry, source, kind, front, back, imageIndex, picture, copies, changed)
+            SELECT key, entry, source, kind, front, back, imageIndex, picture, copies, changed FROM prints;
+        DROP TABLE prints;
+        ALTER TABLE printsByKeyAndSource RENAME TO prints;
+        CREATE INDEX printsByEntry ON prints (entry);
+        CREATE INDEX printsBySource ON prints (source);
+        UPDATE compatibility SET oldestWriter = 5;
         """
 
     /// Brings `database` up to this app's version, in one transaction, and tells whether this app may write it:
@@ -121,7 +131,7 @@ public enum LibraryTable: String, CaseIterable, Sendable {
         case .sources, .art, .customCreatures, .customArt: ["id"]
         case .sourceAccess: ["source", "app"]
         case .watchedFolders: ["app", "path"]
-        case .prints: ["key"]
+        case .prints: ["key", "source"]
         case .aliases: ["oldID"]
         case .creatureArt: ["subject"]
         case .notes: ["entry"]

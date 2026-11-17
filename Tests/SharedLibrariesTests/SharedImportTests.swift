@@ -98,6 +98,20 @@ import Testing
         #expect(imp.prints.map(\.print.kind) == [.figure, .pawn])
     }
 
+    @Test func keepsEveryProductPrintingOnePictureUnderOneName() throws {
+        let library = try library()
+        var reprint = goblin
+        reprint.rect.origin.x = 300
+        try library.add(try pawnBox([goblin]), keeping: true)
+        let other = try writePawnPDF([reprint, ogre], named: "Pathfinder Other Pawn Box PDF.pdf", in: folder)
+        #expect(try library.add(other, keeping: true).alreadyKnown == 1)
+        let entry = try #require(try library.artEntries().first { $0.name == "Goblin Warrior" })
+        #expect(entry.prints.count == 2 && Set(entry.prints.map(\.key)).count == 1)
+        #expect(Set(entry.prints.map(\.print.sourceID)).count == 2)
+        try library.remove(sourceID: try #require(entry.prints.first?.print.sourceID))
+        #expect(try library.artEntry(id: entry.id)?.prints.count == 1)
+    }
+
     @Test func matchesNamesThatPrintMoreOrLessOfTheFamily() {
         #expect(CreatureName.matches("Elemental, Air, Invisible Stalker", "Elemental, Invisible Stalker"))
         #expect(CreatureName.matches("Invisible Stalker", "Elemental, Air, Invisible Stalker"))
