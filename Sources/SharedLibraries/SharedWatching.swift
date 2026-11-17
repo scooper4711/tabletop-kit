@@ -37,22 +37,55 @@ extension SharedLibrary {
     }
 
     /// Adds the PDFs of art in this app's watched folders that the library doesn't have, by reference; `progress` is
-    /// told each file's name as it is read.
+    /// told each file's name as it is read. A PDF another device read, which this app can't reach yet, is linked
+    /// without reading its art (library sync R3.9). A file iCloud Drive hasn't downloaded is left for a later
+    /// scan: reading it would make the system download it.
     @discardableResult
     public func addNewFiles(progress: (String) -> Void = { _ in }) -> [Result<ArtImportReport, Error>] {
         var results: [Result<ArtImportReport, Error>] = []
         for folder in (try? watchedFolders()) ?? [] {
             _ = folder.withAccess { root in
-                for file in ProductScanner.artPDFs(in: root) where !contains(file) {
+                for file in ProductScanner.artPDFs(in: root) where Self.isDownloaded(file) {
+                    let location = SourceLocation.inFolder(folder, relativePath: Self.relativePath(of: file, in: root))
+                    if let known = knownSource(of: file) {
+                        if let linked = link(known, at: location) { results.append(linked) }
+                        continue
+                    }
                     progress(file.lastPathComponent)
-                    let relative = String(file.standardizedFileURL.path.dropFirst(root.standardizedFileURL.path.count))
-                        .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
-                    results.append(Result {
-                        try commit(ArtLibrary.prepare(file), location: .inFolder(folder, relativePath: relative))
-                    })
+                    results.append(Result { try commit(ArtLibrary.prepare(file), location: location) })
                 }
             }
         }
         return results
+    }
+
+    /// True when a file's contents are on the device: it isn't in iCloud Drive (no status), or it is up to date.
+    static func isDownloaded(_ status: URLUbiquitousItemDownloadingStatus?) -> Bool {
+        status == nil || status == .current
+    }
+
+    // MARK: Helpers
+
+    private static func isDownloaded(_ file: URL) -> Bool {
+        let status = try? file.resourceValues(forKeys: [.ubiquitousItemDownloadingStatusKey])
+            .ubiquitousItemDownloadingStatus
+        return isDownloaded(status)
+    }
+
+    private static func relativePath(of file: URL, in root: URL) -> String {
+        String(file.standardizedFileURL.path.dropFirst(root.standardizedFileURL.path.count))
+            .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
+    }
+
+    /// Records how this app reaches a PDF another device read, when the current reader did and this app has no way
+    /// to it yet. Nil when there is nothing to do.
+    private func link(_ known: SharedSource, at location: SourceLocation) -> Result<ArtImportReport, Error>? {
+        guard known.readerVersion >= PawnExtractor.version, known.artSource(for: app) == nil else { return nil }
+        return Result {
+            var report = ArtImportReport(sourceTitle: known.title)
+            report.wasImported = true
+            try writeAccess(to: known, location: location)
+            return report
+        }
     }
 }

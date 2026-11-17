@@ -49,13 +49,18 @@ extension SharedLibrary {
     /// True when the PDF at `url` is in the library: recognized by its size and this app's path to it, or else
     /// its contents.
     public func contains(_ url: URL) -> Bool {
+        knownSource(of: url) != nil
+    }
+
+    /// The library's source for the PDF at `url`, recognized as `contains` does.
+    func knownSource(of url: URL) -> SharedSource? {
         let file = ArtLibrary.libraryFile(for: url)
-        guard let sources = try? sources() else { return false }
+        guard let sources = try? sources() else { return nil }
         let byteCount = (try? FileManager.default.attributesOfItem(atPath: file.path)[.size] as? Int) ?? -1
-        if sources.contains(where: { $0.byteCount == byteCount && Self.path(of: $0, for: app) == file.path }) {
-            return true
+        if let known = sources.first(where: { $0.byteCount == byteCount && Self.path(of: $0, for: app) == file.path }) {
+            return known
         }
-        return (try? ArtLibrary.digest(of: file)).map { digest in sources.contains { $0.id == digest } } ?? false
+        return (try? ArtLibrary.digest(of: file)).flatMap { digest in sources.first { $0.id == digest } }
     }
 
     /// Takes a PDF out of the library for every app, with the art no other PDF prints and its pictures.
@@ -77,11 +82,15 @@ extension SharedLibrary {
         report.wasImported = true
         guard known.artSource(for: app) == nil || (keeping && !known.isKept) else { return report }
         if keeping { try keep(file, digest: known.id) }
-        let location: SourceLocation = keeping ? .kept : .referenced(try FileReference(file))
+        try writeAccess(to: known, location: keeping ? .kept : .referenced(try FileReference(file)))
+        return report
+    }
+
+    /// Writes how this app reaches a PDF the library has.
+    func writeAccess(to known: SharedSource, location: SourceLocation) throws {
         let source = ArtSource(id: known.id, title: known.title, game: known.game, location: location,
                                byteCount: known.byteCount, readerVersion: known.readerVersion, artFound: known.artFound)
         try write { writer in try writer.add(source, for: app) }
-        return report
     }
 
     private func keep(_ file: URL, digest: String) throws {
