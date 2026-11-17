@@ -84,6 +84,27 @@ import Testing
         #expect(try library.artEntries().filter { $0.name == "Ogre" }.count == 2)
     }
 
+    @Test func mergesACardsCreatureWithAPawnNamingMoreOfItsFamily() throws {
+        let library = try library()
+        let devilImp = DrawnPawn(rect: goblin.rect, art: creatureArt(variant: 0), name: "DEVIL, IMP")
+        let golemWood = DrawnPawn(rect: ogre.rect, art: creatureArt(variant: 2), name: "GOLEM, WOOD")
+        try library.add(try pawnBox([devilImp, golemWood]), keeping: true)
+        let deck = [DrawnCard(name: "IMP", creature: creatureArt(variant: 0, scale: 4)),
+                    DrawnCard(name: "GIANT, WOOD", creature: creatureArt(variant: 2, scale: 4))]
+
+        let report = try library.add(try writeCardDeck(deck, in: folder), keeping: true)
+        #expect(report.alreadyKnown == 1 && report.added == 1)
+        let imp = try #require(try library.artEntries().first { $0.name == "Devil, Imp" })
+        #expect(imp.prints.map(\.print.kind) == [.figure, .pawn])
+    }
+
+    @Test func matchesNamesThatPrintMoreOrLessOfTheFamily() {
+        #expect(CreatureName.matches("Elemental, Air, Invisible Stalker", "Elemental, Invisible Stalker"))
+        #expect(CreatureName.matches("Invisible Stalker", "Elemental, Air, Invisible Stalker"))
+        #expect(!CreatureName.matches("Giant, Wood", "Golem, Wood") && !CreatureName.matches("Ghoul", "Ghast"))
+        #expect(CreatureName.familyKey("Elemental, Air, Invisible Stalker ") == "invisiblestalker")
+    }
+
     @Test func keepsATokensPictureAsDrawnAtImport() throws {
         let library = try library()
         let url = folder.appending(path: "Starfinder Test Token Box.pdf")
@@ -179,7 +200,7 @@ import Testing
                              + "VALUES ('a', 'Demon, Brimorak', 'pathfinder', 'medium', '', '', '', 1)")
         }
         let library = try library()
-        let folded = try library.connection().rows("SELECT foldedName FROM art").first?.text("foldedName")
-        #expect(folded == "demonbrimorak")
+        let row = try library.connection().rows("SELECT foldedName, nameKey FROM art").first
+        #expect(row?.text("foldedName") == "demonbrimorak" && row?.text("nameKey") == "brimorak")
     }
 }

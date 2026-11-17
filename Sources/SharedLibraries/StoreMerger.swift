@@ -101,14 +101,15 @@ struct StoreMerger {
                             [.text(key.uuidString)]).first
     }
 
-    /// Art of the same name showing the same picture: matching fingerprints, or colors when one is a figure.
+    /// Art of the same name showing the same picture: matching fingerprints, or colors when one is a figure, whose
+    /// name may then give more or less of the creature's family (`CreatureName.matches`).
     private mutating func sameArt(as found: ExtractedPawn, print: SharedPrint) throws -> SharedArtEntry? {
         let isItem = print.print.kind == .item
         let candidates = try ArtRows.entries(in: writer.database, where: "foldedName = ? AND game = ?",
                                              [.text(ArtKey.foldedName(found.name)), .text(source.game.rawValue)])
             .filter { $0.artEntry.isItem == isItem }
         if let match = candidates.first(where: { $0.fingerprint.matches(found.fingerprint) }) { return match }
-        let involved = candidates.filter { candidate in
+        let involved = try (candidates + family(of: found, isItem: isItem, besides: candidates)).filter { candidate in
             print.print.kind == .figure || candidate.prints.contains { $0.print.kind == .figure }
         }
         guard print.print.kind != .token, !involved.isEmpty, let figure = figure(of: print.print) else { return nil }
@@ -120,6 +121,17 @@ struct StoreMerger {
             }
         }
         return nil
+    }
+
+    /// Named art of the same family as `found` under another name, such as "Devil, Imp" for "Imp".
+    private func family(of found: ExtractedPawn, isItem: Bool,
+                        besides known: [SharedArtEntry]) throws -> [SharedArtEntry] {
+        guard !isItem else { return [] }
+        let ids = Set(known.map(\.id))
+        return try ArtRows.entries(in: writer.database, where: "nameKey = ? AND game = ? AND needsName = 0",
+                                   [.text(CreatureName.familyKey(found.name)), .text(source.game.rawValue)])
+            .filter { !ids.contains($0.id) && !$0.artEntry.isItem && CreatureName.matches($0.name, found.name) }
+            .sorted { $0.id.uuidString < $1.id.uuidString }
     }
 
     /// `known` with `print` added; art waiting for a name takes `found`'s.

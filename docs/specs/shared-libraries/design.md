@@ -164,7 +164,10 @@ keeping its API so Turnkeeper and Field Guide change only how they create it. Pa
 - **Merging** (`ArtMerger`'s rules over the store). A print whose key the library has joins that entry.
   Otherwise, among the entries with the same folded name, game and kind of art (item or creature): one whose
   fingerprint matches, or, when either is a figure, whose colors match (`Figure.palette`, measured once and kept).
-  `art.foldedName`, indexed, finds them (schema version 2).
+  `art.foldedName`, indexed, finds them (schema version 2). When a figure is involved, the colors are also compared
+  with named creature art whose name gives more or less of the creature's family (`CreatureName.matches`, as Pawn
+  Shop merged Battle Cards: "Imp" and "Devil, Imp", but not "Giant, Wood" and "Golem, Wood"), found by
+  `art.nameKey`, the folded part after the name's last comma (schema version 5).
 - **Pictures** (R3.2). Each new entry's picture is drawn from the print that made it and saved as
   `Pictures/<key>.heic`, at most 1,024 pixels on its long side; a token's or item's picture drawn at import is
   kept as `<key>.png`. A figure added later (a Battle Card) draws the picture again, sharper. `picture(of:)` reads

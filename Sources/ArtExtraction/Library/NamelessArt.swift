@@ -31,3 +31,21 @@ extension ArtFingerprint {
         imageDigests == other.imageDigests ? 0 : thumbnailDistance(from: other)
     }
 }
+
+/// Creatures' names as products print them, which differ in how much of the creature's family they give.
+public enum CreatureName {
+    /// The part of a name after its last comma, folded as `ArtKey.foldedName` folds it, which names that match
+    /// (`matches`) share.
+    public static func familyKey(_ name: String) -> String {
+        ArtKey.foldedName(String(name.split(separator: ",").last ?? Substring(name)))
+    }
+
+    /// True when two names can be the same creature's: "Elemental, Air, Invisible Stalker", "Elemental, Invisible
+    /// Stalker" and "Invisible Stalker" match, as do "Imp" and "Devil, Imp"; but when both print a family it must be
+    /// the same, so "Giant, Wood" is not "Golem, Wood".
+    public static func matches(_ first: String, _ second: String) -> Bool {
+        let parts = [first, second].map { $0.split(separator: ",").map { ArtKey.foldedName(String($0)) } }
+        guard parts[0].last == parts[1].last else { return false }
+        return parts[0].count == 1 || parts[1].count == 1 || parts[0].first == parts[1].first
+    }
+}

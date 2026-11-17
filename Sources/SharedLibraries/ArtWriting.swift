@@ -88,6 +88,7 @@ extension LibraryWriter {
                           ("palette", try ArtRows.encoded(entry.palette)),
                           ("picture", entry.picture.map { .text($0) } ?? .null),
                           ("foldedName", .text(ArtKey.foldedName(entry.name))),
+                          ("nameKey", .text(CreatureName.familyKey(entry.name))),
                           ("needsName", .integer(entry.needsName ? 1 : 0))])
         for print in entry.prints {
             try upsert(.prints, [("key", .text(print.key.uuidString)), ("entry", .text(entry.id.uuidString)),
