@@ -125,7 +125,10 @@ the digest is empty. A picture is referenced by `art.picture`, `prints.picture` 
   limit nothing is removed, but a picture still downloads only when first shown.
 - **Old files** (R4.4). `removeUnreferencedPictures` deletes files nothing names, leaving alone files modified in the
   last hour: an import writes a picture's file before the row that names it.
-- **Names** (R4.6). Only `SharedPictures.writePicture` and `StoreMerger.makePrint` name a new picture.
+- **Names** (R4.6). Only `SharedPictures.writePicture` and `StoreMerger.makePrint` name a new picture. Drawing a
+  picture for art that already names one whose file is missing (`picture(of:)`, `drawMissingPictures`) writes it
+  under that name and leaves the row alone: two devices reaching different PDFs of one art would otherwise rename
+  its picture back and forth for ever.
 - **Drawing** (R4.8). `drawMissingPictures(limit:)` draws up to `limit` pictures for art without one that has a
   print in a PDF this app can reach. Art moved in from an app's old library has none, and Pawn Shop draws pawns
   straight from the PDF.
