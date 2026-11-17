@@ -81,19 +81,7 @@ public final class ArtLibrary {
 
     /// Runs `body` with the PDF's file and access to it; nil when it is missing.
     func withFile<Result>(of source: ArtSource, _ body: (URL) throws -> Result) rethrows -> Result? {
-        switch source.location {
-        case .kept:
-            let url = keptFile(id: source.id)
-            return FileManager.default.fileExists(atPath: url.path) ? try body(url) : nil
-        case .referenced(let reference):
-            return try reference.withAccess(body)
-        case .inFolder(let reference, let relativePath):
-            let found = try reference.withAccess { folder -> Result? in
-                let url = folder.appendingPathComponent(relativePath)
-                return FileManager.default.isReadableFile(atPath: url.path) ? try body(url) : nil
-            }
-            return found ?? nil
-        }
+        try source.withFile(keptFile: keptFile(id: source.id), body)
     }
 
     func save() throws {

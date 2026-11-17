@@ -147,4 +147,58 @@ public struct ArtImportReport: Equatable, Sendable {
     public var unreadablePages: [Int] = []
     /// True when the PDF was in the library already, so nothing changed.
     public var wasImported = false
+    /// True when another app is reading the PDF into a shared library: its art arrives with that app's change.
+    public var isReadByAnotherApp = false
+
+    public init(sourceTitle: String, unreadablePages: [Int] = []) {
+        self.sourceTitle = sourceTitle
+        self.unreadablePages = unreadablePages
+    }
+}
+
+extension ArtPrint {
+    /// Where `found` is printed in the PDF `sourceID`. A token's or drawn item's picture is kept in the file
+    /// `pictureFile` (`ExtractedPawn.keptPicture`).
+    public init(found: ExtractedPawn, sourceID: String, pictureFile: String?) {
+        let kind: ArtKind, imageIndex: Int?
+        switch found.shape {
+        case .pawn: (kind, imageIndex) = (.pawn, nil)
+        case .card(let index): (kind, imageIndex) = (.figure, index)
+        case .item(let index): (kind, imageIndex) = (.item, index)
+        case .drawnItem: (kind, imageIndex) = (.item, nil)
+        case .token: (kind, imageIndex) = (.token, nil)
+        }
+        self.init(sourceID: sourceID, kind: kind, face: found.front, imageIndex: imageIndex, tokenFile: pictureFile,
+                  copies: found.copies)
+    }
+}
+
+extension ExtractedPawn {
+    /// The picture drawn at import that the library keeps, as PNG: a token's art, or an item cut out of a card
+    /// printed as a picture.
+    public var keptPicture: Data? {
+        switch shape {
+        case .token(let pictures): pictures.front
+        case .drawnItem(let png): png
+        case .pawn, .card, .item: nil
+        }
+    }
+}
+
+extension ArtSource {
+    /// Runs `body` with the PDF's file and access to it, a kept PDF being `keptFile`; nil when it is missing.
+    public func withFile<Result>(keptFile: URL, _ body: (URL) throws -> Result) rethrows -> Result? {
+        switch location {
+        case .kept:
+            return FileManager.default.fileExists(atPath: keptFile.path) ? try body(keptFile) : nil
+        case .referenced(let reference):
+            return try reference.withAccess(body)
+        case .inFolder(let reference, let relativePath):
+            let found = try reference.withAccess { folder -> Result? in
+                let url = folder.appendingPathComponent(relativePath)
+                return FileManager.default.isReadableFile(atPath: url.path) ? try body(url) : nil
+            }
+            return found ?? nil
+        }
+    }
 }

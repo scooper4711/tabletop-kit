@@ -145,6 +145,30 @@ thumbnail once #33 merges as `ArtMerger` does.
 Pawn Shop sheets keep `.pawn(UUID)`: an old UUID finds its pawn through `aliases`, and a sheet saved again stores
 `ArtReference`s. Tests run on copies of the real libraries above and on sheets saved before the change (R6.4).
 
+## Reading PDFs into the store (#33)
+`ArtLibrary`, the JSON library, stays only as the format apps move in from: `ArtExtraction` can't depend on the
+store, which depends on it. `SharedLibrary` gains what `ArtLibrary` does, and `CreatureArtStore` moves onto it,
+keeping its API so Turnkeeper and Field Guide change only how they create it. Pawn Shop never used `ArtLibrary`.
+
+- **Adding a PDF.** `ArtLibrary.prepare` reads it outside any transaction. The app claims it first (R5.3) and
+  skips it when another app holds the claim. `commit` then writes, in one transaction, the source, its access
+  for this app, and each piece of art found; a PDF read by the current reader is skipped, one read by an older
+  reader is read afresh, its old prints replaced and their keys kept as aliases of the entries they joined.
+- **Merging** (`ArtMerger`'s rules over the store). A print whose key the library has joins that entry.
+  Otherwise, among the entries with the same folded name, game and kind of art (item or creature): one whose
+  fingerprint matches, or, when either is a figure, whose colors match (`Figure.palette`, measured once and kept).
+  `art.foldedName`, indexed, finds them (schema version 2).
+- **Pictures** (R3.2). Each new entry's picture is drawn from the print that made it and saved as
+  `Pictures/<key>.heic`, at most 1,024 pixels on its long side; a token's or item's picture drawn at import is
+  kept as `<key>.png`. A figure added later (a Battle Card) draws the picture again, sharper. `picture(of:)` reads
+  the file, else draws it from a PDF this app can reach and saves it, so moved-in entries get theirs on first use.
+  Pictures are drawn after the write, a page per core: the *Monster Core Pawn Box* (415 pawns) reads in about
+  9 seconds and draws in 5.
+- **Watched folders, removing a PDF, missing PDFs** work as in `ArtLibrary`, per app: each app watches its own
+  folders, and a PDF counts as missing for an app that can't reach it and has no picture.
+- **Pawn Shop's move.** `LibraryMove` also takes art, sources, aliases and notes already keyed, which Pawn Shop
+  makes from `library.json` version 2 in pawn-shop#27. `notes` arrives with it (schema version 2).
+
 ## Who does what
 | Issue | Part |
 |---|---|

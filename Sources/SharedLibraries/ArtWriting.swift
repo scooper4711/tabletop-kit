@@ -28,18 +28,20 @@ extension LibraryWriter {
     }
 
     /// Adds a piece of art, merging it by key (R2.5): a print whose key the library has joins that entry, with every
-    /// print of both. The merged entry takes the ID its prints give it, and what pointed at an entry it replaces
-    /// points at it. Returns its ID.
+    /// print of both, and `incoming`'s name, size and prints over the entry's. The merged entry takes the ID its
+    /// prints give it, and what pointed at an entry it replaces points at it. Returns its ID.
     @discardableResult
     func merge(_ incoming: SharedArtEntry) throws -> UUID {
         let known = try entries(withPrintKeys: incoming.prints.map(\.key))
-        var merged = known.first ?? incoming
-        for other in known.dropFirst() + (known.isEmpty ? [] : [incoming]) {
+        var merged = incoming
+        for other in known {
             if merged.palette.isEmpty { merged.palette = other.palette }
-            if merged.traits.isEmpty { merged.traits = other.traits }
+            if merged.picture == nil { merged.picture = other.picture }
+            merged.traits += other.traits.filter { !merged.traits.contains($0) }
             let keys = Set(merged.prints.map(\.key))
             merged.prints += other.prints.filter { !keys.contains($0.key) }
         }
+        merged.sortPrints()
         merged.id = merged.keyedID
         for replaced in known where replaced.id != merged.id { try repoint(replaced.id, to: merged.id) }
         try upsert(entry: merged)
@@ -64,7 +66,7 @@ extension LibraryWriter {
     }
 
     /// Takes out entry `old`, pointing its aliases and the creatures that chose it at `new`.
-    private func repoint(_ old: UUID, to new: UUID) throws {
+    func repoint(_ old: UUID, to new: UUID) throws {
         try delete(from: .art, where: "id = ?", [.text(old.uuidString)])
         for table in [LibraryTable.aliases, .creatureArt] {
             try database.run("UPDATE \(table.rawValue) SET entry = ?, changed = ? WHERE entry = ?",
@@ -72,12 +74,14 @@ extension LibraryWriter {
         }
     }
 
-    private func upsert(entry: SharedArtEntry) throws {
+    func upsert(entry: SharedArtEntry) throws {
         try upsert(.art, [("id", .text(entry.id.uuidString)), ("name", .text(entry.name)),
                           ("game", .text(entry.game.rawValue)), ("size", .text(entry.size.rawValue)),
                           ("traits", try ArtRows.encoded(entry.traits)),
                           ("fingerprint", try ArtRows.encoded(entry.fingerprint)),
-                          ("palette", try ArtRows.encoded(entry.palette)), ("picture", .null)])
+                          ("palette", try ArtRows.encoded(entry.palette)),
+                          ("picture", entry.picture.map { .text($0) } ?? .null),
+                          ("foldedName", .text(ArtKey.foldedName(entry.name)))])
         for print in entry.prints {
             try upsert(.prints, [("key", .text(print.key.uuidString)), ("entry", .text(entry.id.uuidString)),
                                  ("source", .text(print.print.sourceID)), ("kind", .text(print.print.kind.rawValue)),
