@@ -30,10 +30,11 @@ extension LibraryWriter {
     /// Adds a piece of art, merging it by key (R2.5): a print whose key the library has joins that entry, with every
     /// print of both, and `incoming`'s name, size and prints over the entry's; a name the entry has wins over a
     /// stand-in (R2.3a). The merged entry takes the ID its prints give it, and what pointed at an entry it replaces
-    /// points at it. Returns its ID.
+    /// points at it. Returns its ID. `keys` are print keys besides `incoming`'s that name art to join, as when a
+    /// synced reading says its art is also printed elsewhere.
     @discardableResult
-    func merge(_ incoming: SharedArtEntry) throws -> UUID {
-        let known = try entries(withPrintKeys: incoming.prints.map(\.key))
+    func merge(_ incoming: SharedArtEntry, joining keys: [UUID] = []) throws -> UUID {
+        let known = try entries(withPrintKeys: incoming.prints.map(\.key) + keys)
         var merged = incoming
         for other in known {
             if merged.palette.isEmpty { merged.palette = other.palette }
