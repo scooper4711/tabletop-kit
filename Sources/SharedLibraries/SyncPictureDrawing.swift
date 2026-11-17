@@ -10,12 +10,13 @@ extension SharedLibrary {
     public func drawMissingPictures(limit: Int) throws -> Int {
         guard limit > 0 else { return 0 }
         let reachable = Set(try sources().filter { status(of: $0) == .available }.map(\.id))
+        guard !reachable.isEmpty else { return 0 }
         var remaining = try idsOfArtWithoutPicture()[...]
         while !remaining.isEmpty {
             var jobs: [String: [PictureJob]] = [:]
             var queued = 0
             while queued < limit, !remaining.isEmpty {
-                let chunk = remaining.prefix(limit)
+                let chunk = remaining.prefix(limit - queued)
                 remaining = remaining.dropFirst(chunk.count)
                 for job in try pictureJobs(forArt: Array(chunk), reachable: reachable) {
                     jobs[job.print.print.sourceID, default: []].append(job)
