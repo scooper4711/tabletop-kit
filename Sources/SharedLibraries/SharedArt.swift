@@ -30,11 +30,15 @@ public struct SharedPrint: Hashable, Sendable {
     public var print: ArtPrint
     /// The pawn's back, when it has one of its own.
     public var back: PawnFace?
+    /// A token's back drawn alone at import, in the `Pictures` folder, when it shows art of its own; nil when the
+    /// back is the front mirrored.
+    public var backPicture: String?
 
-    public init(key: UUID, print: ArtPrint, back: PawnFace? = nil) {
+    public init(key: UUID, print: ArtPrint, back: PawnFace? = nil, backPicture: String? = nil) {
         self.key = key
         self.print = print
         self.back = back
+        self.backPicture = backPicture
     }
 }
 

@@ -96,6 +96,7 @@ extension LibraryWriter {
                                  ("back", try print.back.map(ArtRows.encoded) ?? .null),
                                  ("imageIndex", print.print.imageIndex.map { .integer(Int64($0)) } ?? .null),
                                  ("picture", print.print.tokenFile.map { .text($0) } ?? .null),
+                                 ("backPicture", print.backPicture.map { .text($0) } ?? .null),
                                  ("copies", .integer(Int64(print.print.copies)))])
         }
     }

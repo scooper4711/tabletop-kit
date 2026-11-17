@@ -59,9 +59,11 @@ enum LibrarySchema {
         INSERT INTO compatibility VALUES (1, 1);
         """
 
-    /// Art printed without a name, kept under a stand-in name until it is named (R2.3a).
+    /// Art printed without a name, kept under a stand-in name until it is named (R2.3a), and tokens' backs drawn
+    /// alone at import, which Pawn Shop prints.
     private static let version5 = """
         ALTER TABLE art ADD COLUMN needsName INTEGER NOT NULL DEFAULT 0;
+        ALTER TABLE prints ADD COLUMN backPicture TEXT;
         """
 
     /// Brings `database` up to this app's version, in one transaction, and tells whether this app may write it:

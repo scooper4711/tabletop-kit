@@ -76,18 +76,24 @@ struct StoreMerger {
     }
 
     private func makePrint(of found: ExtractedPawn, key: UUID) throws -> SharedPrint {
-        var file: String?
-        if let png = found.keptPicture {
-            file = "\(key.uuidString).png"
-            do {
-                try png.write(to: library.pictureFile(file ?? ""), options: .atomic)
-            } catch {
-                throw SharedLibraryError(operation: "Saving \(found.name)'s picture",
-                                         detail: error.localizedDescription)
-            }
+        let file = try found.keptPicture.map { try save($0, as: "\(key.uuidString).png", of: found) }
+        var backPicture: String?
+        if case .token(let pictures) = found.shape, let back = pictures.back {
+            backPicture = try save(back, as: "\(key.uuidString)-back.png", of: found)
         }
         let back: PawnFace? = found.shape == .pawn ? found.back : nil
-        return SharedPrint(key: key, print: ArtPrint(found: found, sourceID: source.id, pictureFile: file), back: back)
+        return SharedPrint(key: key, print: ArtPrint(found: found, sourceID: source.id, pictureFile: file), back: back,
+                           backPicture: backPicture)
+    }
+
+    /// Writes a picture drawn at import into the `Pictures` folder, returning its name there.
+    private func save(_ png: Data, as file: String, of found: ExtractedPawn) throws -> String {
+        do {
+            try png.write(to: library.pictureFile(file), options: .atomic)
+        } catch {
+            throw SharedLibraryError(operation: "Saving \(found.name)'s picture", detail: error.localizedDescription)
+        }
+        return file
     }
 
     func entry(withKey key: UUID) throws -> SharedArtEntry? {

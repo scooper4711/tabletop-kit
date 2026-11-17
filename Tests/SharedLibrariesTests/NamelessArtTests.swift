@@ -111,6 +111,22 @@ import Testing
     }
 }
 
+/// Tokens' backs drawn alone at import, which Pawn Shop prints.
+@Suite struct TokenBackTests {
+    @Test func keepsATokensBackPicture() throws {
+        let folder = temporaryFolder()
+        let library = try SharedLibrary(folder: folder.appending(path: "Tableside"), app: .pawnShop)
+        let front = DrawnToken(center: CGPoint(x: 100, y: 600), rimName: "NITPICK")
+        let url = folder.appending(path: "Pathfinder Test Token Box PDF.pdf")
+        try tokenPDF(pages: [[front], [front.mirrored(pageWidth: letterPage.width)]]).write(to: url)
+        try library.add(url, keeping: true)
+        let print = try #require(try library.artEntries().first?.prints.first)
+        let back = try #require(print.backPicture)
+        #expect(back == "\(print.key.uuidString)-back.png" && print.print.tokenFile == "\(print.key.uuidString).png")
+        #expect(FileManager.default.fileExists(atPath: library.pictureFile(back).path))
+    }
+}
+
 /// Telling art apart when naming it (shared libraries R2.3a).
 @Suite struct NamingArtTests {
     let thumbnail = (0..<64).map { UInt8($0 * 3) }
