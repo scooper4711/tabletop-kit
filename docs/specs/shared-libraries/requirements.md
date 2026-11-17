@@ -55,6 +55,8 @@ Issues: tabletop-kit#15 (this spec), #16 and #33 (implementation), #44 (sync); P
 - R4.3 Field Guide shows custom creatures in its Bestiary, searchable and with their battle cards. Making and
   editing them stays in Turnkeeper.
 - R4.4 Pawn Shop lists each custom creature with art as a pawn it can print; one without art is left out.
+- R4.4a Its pawn's size is the creature's size from its traits; Tiny prints as Small, and a size that is missing or
+  isn't one of Paizo's prints as Medium.
 - R4.5 Turnkeeper's encounters keep referring to custom creatures by their `custom.<id>` keys, and sharing a
   library (`sharedVersion` on custom creatures and art) keeps working.
 

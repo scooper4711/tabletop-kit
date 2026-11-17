@@ -145,5 +145,7 @@ Settled for pawn-shop#46's and the suite's open questions:
 - **The same picture twice:** variants within a product (R2.3); across products the picture merges, and the other
   names are kept.
 - **A Battle Card's sharper picture** joins the pawn's entry, which keeps the pawn's ID.
+- **A custom creature's pawn size** is `TraitLine.size` mapped to `PawnSize` (case ignored): Tiny becomes `.small`,
+  and an empty or unknown size `.medium`.
 - **Custom creatures without art** are left out of Pawn Shop. **Field Guide** shows custom creatures but doesn't edit
   them. The **art chosen for a creature** is shared by Turnkeeper and Field Guide.
