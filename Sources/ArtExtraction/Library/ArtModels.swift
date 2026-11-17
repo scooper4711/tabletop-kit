@@ -41,6 +41,17 @@ public struct ArtSource: Codable, Identifiable, Hashable, Sendable {
     public var readerVersion: Int
     /// How many pieces of art reading it found.
     public var artFound: Int
+
+    public init(id: String, title: String, game: GameSystem, location: SourceLocation, byteCount: Int,
+                readerVersion: Int, artFound: Int) {
+        self.id = id
+        self.title = title
+        self.game = game
+        self.location = location
+        self.byteCount = byteCount
+        self.readerVersion = readerVersion
+        self.artFound = artFound
+    }
 }
 
 /// What a piece of art is printed as.
@@ -81,6 +92,16 @@ public struct ArtPrint: Codable, Hashable, Sendable {
     public var tokenFile: String?
     /// How many copies the product prints.
     public var copies: Int
+
+    public init(sourceID: String, kind: ArtKind, face: PawnFace, imageIndex: Int? = nil, tokenFile: String? = nil,
+                copies: Int) {
+        self.sourceID = sourceID
+        self.kind = kind
+        self.face = face
+        self.imageIndex = imageIndex
+        self.tokenFile = tokenFile
+        self.copies = copies
+    }
 }
 
 /// One piece of creature or item art, with every product that prints it, its sharpest print first.
@@ -96,6 +117,18 @@ public struct ArtEntry: Codable, Identifiable, Hashable, Sendable {
     /// The colors of the art's figure (see `Figure.palette`), once measured to compare it with art of the same
     /// name; empty until then.
     public var palette: [Double]
+
+    public init(id: UUID, name: String, game: GameSystem, size: PawnSize, traits: [String],
+                fingerprint: ArtFingerprint, prints: [ArtPrint], palette: [Double]) {
+        self.id = id
+        self.name = name
+        self.game = game
+        self.size = size
+        self.traits = traits
+        self.fingerprint = fingerprint
+        self.prints = prints
+        self.palette = palette
+    }
 
     /// True for an item's art, from an item deck, rather than a creature's.
     public var isItem: Bool { prints.contains { $0.kind == .item } }

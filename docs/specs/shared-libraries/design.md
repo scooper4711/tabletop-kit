@@ -58,13 +58,14 @@ listed here exactly.
   the art can say what is missing. Custom art keeps its random UUID and needs no label.
 
 ## The store (R1, R3, R4, R5)
-`SharedLibrary`, a new target in tabletop-kit, opens `Tableside/Library.sqlite` in the group folder, or
+`SharedLibrary`, in the new `SharedLibraries` target of tabletop-kit (the module isn't named after the type, which
+would hide the module's name), opens `Tableside/Library.sqlite` in the group folder, or
 `<app folder>/Library.sqlite` outside it (R1.2), with its files beside it:
 
 | Folder | Holds |
 |---|---|
 | `Sources/<sha256>.pdf` | PDFs the library keeps |
-| `Pictures/<key>.heic` | each entry's picture, named by the key of the print drawn (R3.2) |
+| `Pictures/<key>.heic` | each entry's picture, named by the key of the print drawn (R3.2); a token's or item's picture drawn at import keeps its format (`<key>.png`) |
 | `Custom/<uuid>.<ext>` | images the user pasted or dropped, and custom pawns' art |
 
 It uses the system's SQLite (`import SQLite3`), so the package keeps no dependencies. The tables:
@@ -82,7 +83,13 @@ It uses the system's SQLite (`import SQLite3`), so the package keeps no dependen
 | `customCreatures` | Turnkeeper's `CustomCreature` as JSON, with id, the campaign it was made in, `sharedVersion` |
 | `customArt` | Turnkeeper's `CustomArt` as JSON, with id, image file, `sharedVersion` |
 | `claims` | a PDF being read: source, app, until when |
-| `changes` | a counter, and each deleted row's table and id with the counter when it went |
+| `counter` | the change counter |
+| `deletions` | each deleted row's table and key, with the counter when it went |
+| `moves` | each app's move (R6): rows recorded, or finished |
+
+The toolkit doesn't know Turnkeeper's types, so `CustomCreatureRecord` and `CustomArtRecord` carry them as the app
+encodes them, with the columns the library needs. `notes` comes with Pawn Shop's move (#27, #33), as schema
+version 2 (`PRAGMA user_version`).
 
 `ArtLibrary` keeps its API and becomes a view over the store; `CreatureArtStore` and Pawn Shop's `PawnLibrary` build
 on it. `ArtPrint` gains `back: PawnFace?`, which Pawn Shop's pawns need.
@@ -96,9 +103,9 @@ on it. `ArtPrint` gains `back: PawnFace?`, which Pawn Shop's pawns need.
   counter also gives #44 its list of changes to upload.
 - **Claims** (R5.3). Before reading a PDF an app claims it for 10 minutes; another app skips a claimed PDF and
   picks up its art when the change arrives.
-- **The iPad** (R5.4). The system ends a suspended app that holds a lock on a file in an App Group container. Each
-  write runs inside a background task, no transaction stays open, and the store closes its connection when the app
-  goes to the background and opens it again when needed.
+- **The iPad** (R5.4). The system ends a suspended app that holds a lock on a file in an App Group container. No
+  transaction stays open, and the app calls `close()` when it goes to the background, wrapping any write still
+  running in a background task (UIKit's, which the apps own); the store opens its connection again when needed.
 - **Pictures** (R3.2). When a PDF is read, each new entry's picture is drawn as `ArtLibrary.picture(of:)` does and
   saved as HEIC with alpha, at the size the PDF embeds it, at most 1,024 pixels on its long side. A sharper print
   replaces it. Field Guide #40 measures the size on the real library before the cap is settled. Entries moved in
@@ -113,7 +120,7 @@ same result; GRDB would be the package's first dependency.
 
 ## Moving in (R6)
 `SharedLibrary.moveIn(from:app:)`, which each app calls at launch until it succeeds:
-1. Skip it when `changes` records the move for this app. Otherwise read the app's old library (`art-library.json`
+1. Skip it when `moves` records the move for this app as finished. Otherwise read the app's old library (`art-library.json`
    or Pawn Shop's `library.json`).
 2. Give each print its key from its fingerprint, name and face, grouping by source for sizes. No PDF is read.
    Pawn Shop's `library.json` version 2 (pawn-shop#46) already keys its pawns: they keep their IDs, and its
@@ -121,11 +128,19 @@ same result; GRDB would be the package's first dependency.
 3. In one transaction, add the sources, art and prints, merging by key (above); record each old UUID in `aliases`;
    merge `notes` and `creatureArt`. The user's corrections win over what was read and the later over the earlier;
    today's libraries record no correction times, so Pawn Shop's corrected names and tags go first, then the others.
-   Add Turnkeeper's custom creatures and art. Record the move.
+   Add Turnkeeper's custom creatures and art. Record the move's rows (`moves`: recorded), so a move cut short
+   doesn't write them twice.
 4. Move the files: kept PDFs into `Sources` (a rename on the same volume; a PDF already there is deleted after its
    SHA-256 is checked), token, item and custom pictures into `Pictures` and `Custom` under their new names.
    A file already moved is skipped, so a move cut short finishes at the next launch (R6.5).
-5. Rename the old library file to `<name>.moved`, kept for one version and then deleted.
+5. Rename the old library file to `<name>.moved`, kept for one version and then deleted, and record the move as
+   finished.
+
+Art chosen for a creature by an app that moved in before is kept. On copies of Turnkeeper's and Field Guide's real
+libraries (in the gitignored `TestData/RealLibraries`), each move takes about 2 seconds; Turnkeeper's 10,280
+entries become 10,274 (the 6 names read with different spacing), and every old ID of both apps finds its art.
+Field Guide's copy adds 223: 8 PDFs Turnkeeper hasn't read, and PDFs an older reader read, whose art merges by
+thumbnail once #33 merges as `ArtMerger` does.
 
 Pawn Shop sheets keep `.pawn(UUID)`: an old UUID finds its pawn through `aliases`, and a sheet saved again stores
 `ArtReference`s. Tests run on copies of the real libraries above and on sheets saved before the change (R6.4).

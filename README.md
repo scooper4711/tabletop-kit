@@ -18,6 +18,8 @@ Swift libraries shared by three of the [Tableside Toolkit](#the-apps) apps,
 - **BattleCards** draws a creature's battle card, front and back, with its template and conditions applied, in a
   look of its own; the card art comes from your own Rexard packs.
 - **CreatureArt** keeps the art library that Turnkeeper and Field Guide read from your PDFs.
+- **SharedLibraries** keeps the art library and creature library the three apps share in the toolkit's App Group:
+  an SQLite database that two apps can write at once, telling the others of each change.
 - **AppNotices** is the About screen each app shows, with the notices Paizo's Community Use Policy and
   Compatibility License require.
 
