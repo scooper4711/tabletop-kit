@@ -61,6 +61,8 @@ share. It contains no Paizo art or text.
   progress and a summary, a catalog of the art (name, game, whether a remastered product prints it, whether it is
   a token, whether it can be drawn, the PDFs printing it) and of the PDFs (missing or not), and pictures drawn off
   the main thread.
+- R2.11 Art has IDs every device derives the same way, and the library moves into the App Group shared by Pawn
+  Shop, Turnkeeper and Field Guide: see `docs/specs/shared-libraries`.
 
 ## R3 Test support (`ArtExtractionTestSupport`)
 - R3.1 Draws small PDFs laid out like Paizo's (pawns with cut outlines and labels, tokens, Battle Cards decks), so

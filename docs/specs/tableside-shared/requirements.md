@@ -17,6 +17,8 @@ holds the one bridge through which an app lists and opens Scrollkeeper's titles
 - R1.3 Scrollkeeper's part of the group is its `Scrollkeeper` folder: the
   downloads in `Files`, the covers in `Covers`, and `library.json`. Only
   Scrollkeeper writes there.
+- R1.4 The shared art and creature libraries are its `Tableside` folder, written by Pawn Shop, Turnkeeper and
+  Field Guide (`docs/specs/shared-libraries`).
 
 ## R2 The library list
 - R2.1 `library.json` has a format version and the time it was written, says
