@@ -72,7 +72,8 @@ Issues: tabletop-kit#15 (this spec), #16 and #33 (implementation), #44 (sync); P
 
 ## R6 Moving into the group
 - R6.1 The first app on a device with this version moves its library into the group; each later app merges its own
-  into it. Each library moves at most once: Pawn Shop changes its pawn IDs (#46) and moves (#27) in the same step.
+  into it. Each library moves at most once. Pawn Shop gives its pawns their IDs in place first (#46), keeping the
+  old IDs as aliases, and the move (#27) carries those aliases into `aliases`.
 - R6.2 Merging keeps each piece of art once, by its ID (R2), with every product, the user's names, tags and
   corrections, and the art chosen for creatures. Where two apps disagree, the user's corrections win over what was
   read, and the later correction wins over the earlier.
