@@ -116,6 +116,8 @@ same result; GRDB would be the package's first dependency.
 1. Skip it when `changes` records the move for this app. Otherwise read the app's old library (`art-library.json`
    or Pawn Shop's `library.json`).
 2. Give each print its key from its fingerprint, name and face, grouping by source for sizes. No PDF is read.
+   Pawn Shop's `library.json` version 2 (pawn-shop#46) already keys its pawns: they keep their IDs, and its
+   `aliases` (old ID or another print's key → pawn ID) move into `aliases`.
 3. In one transaction, add the sources, art and prints, merging by key (above); record each old UUID in `aliases`;
    merge `notes` and `creatureArt`. The user's corrections win over what was read and the later over the earlier;
    today's libraries record no correction times, so Pawn Shop's corrected names and tags go first, then the others.
@@ -133,7 +135,8 @@ Pawn Shop sheets keep `.pawn(UUID)`: an old UUID finds its pawn through `aliases
 |---|---|
 | tabletop-kit#16 | `SharedLibrary`: the store, change notices, claims, creature library, Turnkeeper's and Field Guide's move |
 | tabletop-kit#33 | `ArtKey`, `ArtReference`, merging by key, pictures, `ArtLibrary` over the store, Pawn Shop's move |
-| pawn-shop#46, #27 | pawns over shared art, sheets with `ArtReference`, the move in one step |
+| pawn-shop#46 | pawn IDs from `ArtKey` in Pawn Shop's own library, with aliases; sheets with `ArtReference` |
+| pawn-shop#27 | pawns over shared art, the move with #46's aliases |
 | turnkeeper#18, field-guide#17 | each app on `SharedLibrary`; Field Guide shows custom creatures (R4.3) |
 | field-guide#40 | picture size and format (R3.2) |
 | tabletop-kit#44 | sync of `art`, `prints`, `notes`, `creatureArt` and the creature library by change counter |
