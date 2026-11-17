@@ -45,12 +45,11 @@ extension SharedLibrary {
         let database = try connection()
         switch change {
         case .deleted(let id):
-            return try cloudRecords(inZone: SyncZone.library, in: database)[id.name] == nil
-                && syncRow(of: id, in: database) == nil
+            return try cloudRecord(named: id.name, in: database) == nil && syncRow(of: id, in: database) == nil
         case .saved(let record, let fields):
             let digest = try SyncPayloads.digest(ofIncoming: record.payload, kind: record.id.kind)
             guard let row = try syncRow(of: record.id, in: database) else { return false }
-            let known = try cloudRecords(inZone: SyncZone.library, in: database)[record.id.name]
+            let known = try cloudRecord(named: record.id.name, in: database)
             if known?.digest == digest {
                 try database.run("UPDATE cloudRecords SET systemFields = ? WHERE zone = ? AND name = ?",
                                  [.blob(fields), .text(SyncZone.library), .text(record.id.name)])

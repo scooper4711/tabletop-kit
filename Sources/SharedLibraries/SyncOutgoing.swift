@@ -33,7 +33,7 @@ extension SharedLibrary {
         guard let row = try syncRow(of: id, in: database),
               let record = try syncRecord(id, rowKey: row.rowKey, in: database) else { return nil }
         let digest = SyncDigest.hex(of: record.payload)
-        let known = try cloudRecords(inZone: SyncZone.library, in: database)[id.name]
+        let known = try cloudRecord(named: id.name, in: database)
         if let known, known.systemFields != nil, known.digest == digest {
             try database.run("UPDATE cloudRecords SET sentChanged = MAX(sentChanged, ?) WHERE zone = ? AND name = ?",
                              [.integer(row.changed), .text(SyncZone.library), .text(id.name)])
