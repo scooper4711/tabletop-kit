@@ -68,7 +68,8 @@ extension SharedLibrary {
     }
 
     /// Removes the files in `Pictures` that nothing names, except those written in the last hour, which an import
-    /// writes before the row that names them. Returns how many it removed.
+    /// writes before the row that names them, and forgets cached pictures whose files are gone. Returns how many
+    /// files it removed.
     @discardableResult
     public func removeUnreferencedPictures() throws -> Int {
         let database = try connection()
@@ -80,7 +81,22 @@ extension SharedLibrary {
             try database.run("DELETE FROM fetchedPictures WHERE name = ?", [.text(file.name)])
             removed += 1
         }
+        for row in try database.rows("SELECT name FROM fetchedPictures") {
+            guard let name = row.text("name"), !hasPicture(name) else { continue }
+            try database.run("DELETE FROM fetchedPictures WHERE name = ?", [.text(name)])
+        }
         return removed
+    }
+
+    /// Deletes the files of those of `names` that nothing names any more, with their place in the cache.
+    func removePictures(noLongerNamedAmong names: [String]) {
+        guard !names.isEmpty, let database = try? connection(),
+              let rows = try? database.rows(Self.referencedPictures) else { return }
+        let referenced = Set(rows.compactMap { $0.text("name") })
+        for name in Set(names) where !referenced.contains(name) {
+            try? FileManager.default.removeItem(at: pictureFile(name))
+            try? database.run("DELETE FROM fetchedPictures WHERE name = ?", [.text(name)])
+        }
     }
 
     // MARK: Helpers

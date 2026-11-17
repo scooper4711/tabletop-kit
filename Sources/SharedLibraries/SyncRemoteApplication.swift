@@ -17,9 +17,12 @@ struct RemoteApplication {
     let library: SharedLibrary
     private(set) var applied = 0
     private(set) var parked = 0
-    /// What to delete from the disk once the transaction has committed.
+    /// What to change on the disk once the transaction has committed, so a failed batch leaves every file as it
+    /// was: pictures and custom images to delete, removed PDFs, and custom images copied in under a staged name.
     private var picturesToDelete: [String] = []
     private var removedSources: [String] = []
+    private var customImagesToDelete: [String] = []
+    private var stagedImages: Set<String> = []
     /// The sources applied, settled once all are in.
     private var appliedSources: [IncomingRecord] = []
 
@@ -41,10 +44,22 @@ struct RemoteApplication {
         try settleSources()
     }
 
-    /// Deletes the files the transaction left behind: pictures no art uses, and removed PDFs' kept copies.
+    /// Changes the files, the transaction having committed: deletes the pictures nothing names any more (art
+    /// applied later in the batch may name one again), removed PDFs' kept copies and deleted custom art's images,
+    /// and puts the staged custom images in place.
     func finish() {
-        for name in picturesToDelete { try? FileManager.default.removeItem(at: library.pictureFile(name)) }
+        library.removePictures(noLongerNamedAmong: picturesToDelete)
         for source in removedSources { try? FileManager.default.removeItem(at: library.keptFile(sourceID: source)) }
+        let files = try? database.rows("SELECT file FROM customArt").compactMap { $0.text("file") }
+        if let named = files.map(Set.init) {
+            for file in customImagesToDelete where !named.contains(file) {
+                try? FileManager.default.removeItem(at: library.customFile(file))
+            }
+        }
+        for file in stagedImages {
+            try? FileManager.default.removeItem(at: library.customFile(file))
+            try? FileManager.default.moveItem(at: library.stagedCustomFile(file), to: library.customFile(file))
+        }
     }
 
     // MARK: Saved records
@@ -100,9 +115,10 @@ struct RemoteApplication {
 
     mutating func countApplied() { applied += 1 }
     mutating func countParked() { parked += 1 }
-    mutating func resetParked(to count: Int) { parked = count }
     mutating func addPicturesToDelete(_ names: [String]) { picturesToDelete += names }
     mutating func addRemovedSource(_ id: String) { removedSources.append(id) }
+    mutating func addCustomImageToDelete(_ file: String) { customImagesToDelete.append(file) }
+    mutating func addStagedImage(_ file: String) { stagedImages.insert(file) }
     mutating func addAppliedSource(_ incoming: IncomingRecord) { appliedSources.append(incoming) }
 
     // MARK: Parked and settled

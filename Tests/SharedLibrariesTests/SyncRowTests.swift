@@ -169,4 +169,45 @@ import Testing
         try devices.exchange()
         #expect(try Data(contentsOf: second.customFile("a.png")) == Data([1, 2, 3]))
     }
+
+    @Test func forgetsANoteKeptAsideWhenItIsDeletedBeforeItsArtArrives() throws {
+        let sender = try devices.first.library()
+        try sender.write { writer in
+            try SyncFixture.addSource("pawns", to: writer)
+            try writer.merge(SyncFixture.entry([.init(.pawn, pawn, "pawns")]))
+            try writer.upsert(ArtNote(tags: ["club"]), for: pawn)
+        }
+        let sent = try sender.sendEverything()
+        try second.applyRemote(savedRecords(sent, of: .note))
+
+        try second.applyRemote([.deleted(SyncRecordID(kind: .note, name: "note-\(pawn.uuidString)"))])
+        try second.applyRemote(savedRecords(sent, of: .source))
+        #expect(try second.notes().isEmpty)
+        #expect(try second.connection().rows("SELECT * FROM parkedRecords").isEmpty)
+    }
+
+    @Test func keepsCustomArtsImagesWhenABatchFails() throws {
+        let kept = CustomArtRecord(id: UUID(), fileName: "kept.png", sharedVersion: nil, record: Data())
+        let changed = CustomArtRecord(id: UUID(), fileName: "changed.png", sharedVersion: nil, record: Data())
+        try first.save(kept, image: Data([1]))
+        try first.save(changed, image: Data([2]))
+        try devices.exchange()
+        try first.save(changed, image: Data([3]))
+        let candidate = try #require(try first.syncCandidates().saves.first)
+        let update = try #require(try first.outgoingRecord(candidate))
+        var broken = update.record
+        broken.id = SyncRecordID(kind: .customArt, name: "customArt-\(UUID().uuidString)")
+        broken.file = devices.first.root.appending(path: "no-such-image.png")
+        let batch: [RemoteChange] = [
+            .deleted(SyncRecordID(kind: .customArt, name: "customArt-\(kept.id.uuidString)")),
+            .saved(update.record, systemFields: Data([2])), .saved(broken, systemFields: Data([1]))
+        ]
+
+        #expect(throws: SharedLibraryError.self) { try second.applyRemote(batch) }
+        #expect(try second.customArt().count == 2)
+        #expect(try Data(contentsOf: second.customFile("kept.png")) == Data([1]))
+        #expect(try Data(contentsOf: second.customFile("changed.png")) == Data([2]))
+        let leftovers = try FileManager.default.contentsOfDirectory(atPath: second.customFile("").path)
+        #expect(leftovers.sorted() == ["changed.png", "kept.png"])
+    }
 }

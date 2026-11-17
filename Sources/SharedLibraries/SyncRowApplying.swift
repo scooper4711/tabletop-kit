@@ -25,7 +25,7 @@ extension RemoteApplication {
 
     mutating func applyCreatureArt(_ payload: CreatureArtPayload, _ incoming: IncomingRecord) throws {
         let subject = payload.subject
-        if try !keepsLocal(.creatureArt, in: .creatureArt, key: subject, over: payload.modified) {
+        if try !keepsLocal(.creatureArt, key: subject, over: payload.modified) {
             let modified = SharedLibrary.date(payload.modified)
             if let entry = payload.entry {
                 let known = try ArtRows.entryID(answeringTo: entry, in: database) ?? entry
@@ -42,7 +42,7 @@ extension RemoteApplication {
 
     mutating func applyCustomCreature(_ payload: CustomCreaturePayload, _ incoming: IncomingRecord) throws {
         let key = payload.id.uuidString
-        if try !keepsLocal(.customCreature, in: .customCreatures, key: key, over: payload.modified) {
+        if try !keepsLocal(.customCreature, key: key, over: payload.modified) {
             try writer.upsert(CustomCreatureRecord(id: payload.id, campaignID: payload.campaign,
                                                    sharedVersion: payload.sharedVersion.map(SharedLibrary.date),
                                                    record: payload.record),
@@ -54,8 +54,8 @@ extension RemoteApplication {
 
     mutating func applyCustomArt(_ payload: CustomArtPayload, _ incoming: IncomingRecord) throws {
         let key = payload.id.uuidString
-        if try !keepsLocal(.customArt, in: .customArt, key: key, over: payload.modified) {
-            try copyImage(of: incoming.record, as: payload.file)
+        if try !keepsLocal(.customArt, key: key, over: payload.modified) {
+            try stageImage(of: incoming.record, as: payload.file)
             try writer.upsert(CustomArtRecord(id: payload.id, fileName: payload.file,
                                               sharedVersion: payload.sharedVersion.map(SharedLibrary.date),
                                               record: payload.record),
@@ -99,11 +99,9 @@ extension RemoteApplication {
 
     /// True when the row has changes not yet sent that are later than `incoming`, so the incoming record doesn't
     /// replace it.
-    private func keepsLocal(_ kind: SyncKind, in table: LibraryTable, key: String,
-                            over incoming: Double) throws -> Bool {
-        guard let local = try modified(in: table, key: key), try hasUnsentChanges(kind, rowKey: key) else {
-            return false
-        }
+    private func keepsLocal(_ kind: SyncKind, key: String, over incoming: Double) throws -> Bool {
+        guard let table = Self.table(of: kind), let local = try modified(in: table, key: key),
+              try hasUnsentChanges(kind, rowKey: key) else { return false }
         return local > incoming
     }
 
@@ -114,22 +112,27 @@ extension RemoteApplication {
         return knownRecord?.isInStep(at: changed) != true
     }
 
-    private func deleteRow(of kind: SyncKind, in table: LibraryTable, key: String) throws {
-        let file = kind == .customArt ? try database.rows("SELECT file FROM customArt WHERE id = ?", [.text(key)])
-            .first?.text("file") : nil
+    /// Deletes the row; custom art's image goes once the transaction has committed.
+    private mutating func deleteRow(of kind: SyncKind, in table: LibraryTable, key: String) throws {
+        if kind == .customArt, let file = try database.rows("SELECT file FROM customArt WHERE id = ?", [.text(key)])
+            .first?.text("file") {
+            addCustomImageToDelete(file)
+        }
         try writer.delete(from: table, where: "\(table.keyColumns[0]) = ?", [.text(key)])
-        if let file { try? FileManager.default.removeItem(at: library.customFile(file)) }
     }
 
-    private func copyImage(of record: SyncRecord, as fileName: String) throws {
+    /// Copies custom art's image in under a staged name; `finish` puts it in place once the transaction has
+    /// committed, so a failed batch leaves the image the row had.
+    private mutating func stageImage(of record: SyncRecord, as fileName: String) throws {
         guard let source = record.file else { return }
-        let destination = library.customFile(fileName)
+        let staged = library.stagedCustomFile(fileName)
         do {
-            try? FileManager.default.removeItem(at: destination)
-            try FileManager.default.copyItem(at: source, to: destination)
+            try? FileManager.default.removeItem(at: staged)
+            try FileManager.default.copyItem(at: source, to: staged)
         } catch {
             throw SharedLibraryError(operation: "Saving \(fileName)", detail: error.localizedDescription)
         }
+        addStagedImage(fileName)
     }
 
     /// Keeps a note aside until the art it is about arrives.

@@ -104,6 +104,21 @@ extension SharedLibrary {
         customFolder.appending(path: fileName)
     }
 
+    /// Where an image from another device waits until the change that brings it has been saved (library sync).
+    func stagedCustomFile(_ fileName: String) -> URL {
+        customFolder.appending(path: fileName + Self.stagedSuffix)
+    }
+
+    /// Removes the images left waiting by a change that failed.
+    func removeStagedImages() {
+        let files = (try? FileManager.default.contentsOfDirectory(at: customFolder, includingPropertiesForKeys: nil))
+        for file in files ?? [] where file.lastPathComponent.hasSuffix(Self.stagedSuffix) {
+            try? FileManager.default.removeItem(at: file)
+        }
+    }
+
+    private static let stagedSuffix = ".incoming"
+
     /// The art chosen for each creature, by its bestiary key or `custom.<id>`.
     public func creatureArt() throws -> [String: CreatureArtChoice] {
         var choices: [String: CreatureArtChoice] = [:]

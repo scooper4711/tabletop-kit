@@ -66,7 +66,7 @@ extension SharedLibrary {
     /// Takes a PDF out of the library for every app, with the art no other PDF prints and its pictures.
     public func remove(sourceID: String) throws {
         let pictures = try write { writer in try writer.remove(sourceID: sourceID) }
-        for name in pictures { try? FileManager.default.removeItem(at: pictureFile(name)) }
+        removePictures(noLongerNamedAmong: pictures)
         try? FileManager.default.removeItem(at: keptFile(sourceID: sourceID))
     }
 

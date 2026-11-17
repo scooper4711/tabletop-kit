@@ -45,7 +45,11 @@ extension SharedLibrary {
                 .flatMap(customCreaturePayload).map { try record(id, $0, title: rowKey) }
         case .customArt:
             return try database.rows("SELECT * FROM customArt WHERE id = ?", key).first.flatMap(customArtPayload)
-                .map { try record(id, $0, title: $0.file, file: customFile($0.file)) }
+                .map { payload in
+                    var record = try record(id, payload, title: payload.file)
+                    record.file = customFile(payload.file)
+                    return record
+                }
         }
     }
 
@@ -69,9 +73,8 @@ extension SharedLibrary {
         }
     }
 
-    private func record(_ id: SyncRecordID, _ payload: some Encodable, title: String, file: URL? = nil) throws
-        -> SyncRecord {
-        SyncRecord(id: id, payload: try SyncPayloads.encode(payload), title: title, file: file)
+    private func record(_ id: SyncRecordID, _ payload: some Encodable, title: String) throws -> SyncRecord {
+        SyncRecord(id: id, payload: try SyncPayloads.encode(payload), title: title)
     }
 
     private func notePayload(_ row: SQLRow) -> NotePayload? {

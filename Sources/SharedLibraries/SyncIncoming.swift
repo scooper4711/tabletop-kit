@@ -14,10 +14,16 @@ extension SharedLibrary {
             if try holdsAlready(change) { report.unchanged += 1 } else { pending.append(change) }
         }
         guard !pending.isEmpty else { return report }
-        let application = try write { writer in
-            var application = RemoteApplication(writer: writer, library: self)
-            try application.apply(Self.inApplyingOrder(pending))
-            return application
+        let application: RemoteApplication
+        do {
+            application = try write { writer in
+                var application = RemoteApplication(writer: writer, library: self)
+                try application.apply(Self.inApplyingOrder(pending))
+                return application
+            }
+        } catch {
+            removeStagedImages()
+            throw error
         }
         application.finish()
         report.applied = application.applied
@@ -45,6 +51,8 @@ extension SharedLibrary {
         let database = try connection()
         switch change {
         case .deleted(let id):
+            // A note kept aside for art that hasn't arrived goes with its record, or it would come back later.
+            try database.run("DELETE FROM parkedRecords WHERE name = ?", [.text(id.name)])
             return try cloudRecord(named: id.name, in: database) == nil && syncRow(of: id, in: database) == nil
         case .saved(let record, let fields):
             let digest = try SyncPayloads.digest(ofIncoming: record.payload, kind: record.id.kind)

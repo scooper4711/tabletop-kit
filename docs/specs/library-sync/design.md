@@ -84,7 +84,9 @@ that art, in one statement. No writer has to change.
 
 1. **Skip what is known.** A saved record whose re-encoded digest equals the stored one, with its row present, only
    updates the stored system fields, outside `write`. When nothing else is left: no transaction, no counter, no
-   notification. A second app on the device fetching the same records is a no-op (R2.3).
+   notification. A second app on the device fetching the same records is a no-op (R2.3). A record whose content
+   the library holds already is noted the same way, and so is a deletion of a record that is neither here nor
+   known to the cloud, which takes a parked note of that name with it.
 2. **In `SyncKind` order**, deletions of a kind before its saves; then parked records are tried again; then
    `cloudRecords` is settled for every source touched or sharing art with one.
 3. **A source saved.** A local reading by a newer reader stays, and is uploaded over the incoming one. An older
@@ -93,20 +95,23 @@ that art, in one statement. No writer has to change.
    piece becomes one piece here (R3.4); its aliases are added unless they already answer to art. The old prints
    are then retired, their keys becoming aliases (R3.3), and their pictures deleted after the transaction.
    `sourceAccess` is never written, and `kept` stays as it was.
-4. **A source deleted.** The PDF is removed as `SharedLibrary.remove(sourceID:)` does, its pictures and kept copy
-   deleted after the transaction. A removal always wins.
+4. **A source deleted.** The PDF is removed as `SharedLibrary.remove(sourceID:)` does, its kept copy and the
+   pictures nothing names any more deleted after the transaction: a PDF downloaded afresh has other bytes and so
+   another ID, and its record in the same batch names the same pictures. A removal always wins.
 5. **A note saved.** Found by any ID of its art; without art it is parked (R3.7). With unsent local changes, the
    local note stays if it is corrected and the incoming one isn't, or when neither or both are and its `modified` is
    later. When the art's ID here differs from the record's, the record is renamed on the server by uploading the
    note under the new name and deleting the old (R3.5).
 6. **Creature art, custom creature and custom art saved.** With unsent local changes the later `modified` wins, a
-   tie going to the incoming one. A custom art's image is copied before its row.
-7. **Those deleted.** With unsent local changes the row stays and is uploaded again; otherwise it goes, with a
-   custom art's image.
+   tie going to the incoming one. A custom art's image is copied in under a staged name (`<file>.incoming`) and put
+   in place once the transaction has committed.
+7. **Those deleted.** With unsent local changes the row stays and is uploaded again; otherwise it goes, and a
+   custom art's image once the transaction has committed.
 8. **Settling `cloudRecords`** after a save: the system fields and the incoming digest are stored. When the local
    payload built again has the same digest, nothing is left to upload; otherwise the merged result is.
 
-On a failure the transaction rolls back and `applyRemote` throws.
+On a failure the transaction rolls back and `applyRemote` throws, with every file as it was: files are only
+deleted or replaced after the commit.
 
 ## Pictures
 
@@ -124,7 +129,8 @@ the digest is empty. A picture is referenced by `art.picture`, `prints.picture` 
   from its own PDFs are never in `fetchedPictures`, so they are never evicted. No limit is not `.everything`: with no
   limit nothing is removed, but a picture still downloads only when first shown.
 - **Old files** (R4.4). `removeUnreferencedPictures` deletes files nothing names, leaving alone files modified in the
-  last hour: an import writes a picture's file before the row that names it.
+  last hour: an import writes a picture's file before the row that names it. It also forgets cached pictures
+  whose files are gone.
 - **Names** (R4.6). Only `SharedPictures.writePicture` and `StoreMerger.makePrint` name a new picture. Drawing a
   picture for art that already names one whose file is missing (`picture(of:)`, `drawMissingPictures`) writes it
   under that name and leaves the row alone: two devices reaching different PDFs of one art would otherwise rename
