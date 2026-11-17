@@ -147,7 +147,7 @@ the digest is empty. A picture is referenced by `art.picture`, `prints.picture` 
 
 ## A PDF another device read (R3.9)
 
-`addNewFiles` links a file whose source the library has, read by the current reader, but which this app can't reach:
+`addNewFiles` links a file whose source the library has but which this app can't reach, whichever reader read it:
 it records this app's access with the `.inFolder` location, without reading the PDF's art (`ArtLibrary.prepare`
 reads it all before `commit` finds out it is known).
 

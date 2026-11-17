@@ -48,6 +48,23 @@ import Testing
         #expect(try library.artEntries().count == 2 && library.addNewFiles().isEmpty)
     }
 
+    @Test func linksAPDFAnOlderReaderReadSoItIsNotHashedAtEveryScan() throws {
+        let name = "Pathfinder Test Pawn Box PDF.pdf"
+        let sender = try downloads(of: devices.first, named: name)
+        try FileManager.default.copyItem(at: try devices.first.pawnBox(), to: sender.pdf)
+        try devices.firstLibrary.add(sender.pdf, keeping: false)
+        try devices.exchange()
+        let receiver = try downloads(of: devices.second, named: name)
+        try FileManager.default.copyItem(at: sender.pdf, to: receiver.pdf)
+        let library = devices.secondLibrary
+        try library.connection().run("UPDATE sources SET readerVersion = 0")
+        try library.watch(receiver.root)
+
+        #expect(library.addNewFiles().count == 1)
+        #expect(try library.sources().first?.access[.fieldGuide] != nil)
+        #expect(try library.sources().first?.readerVersion == 0 && library.addNewFiles().isEmpty)
+    }
+
     @Test func leavesAPDFAlreadyReachableAlone() throws {
         let name = "Pathfinder Test Pawn Box PDF.pdf"
         let files = try downloads(of: devices.first, named: name)

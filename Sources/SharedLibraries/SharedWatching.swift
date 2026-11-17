@@ -77,10 +77,11 @@ extension SharedLibrary {
             .trimmingCharacters(in: CharacterSet(charactersIn: "/"))
     }
 
-    /// Records how this app reaches a PDF another device read, when the current reader did and this app has no way
-    /// to it yet. Nil when there is nothing to do.
+    /// Records how this app reaches a PDF another device read, when this app has no way to it yet. Nil when there
+    /// is nothing to do. A PDF an older reader read is linked too, like any the library has: it is then read
+    /// again as the others are, and isn't hashed at every scan.
     private func link(_ known: SharedSource, at location: SourceLocation) -> Result<ArtImportReport, Error>? {
-        guard known.readerVersion >= PawnExtractor.version, known.artSource(for: app) == nil else { return nil }
+        guard known.artSource(for: app) == nil else { return nil }
         return Result {
             var report = ArtImportReport(sourceTitle: known.title)
             report.wasImported = true
