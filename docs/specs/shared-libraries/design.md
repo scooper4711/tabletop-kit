@@ -78,7 +78,7 @@ It uses the system's SQLite (`import SQLite3`), so the package keeps no dependen
 | `art` | `ArtEntry`: id, name, game, size, traits, fingerprint, palette, picture key, whether it needs a name |
 | `prints` | `ArtPrint` by key and source (two products printing one picture under one name share a key; schema version 5, which older apps only read): entry, kind, front and back face, image index, copies, a token's back picture |
 | `aliases` | old ID, app, entry |
-| `notes` | what is learned about art, by entry: user name, tags, tag model, suggested name, whether corrected |
+| `notes` | what is learned about art, by entry: user name, tags, tag model, suggested name, whether corrected, when changed (schema version 6) |
 | `creatureArt` | the art chosen for a creature (bestiary key or `custom.<id>`): an entry ID or custom art |
 | `customCreatures` | Turnkeeper's `CustomCreature` as JSON, with id, the campaign it was made in, `sharedVersion` |
 | `customArt` | Turnkeeper's `CustomArt` as JSON, with id, image file, `sharedVersion` |
@@ -86,6 +86,7 @@ It uses the system's SQLite (`import SQLite3`), so the package keeps no dependen
 | `counter` | the change counter |
 | `deletions` | each deleted row's table and key, with the counter when it went |
 | `moves` | each app's move (R6): rows recorded, or finished |
+| `cloudRecords`, `parkedRecords`, `syncState`, `fetchedPictures` | what this device knows of its sync (schema version 6, library sync design); never synced, and written outside the change counter |
 
 The toolkit doesn't know Turnkeeper's types, so `CustomCreatureRecord` and `CustomArtRecord` carry them as the app
 encodes them, with the columns the library needs. `notes` comes with Pawn Shop's move (#27, #33), as schema
@@ -220,7 +221,7 @@ need names, all from that product; 242 pawns are printed in it). `StoreMerger` n
 | pawn-shop#27 | pawns over shared art, the move with #46's aliases |
 | turnkeeper#18, field-guide#17 | each app on `SharedLibrary`; Field Guide shows custom creatures (R4.3) |
 | field-guide#40 | picture size and format (R3.2) |
-| tabletop-kit#44 | sync of `art`, `prints`, `notes`, `creatureArt` and the creature library by change counter |
+| tabletop-kit#44 | sync of the art read from PDFs, `notes`, `creatureArt` and the creature library through the suite's iCloud container (`docs/specs/library-sync`) |
 
 ## Decisions
 Settled for pawn-shop#46's and the suite's open questions:

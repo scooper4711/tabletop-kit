@@ -1,0 +1,168 @@
+# Library sync: design
+
+The store (`SharedLibrary`, shared libraries design) gains what sync needs, in `SharedLibraries` and without
+CloudKit: what to upload, how a record from another device is merged in, and the bookkeeping for pictures. The
+`TablesideSync` target puts a `CKSyncEngine` on top of it.
+
+## Decisions
+
+| Question | Decision |
+|---|---|
+| Container | `iCloud.io.github.scooper4711.tableside`, private database. Field Guide's lore stays in its own. |
+| Zones | `Library` (rows, synced by the engine) and `Pictures` (one asset per picture, fetched on demand, never by the engine). |
+| Unit of art | **One record per PDF read** (`Source`), holding that PDF's whole reading: its prints, the art they belong to, and that art's aliases. About 85 records instead of 23,000, and a newer reader's reading replaces an older one whole. |
+| Other records | One per row: `Note`, `CreatureArt`, `CustomCreature`, `CustomArt` (its image as an asset in the record). |
+| Not synced | `sourceAccess`, `watchedFolders`, `claims`, `moves`, `counter`, `deletions`, `compatibility`, `sources.kept`, the PDFs. |
+| Conflicts | No separate rule set: a server record is merged in exactly as a fetched one is, and the result is uploaded only if it still differs. |
+| What needs uploading | A device-local table, `cloudRecords`, shared by the apps on the device: each record's server change tag, the change counter it was last in step with, and the digest of its content. No echo, and two apps syncing at once are safe. |
+| Engine state | In the SQLite database (`syncState`), one row per app, so a restored backup carries a matching state. |
+| Picture names | A picture's name is opaque and its content never changes. A different rendering (a sharper print, a larger size cap later) is a new picture under a new name; the name syncs in the reading, so every device follows, and the old picture is deleted once nothing uses it. Nothing works out a picture's name from an art key: it reads the name from the row. |
+| Pictures on a device | One setting per device, `PicturePolicy`: `.onDemand(limit:)` downloads a picture when it is first shown and, with a limit in bytes, removes the least recently shown past it (nil: never removes); `.everything` downloads every picture ahead of time and never removes any. The default is `.onDemand(limit: nil)`; each app offers its own choices later. |
+| Removing a PDF | Syncs: its art, pictures and kept copy go on every device. The cloud keeps no tombstone, so a device that first syncs later with that PDF brings it back. |
+| iCloud data deleted by the user (`purged`) | Syncing pauses on the device until the app calls `resume()`. A zone deleted any other way is uploaded again, as Field Guide does. |
+| A user's edits on two devices | The later `modified` time wins; for notes, a corrected note beats an uncorrected one first. |
+| One engine per database | `SyncEngine` hosts several zone handlers, so Turnkeeper (a zone per campaign) and Pawn Shop (custom pawns) add theirs to the same engine later. Only the library's handler is written now. |
+
+## Schema version 6
+
+Additive, so `compatibility.oldestWriter` stays 5. None of the new tables is a `LibraryTable`, and writes to them never
+go through `SharedLibrary.write` (no counter, no Darwin notification), except inside the transaction of
+`applyRemote`. `SourceClaims` is the precedent.
+
+| Table | Rows |
+|---|---|
+| `cloudRecords` | What this device knows the server holds, by zone and record name: kind, the local row's key (`rowKey`), the record's archived system fields (NULL once the server is known not to have it), the change counter it was last in step with (`sentChanged`), and the SHA-256 of the content the server holds |
+| `parkedRecords` | A note that arrived before its art, kept until the art does |
+| `syncState` | `engine.<app raw value>` (the engine's saved state), `paused` (present when paused), `picturePolicy` (JSON; absent means `.onDemand(limit: nil)`) |
+| `fetchedPictures` | The pictures this device downloaded: file size and when each was last shown |
+| `aliasesByEntry` | An index on `aliases (entry)`, so a source's change counter is cheap |
+| `modified` | A column of `notes`, `creatureArt`, `customCreatures` and `customArt`: the user's last change, in seconds since the reference date, 0 before version 6 |
+
+## Records and payloads
+
+A `SyncRecord` is a kind, a name, the canonical JSON of a payload, a title for people reading the CloudKit Console,
+and custom art's image file. The kinds, in the order fetched records are applied: `source`, `customArt`,
+`customCreature`, `creatureArt`, `note`.
+
+| Kind | Record name | Payload |
+|---|---|---|
+| `source` | `source-<sha256>` | `SourceReading`: id, title, game, byte count, reader version, art found, and its groups |
+| `note` | `note-<entry UUID>` | `NotePayload` |
+| `creatureArt` | `creatureArt-<SHA-256 hex of the subject>` (a subject can hold any character) | `CreatureArtPayload` |
+| `customCreature` | `creature-<UUID>` | `CustomCreaturePayload` |
+| `customArt` | `customArt-<UUID>` | `CustomArtPayload` |
+
+A reading's `ReadingGroup` is one piece of art as far as this PDF prints it: its ID on the sender (`entry`), its
+attributes and picture names, `keys` (every print key of the art, from any PDF), this PDF's `prints`, and the art's
+`aliases`. Payloads are `Codable` structs encoded by one `JSONEncoder` with sorted keys; dates are seconds since the
+reference date. `digest` is the SHA-256 of those bytes.
+
+**Rule for every later version:** fields are only added, as optionals, and a missing field keeps the local value. A
+digest is always taken of the payload **as this version encodes it** (decode the incoming bytes, encode again),
+never of the incoming bytes, or two app versions would upload over each other forever.
+
+## What to upload
+
+A record's **change counter**: for a note, creature art, custom creature or custom art, the row's `changed`. For a
+source, the greatest `changed` of its `sources` row, its prints, the art those prints belong to, and the aliases of
+that art, in one statement. No writer has to change.
+
+- **Saves**: records whose counter is above their `cloudRecords.sentChanged`, or with no `cloudRecords` row.
+- **Deletions**: `cloudRecords` rows of the zone `Library` with system fields whose row is gone. The `deletions`
+  table isn't used.
+- Paused: neither.
+- `outgoingRecord` builds the payload. When its digest equals the stored one and the server has the record, it
+  catches `sentChanged` up and returns nothing: another app on the device sent this content, or a write changed
+  nothing that syncs.
+- `markSent` stores the record's fields and digest and the counter *when the record was built*, so a change made
+  while it was in flight is still a candidate.
+- `forgetServer` empties `cloudRecords` and `parkedRecords` and the engine states, so everything uploads again.
+
+## Merging in a record from another device
+
+`applyRemote` applies fetched and conflicting server records alike, in one `write` transaction.
+
+1. **Skip what is known.** A saved record whose re-encoded digest equals the stored one, with its row present, only
+   updates the stored system fields, outside `write`. When nothing else is left: no transaction, no counter, no
+   notification. A second app on the device fetching the same records is a no-op (R2.3).
+2. **In `SyncKind` order**, deletions of a kind before its saves; then parked records are tried again; then
+   `cloudRecords` is settled for every source touched or sharing art with one.
+3. **A source saved.** A local reading by a newer reader stays, and is uploaded over the incoming one. An older
+   local reading is taken out (`takeOutPrints`) and the incoming one merged: each group becomes a `SharedArtEntry`
+   merged with `merge(_:joining:)`, which also finds art by the group's other keys, so art the sender had as one
+   piece becomes one piece here (R3.4); its aliases are added unless they already answer to art. The old prints
+   are then retired, their keys becoming aliases (R3.3), and their pictures deleted after the transaction.
+   `sourceAccess` is never written, and `kept` stays as it was.
+4. **A source deleted.** The PDF is removed as `SharedLibrary.remove(sourceID:)` does, its pictures and kept copy
+   deleted after the transaction. A removal always wins.
+5. **A note saved.** Found by any ID of its art; without art it is parked (R3.7). With unsent local changes, the
+   local note stays if it is corrected and the incoming one isn't, or when neither or both are and its `modified` is
+   later. When the art's ID here differs from the record's, the record is renamed on the server by uploading the
+   note under the new name and deleting the old (R3.5).
+6. **Creature art, custom creature and custom art saved.** With unsent local changes the later `modified` wins, a
+   tie going to the incoming one. A custom art's image is copied before its row.
+7. **Those deleted.** With unsent local changes the row stays and is uploaded again; otherwise it goes, with a
+   custom art's image.
+8. **Settling `cloudRecords`** after a save: the system fields and the incoming digest are stored. When the local
+   payload built again has the same digest, nothing is left to upload; otherwise the merged result is.
+
+On a failure the transaction rolls back and `applyRemote` throws.
+
+## Pictures
+
+Rows of the zone `Pictures` in `cloudRecords` have the kind `picture`; the name and `rowKey` are the file's name and
+the digest is empty. A picture is referenced by `art.picture`, `prints.picture` or `prints.backPicture`.
+
+- **Upload and delete.** `picturesToUpload` lists referenced files this device has that have no `cloudRecords`
+  row; `picturesToDelete` the rows nothing names any more.
+- **Download.** `missingPictures(of:)` names what an art lacks here; `storeFetchedPicture` moves a downloaded file
+  into `Pictures` and records it in `fetchedPictures` and `cloudRecords`, so it isn't uploaded back.
+- **The cache limit** (R4.7). With `.onDemand(limit:)` and a limit, storing and setting the policy end by evicting
+  the least recently shown, never one shown in the last hour. An evicted picture keeps its `cloudRecords` row, so it
+  is missing again and is not uploaded back. `shown` is set when a picture is stored, when `picture(of:)` returns
+  it, and by `markPicturesShown`; an update is skipped when `shown` is less than a day old. Pictures the device drew
+  from its own PDFs are never in `fetchedPictures`, so they are never evicted. No limit is not `.everything`: with no
+  limit nothing is removed, but a picture still downloads only when first shown.
+- **Old files** (R4.4). `removeUnreferencedPictures` deletes files nothing names, leaving alone files modified in the
+  last hour: an import writes a picture's file before the row that names it.
+- **Names** (R4.6). Only `SharedPictures.writePicture` and `StoreMerger.makePrint` name a new picture.
+- **Drawing** (R4.8). `drawMissingPictures(limit:)` draws up to `limit` pictures for art without one that has a
+  print in a PDF this app can reach. Art moved in from an app's old library has none, and Pawn Shop draws pawns
+  straight from the PDF.
+
+## A PDF another device read (R3.9)
+
+`addNewFiles` links a file whose source the library has, read by the current reader, but which this app can't reach:
+it records this app's access with the `.inFolder` location, without reading the PDF's art (`ArtLibrary.prepare`
+reads it all before `commit` finds out it is known).
+
+**A file iCloud Drive hasn't downloaded.** Reading it makes the system download it, which would pull every PDF onto a
+device meant to stay thin. So a file whose `ubiquitousItemDownloadingStatus` is present and isn't `.current` is left
+for a later scan. A file outside iCloud has no such value and is read as before. The decision is a function of the
+status alone, `isDownloaded(_:)`. The older kind of placeholder, a hidden `.<name>.icloud` file, isn't listed by
+`ProductScanner.artPDFs`.
+
+## Known limits
+
+- A PDF removed on one device while another is changing its art, or before another device's first sync, can come
+  back; the user removes it again.
+- A PDF is the same PDF only when its bytes are (its ID is its SHA-256). Whether two downloads of one Paizo PDF are
+  byte-identical is **not checked yet**. If they differ, each device's copy is a source of its own: the art still
+  merges (its keys come from the embedded pictures), each piece with a print per copy, the product is listed twice,
+  and R3.9 doesn't apply. Art keyed by its place on the page (flattened pages) would be doubled.
+- A watched folder in iCloud Drive is untested on real devices: whether the download status is reported for a
+  folder reached through a bookmark, and what an app does when it draws from a PDF that is linked here but has since
+  been removed from the device (the read then downloads it, and blocks until it has).
+- An app version from before `modified` existed writes 0, so its edits lose a conflict.
+- Each app's engine fetches the same changes; the second finds them applied and writes nothing.
+
+## End-to-end check
+
+First, without any build: download one pawn PDF from Paizo twice and compare the files' SHA-256 (see the known
+limit above). The rest needs a signed build with the container. Mac and iPad on one account, both in the Development
+environment: a first sync from a full Mac library to an empty iPad; the same PDF read on both first; a note, a
+creature's art and a custom creature edited on each side; two apps open on the Mac while the iPad changes something;
+a PDF removed; a picture shown on the iPad without its PDF, then the cache cleared; signed out of iCloud; iCloud data
+deleted in Settings, then `resume()`; a watched folder in iCloud Drive whose PDFs aren't downloaded on the iPad
+(nothing downloads by itself; a PDF downloaded by hand is linked, not read). Before a release, deploy the schema to
+Production in the CloudKit Console.
