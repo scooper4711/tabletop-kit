@@ -83,31 +83,13 @@ struct ArtMerger {
 
     /// Where the found art is printed; a token's art, drawn alone at import, is kept as a picture.
     private func makePrint(of found: ExtractedPawn) throws -> ArtPrint {
-        switch found.shape {
-        case .pawn:
-            return ArtPrint(sourceID: source.id, kind: .pawn, face: found.front, copies: found.copies)
-        case .card(let imageIndex):
-            return ArtPrint(sourceID: source.id, kind: .figure, face: found.front, imageIndex: imageIndex,
-                            copies: found.copies)
-        case .item(let imageIndex):
-            return ArtPrint(sourceID: source.id, kind: .item, face: found.front, imageIndex: imageIndex,
-                            copies: found.copies)
-        case .drawnItem(let png):
-            let file = "\(UUID().uuidString).png"
-            do {
-                try png.write(to: library.tokenURL(file))
-            } catch {
-                throw ArtLibraryError.saveFailed("writing an item's art: \(error.localizedDescription)")
-            }
-            return ArtPrint(sourceID: source.id, kind: .item, face: found.front, tokenFile: file, copies: found.copies)
-        case .token(let pictures):
-            let file = "\(UUID().uuidString).png"
-            do {
-                try pictures.front.write(to: library.tokenURL(file))
-            } catch {
-                throw ArtLibraryError.saveFailed("writing a token's art: \(error.localizedDescription)")
-            }
-            return ArtPrint(sourceID: source.id, kind: .token, face: found.front, tokenFile: file, copies: found.copies)
+        guard let png = found.keptPicture else { return ArtPrint(found: found, sourceID: source.id, pictureFile: nil) }
+        let file = "\(UUID().uuidString).png"
+        do {
+            try png.write(to: library.tokenURL(file))
+        } catch {
+            throw ArtLibraryError.saveFailed("writing \(found.name)'s art: \(error.localizedDescription)")
         }
+        return ArtPrint(found: found, sourceID: source.id, pictureFile: file)
     }
 }

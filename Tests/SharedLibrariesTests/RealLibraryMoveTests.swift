@@ -41,3 +41,26 @@ enum RealLibraries {
         .appending(path: "../../TestData/RealLibraries").standardized
     static var areCopied: Bool { FileManager.default.fileExists(atPath: folder.path) }
 }
+
+/// A real pawn box read into the store, with its pictures, when its PDF is in the gitignored `TestData`.
+@Suite(.enabled(if: RealLibraries.hasPawnBox)) struct RealPawnBoxImportTests {
+    @Test func readsAPawnBoxAndSavesEveryPicture() throws {
+        let library = try SharedLibrary(folder: temporaryFolder().appending(path: "Tableside"), app: .pawnShop)
+        let start = Date()
+        let prepared = try ArtLibrary.prepare(RealLibraries.pawnBox)
+        let read = Date()
+        let report = try library.commit(prepared, location: .referenced(FileReference(prepared.file)))
+        let entries = try library.artEntries()
+        print("\(report.added) added: read in \(read.timeIntervalSince(start)) s, "
+              + "written and drawn in \(Date().timeIntervalSince(read)) s")
+        #expect(report.added > 300)
+        #expect(entries.allSatisfy { entry in
+            entry.picture.map { FileManager.default.fileExists(atPath: library.pictureFile($0).path) } == true
+        })
+    }
+}
+
+extension RealLibraries {
+    static let pawnBox = folder.appending(path: "Monster Core Pawn Box.pdf")
+    static var hasPawnBox: Bool { FileManager.default.fileExists(atPath: pawnBox.path) }
+}

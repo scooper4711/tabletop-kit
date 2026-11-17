@@ -135,7 +135,7 @@ extension ArtLibrary {
 
     /// The file the library keeps for `url`: a deck's art PDF, the folder of a deck printed as pictures, or the
     /// PDF itself.
-    static func libraryFile(for url: URL) -> URL {
+    public static func libraryFile(for url: URL) -> URL {
         ImageDeck.containing(url)?.folder ?? CardDeck.containing(url)?.artFile ?? url
     }
 

@@ -1,8 +1,10 @@
+import ArtExtraction
+
 /// The shared library's tables, by schema version (`PRAGMA user_version`). Every table whose rows sync has a
 /// `changed` column: the change counter's value when the row last changed.
 enum LibrarySchema {
     /// Each version's statements, applied in order to a database at an older version.
-    static let versions: [String] = [version1]
+    static let versions: [String] = [version1, version2]
 
     private static let version1 = """
         CREATE TABLE counter (id INTEGER PRIMARY KEY CHECK (id = 1), value INTEGER NOT NULL);
@@ -34,6 +36,12 @@ enum LibrarySchema {
         CREATE TABLE moves (app TEXT PRIMARY KEY, stage TEXT NOT NULL, changed INTEGER NOT NULL);
         """
 
+    /// Art found by its folded name (`ArtKey.foldedName`), for merging art printed without the same picture.
+    private static let version2 = """
+        ALTER TABLE art ADD COLUMN foldedName TEXT NOT NULL DEFAULT '';
+        CREATE INDEX artByName ON art (foldedName, game);
+        """
+
     /// Brings `database` up to the latest version, in one transaction.
     static func migrate(_ database: SQLiteDatabase) throws {
         try database.transaction {
@@ -41,7 +49,18 @@ enum LibrarySchema {
             for version in versions.indices where version >= current {
                 try database.execute(versions[version])
             }
+            if current < 2 { try foldNames(in: database) }
             try database.execute("PRAGMA user_version = \(versions.count)")
+        }
+    }
+}
+
+extension LibrarySchema {
+    /// Fills in `art.foldedName` for art written before version 2.
+    static func foldNames(in database: SQLiteDatabase) throws {
+        for row in try database.rows("SELECT id, name FROM art") {
+            guard let id = row.text("id"), let name = row.text("name") else { continue }
+            try database.run("UPDATE art SET foldedName = ? WHERE id = ?", [.text(ArtKey.foldedName(name)), .text(id)])
         }
     }
 }

@@ -34,7 +34,7 @@ extension ArtLibrary {
 
     /// The figure among a page's images: a figure's own picture cut to its face, or the largest picture inside a
     /// pawn's outline, trimmed.
-    static func figure(of print: ArtPrint, among images: [ImagePlacement]) -> Figure? {
+    public static func figure(of print: ArtPrint, among images: [ImagePlacement]) -> Figure? {
         guard let index = print.imageIndex else { return Figure.largest(inside: print.face.rect, among: images) }
         guard images.indices.contains(index), let image = images[index].stream.flatMap(EmbeddedImage.maskedImage(of:))
         else { return nil }
@@ -54,7 +54,7 @@ extension ArtLibrary {
     }
 
     /// The figure turned upright, as large as fits in `maxPixels` on its long side.
-    static func render(_ figure: Figure, rotation: Int, maxPixels: Int) -> CGImage? {
+    public static func render(_ figure: Figure, rotation: Int, maxPixels: Int) -> CGImage? {
         let bounds = figure.bounds
         let upright = rotation % 180 == 0 ? bounds.size : CGSize(width: bounds.height, height: bounds.width)
         guard upright.width > 0, upright.height > 0 else { return nil }

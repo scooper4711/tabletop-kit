@@ -48,7 +48,10 @@ public struct SharedArtEntry: Identifiable, Hashable, Sendable {
     public var traits: [String]
     public var fingerprint: ArtFingerprint
     public var palette: [Double]
+    /// Its prints, figures first (the sharpest), then by key.
     public var prints: [SharedPrint]
+    /// Its picture's file in the library's `Pictures` folder (R3.2), once drawn.
+    public var picture: String?
 
     /// The entry with its prints' keys left out, as the apps' art library holds it.
     public var artEntry: ArtEntry {
@@ -66,6 +69,14 @@ public struct SharedArtEntry: Identifiable, Hashable, Sendable {
         fingerprint = entry.fingerprint
         palette = entry.palette
         prints = zip(entry.prints, keys).map { SharedPrint(key: $1, print: $0) }
+    }
+
+    /// Puts the prints in order: figures first, then by key.
+    mutating func sortPrints() {
+        prints.sort { first, second in
+            first.print.kind == second.print.kind ? first.key.uuidString < second.key.uuidString
+                                                  : first.print.kind < second.print.kind
+        }
     }
 
     /// The ID its prints give it, or its own without prints.

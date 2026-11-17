@@ -62,6 +62,8 @@ enum ArtRows {
                              prints: [], palette: try decoded([Double].self, row.blob("palette")) ?? [])
         var shared = SharedArtEntry(entry, keys: [])
         shared.prints = prints
+        shared.sortPrints()
+        shared.picture = row.text("picture")
         return shared
     }
 

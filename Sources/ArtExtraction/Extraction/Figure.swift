@@ -35,6 +35,14 @@ public struct Figure {
         self.bounds = bounds
     }
 
+    /// The figure's long side in its embedded image's pixels: as large as it can be drawn without inventing detail.
+    public var embeddedPixels: Int {
+        guard placement.rect.width > 0, placement.rect.height > 0 else { return 0 }
+        let width = bounds.width / placement.rect.width * CGFloat(image.width)
+        let height = bounds.height / placement.rect.height * CGFloat(image.height)
+        return Int(max(width, height).rounded())
+    }
+
     /// The largest image drawn with its center inside `rect`, as on a pawn's face; nil when there is none.
     public static func largest(inside rect: CGRect, among images: [ImagePlacement]) -> Figure? {
         let art = images.filter { image in
