@@ -156,7 +156,7 @@ extension ArtLibrary {
     }
 
     /// SHA-256 of a file; of a folder, of its files' names and sizes, which a deck of pictures doesn't change.
-    static func digest(of url: URL) throws -> String {
+    public static func digest(of url: URL) throws -> String {
         if let files = folderFiles(url) {
             let listing = files.map { "\($0.lastPathComponent):\(byteCount(of: $0))" }.joined(separator: "\n")
             return SHA256.hash(data: Data(listing.utf8)).map { String(format: "%02x", $0) }.joined()

@@ -12,12 +12,18 @@ public enum LibraryChange {
     }
 }
 
-/// Calls `onChange` on the main actor each time Scrollkeeper's library list changes, until it is released.
+/// Calls `onChange` on the main actor each time Scrollkeeper's library list changes, or another Darwin notification
+/// is posted, until it is released.
 public final class LibraryChangeObserver {
     private var token: Int32 = NOTIFY_TOKEN_INVALID
 
-    public init(onChange: @escaping @MainActor @Sendable () -> Void) {
-        notify_register_dispatch(LibraryChange.notificationName, &token, .main) { _ in
+    public convenience init(onChange: @escaping @MainActor @Sendable () -> Void) {
+        self.init(name: LibraryChange.notificationName, onChange: onChange)
+    }
+
+    /// Observes the Darwin notification `name`.
+    public init(name: String, onChange: @escaping @MainActor @Sendable () -> Void) {
+        notify_register_dispatch(name, &token, .main) { _ in
             MainActor.assumeIsolated { onChange() }
         }
     }
