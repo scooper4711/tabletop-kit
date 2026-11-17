@@ -19,10 +19,13 @@ Issues: tabletop-kit#15 (this spec), #16 and #33 (implementation), #44 (sync); P
 - R2.1 Every piece of art found in a PDF gets an ID that any app on any device derives the same way: the same PDF
   read by the same reader gives the same IDs everywhere, in any order of import.
 - R2.2 The ID comes from the picture Paizo embedded, not from where or how an app found it on the page: a better
-  detector or a different crop doesn't change it, and art reprinted in another product gets the same ID.
-- R2.3 Where one product prints one picture under several names or sizes (numbered tokens "Drone 1" to "Drone 6",
-  "Mantis, Deadly" and "Mantis, Giant" on Battle Cards, an elemental printed Large and Huge), each gets an ID of
-  its own.
+  detector or a different crop doesn't change it, and art reprinted in another product under the same name gets
+  the same ID.
+- R2.3 One picture printed under different names is different art, each with an ID of its own, in one product or
+  across products: a named enemy in an adventure's pawns that shares its picture with a common creature, numbered
+  tokens ("Drone 1" to "Drone 6"), "Mantis, Deadly" and "Mantis, Giant". Names that differ only in case, accents,
+  spaces or punctuation are the same name. One product printing a picture under one name in two sizes gives each
+  size an ID.
 - R2.4 Art without a picture of its own (a page printed as one flattened image) gets an ID from its PDF, its page
   and its place on the page.
 - R2.5 Art printed by several products is one piece of art that answers to the ID of each print. It shows one of

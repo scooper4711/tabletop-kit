@@ -17,21 +17,25 @@ Scrollkeeper holds.
   reprint under another name ("Bat, Skaveling" in *Bestiary 2*, "Skaveling" in *Shattered Star*); and names read
   two ways ("Sister of the Bloodshot Eye", "Bloodshot Eye Sister of the").
 
-So the digests are the art IDs' key: no PDF has to be read again to give existing art its new ID.
+So the digests, with the name, are the art IDs' key: no PDF has to be read again to give existing art its new ID.
 
 ## Art IDs (R2)
 `ArtKey` in `ArtExtraction/Library` makes the keys, as name-based UUIDs (version 5, RFC 9562: SHA-1 of the
 namespace `2A674007-7209-4190-AA36-612838B41B5F` followed by the name in UTF-8, with the version and variant bits
 set). CryptoKit's `Insecure.SHA1` hashes; the name is the contract, so it is listed here exactly.
 
-- **Picture.** `image:` and the print's `imageDigests` (sorted, unique, lowercase hex) joined with `,`. A digest is
-  the one `ImageIdentity.digest` makes today: SHA-256 of what `CGPDFStreamCopyData` returns, which is a JPEG or
-  JPEG 2000 image's bytes as stored and other images' samples with their filters undone. Recompressing a Flate
-  stream doesn't change it, and the soft mask isn't part of it.
-- **Variant** (R2.3). Within one PDF, when prints with the same picture differ in size or folded name, each of
-  them adds `|`, the size (`PawnSize.rawValue`) and `|`, and the folded name: lowercase, without diacritics, only
-  letters and digits ("Devil, Contract Incutilis" and a misread "Devil, Contractincutilis" fold the same). A
-  picture a PDF prints only once, or several times under one name and size (copies), adds nothing.
+- **Picture and name.** `image:`, the print's `imageDigests` (sorted, unique, lowercase hex) joined with `,`, then
+  `|` and the folded name: lowercase, without diacritics, only letters and digits. A digest is the one
+  `ImageIdentity.digest` makes today: SHA-256 of what `CGPDFStreamCopyData` returns, which is a JPEG or JPEG 2000
+  image's bytes as stored and other images' samples with their filters undone. Recompressing a Flate stream doesn't
+  change it, and the soft mask isn't part of it. The name keeps apart art that shares a picture (R2.3), such as a
+  named enemy in an adventure's pawns drawn with a bestiary creature's picture; on the real libraries every key
+  is then one piece of art, and the 6 keys shared by two entries are names read with different spacing ("Demon,
+  Brimorak" and "Demon,brimorak"), which now merge as they should.
+- **Size** (R2.3). Within one PDF, when prints with the same picture and folded name differ in size, each of them
+  adds `|` and the size (`PawnSize.rawValue`). None of the real libraries needs it today.
+- **A new reader.** A PDF read again by a newer reader can read a name differently, which changes the key. A new
+  print in the same source, with the same picture and face as an old one, records the old key as an alias.
 - **Fallback** (R2.4). Art without digests: `place:`, the PDF's SHA-256 (`ArtSource.id`), `|`, the zero-based page,
   `|`, and the center of the front face as a fraction of the page's media box, each rounded to the nearest 1/20,
   written `x,y` with two decimals. Two such pieces of art in one cell add `#2`, `#3` in reading order (top to
@@ -43,10 +47,10 @@ set). CryptoKit's `Insecure.SHA1` hashes; the name is the contract, so it is lis
   Importing a product can change an entry's `id`; nothing saved points only at it (below).
 - **Finding art.** `ArtLibrary.entry(id:)` looks for an entry whose `id` or one of whose print keys is `id`, then in
   the aliases (R2.7): the random UUIDs each app gave the art before, recorded at the move (R6) with the app's name.
-- **Merging** (`ArtMerger`). Art merges first by key: a print whose key is already in the library joins that entry,
-  and a different name it was printed under joins `otherNames`, which matching creatures also searches. The
-  existing rules follow: the same folded name and game with matching fingerprints, or palettes when one is a
-  figure. A reprint under another name, such as "Skaveling", now merges by its picture.
+- **Merging** (`ArtMerger`). Art merges first by key: a print whose key is already in the library joins that entry.
+  The existing rules follow: the same folded name and game with matching fingerprints, or palettes when one is a
+  figure (a Battle Card's picture of a pawn's painting). Art under another name never merges, so a reprint renamed
+  "Skaveling" stays apart from "Bat, Skaveling", as today.
 - **References** (R2.8). What saves a reference to extracted art (a Pawn Shop sheet, Turnkeeper's `library:` path,
   Field Guide's chosen art) saves an `ArtReference`: the ID, the name, and the product's title, so a device without
   the art can say what is missing. Custom art keeps its random UUID and needs no label.
@@ -68,7 +72,7 @@ It uses the system's SQLite (`import SQLite3`), so the package keeps no dependen
 | `sources` | `ArtSource` without its location: id, title, game, byte count, reader version, art found, whether kept |
 | `sourceAccess` | how each app reaches a referenced PDF: source, app, encoded `SourceLocation` |
 | `watchedFolders` | each app's watched folders (bookmarks only work for the app that made them) |
-| `art` | `ArtEntry`: id, name, other names, game, size, traits, fingerprint, palette, picture key |
+| `art` | `ArtEntry`: id, name, game, size, traits, fingerprint, palette, picture key |
 | `prints` | `ArtPrint` by key: entry, source, kind, front and back face, image index, copies |
 | `aliases` | old ID, app, entry |
 | `notes` | what is learned about art, by entry: user name, tags, tag model, suggested name, whether corrected |
@@ -109,7 +113,7 @@ same result; GRDB would be the package's first dependency.
 `SharedLibrary.moveIn(from:app:)`, which each app calls at launch until it succeeds:
 1. Skip it when `changes` records the move for this app. Otherwise read the app's old library (`art-library.json`
    or Pawn Shop's `library.json`).
-2. Give each print its key from its fingerprint and face, grouping by source to find variants. No PDF is read.
+2. Give each print its key from its fingerprint, name and face, grouping by source for sizes. No PDF is read.
 3. In one transaction, add the sources, art and prints, merging by key (above); record each old UUID in `aliases`;
    merge `notes` and `creatureArt`. The user's corrections win over what was read and the later over the earlier;
    today's libraries record no correction times, so Pawn Shop's corrected names and tags go first, then the others.
@@ -142,8 +146,9 @@ Settled for pawn-shop#46's and the suite's open questions:
 - **What is hashed:** the stream as `CGPDFStreamCopyData` gives it, which every library already stores. A reissue
   that encodes the art again merges by its thumbnail, as today, and the entry answers to both keys.
 - **The fallback place** is the face's center on a 1/20 grid, with reading order for ties.
-- **The same picture twice:** variants within a product (R2.3); across products the picture merges, and the other
-  names are kept.
+- **The same picture twice:** the folded name is always part of the key, so a picture shared by different
+  creatures, in one product or across products, gives each its own ID (R2.3); size is added only where one product
+  prints a picture under one name in two sizes.
 - **A Battle Card's sharper picture** joins the pawn's entry, which keeps the pawn's ID.
 - **A custom creature's pawn size** is `TraitLine.size` mapped to `PawnSize` (case ignored): Tiny becomes `.small`,
   and an empty or unknown size `.medium`.
