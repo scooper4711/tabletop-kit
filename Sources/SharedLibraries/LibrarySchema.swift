@@ -2,9 +2,14 @@ import ArtExtraction
 
 /// The shared library's tables, by schema version (`PRAGMA user_version`). Every table whose rows sync has a
 /// `changed` column: the change counter's value when the row last changed.
+///
+/// The apps update one at a time, so an app can open a library a newer app has changed. A new version therefore
+/// only adds: tables, and columns with defaults, which an older app leaves alone when it writes (`upsert` updates
+/// only the columns it names). A version that changes what existing rows mean also raises
+/// `compatibility.oldestWriter` to itself, and older apps then only read the library until they are updated.
 enum LibrarySchema {
     /// Each version's statements, applied in order to a database at an older version.
-    static let versions: [String] = [version1, version2, version3]
+    static let versions: [String] = [version1, version2, version3, version4]
 
     private static let version1 = """
         CREATE TABLE counter (id INTEGER PRIMARY KEY CHECK (id = 1), value INTEGER NOT NULL);
@@ -48,15 +53,27 @@ enum LibrarySchema {
             suggestedName TEXT NOT NULL, corrected INTEGER NOT NULL, changed INTEGER NOT NULL);
         """
 
-    /// Brings `database` up to the latest version, in one transaction.
-    static func migrate(_ database: SQLiteDatabase) throws {
+    /// The oldest schema version that may still write the library.
+    private static let version4 = """
+        CREATE TABLE compatibility (id INTEGER PRIMARY KEY CHECK (id = 1), oldestWriter INTEGER NOT NULL);
+        INSERT INTO compatibility VALUES (1, 1);
+        """
+
+    /// Brings `database` up to this app's version, in one transaction, and tells whether this app may write it:
+    /// a library a newer app has changed stays at its version, writable unless that version said otherwise.
+    static func migrate(_ database: SQLiteDatabase) throws -> Bool {
         try database.transaction {
             let current = Int(try database.rows("PRAGMA user_version").first?.integer("user_version") ?? 0)
+            guard current <= versions.count else {
+                let oldest = try database.rows("SELECT oldestWriter FROM compatibility").first?.integer("oldestWriter")
+                return Int(oldest ?? 1) <= versions.count
+            }
             for version in versions.indices where version >= current {
                 try database.execute(versions[version])
             }
             if current < 2 { try foldNames(in: database) }
             try database.execute("PRAGMA user_version = \(versions.count)")
+            return true
         }
     }
 }
@@ -76,17 +93,20 @@ public enum LibraryTable: String, CaseIterable, Sendable {
     case sources, sourceAccess, watchedFolders, art, prints, aliases, creatureArt, customCreatures, customArt, moves,
          notes
 
-    /// The SQL naming a row: its key, or its keys joined with `|`.
-    var keyExpression: String {
+    /// The columns of a row's primary key.
+    var keyColumns: [String] {
         switch self {
-        case .sources, .art, .customCreatures, .customArt: "id"
-        case .sourceAccess: "source || '|' || app"
-        case .watchedFolders: "app || '|' || path"
-        case .prints: "key"
-        case .aliases: "oldID"
-        case .creatureArt: "subject"
-        case .notes: "entry"
-        case .moves: "app"
+        case .sources, .art, .customCreatures, .customArt: ["id"]
+        case .sourceAccess: ["source", "app"]
+        case .watchedFolders: ["app", "path"]
+        case .prints: ["key"]
+        case .aliases: ["oldID"]
+        case .creatureArt: ["subject"]
+        case .notes: ["entry"]
+        case .moves: ["app"]
         }
     }
+
+    /// The SQL naming a row: its key, or its keys joined with `|`.
+    var keyExpression: String { keyColumns.joined(separator: " || '|' || ") }
 }

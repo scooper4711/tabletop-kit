@@ -9,6 +9,7 @@ extension SharedLibrary {
     /// Claims the PDF with SHA-256 `sourceID` for this app until `now + claimDuration`; false when another app's
     /// claim on it hasn't run out.
     public func claim(sourceID: String, now: Date = Date()) throws -> Bool {
+        try requireWriting()
         let database = try connection()
         return try database.transaction {
             let held = try database.rows("SELECT app FROM claims WHERE source = ? AND until > ?",

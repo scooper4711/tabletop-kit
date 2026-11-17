@@ -97,6 +97,11 @@ on it. `ArtPrint` gains `back: PawnFace?`, which Pawn Shop's pawns need.
 - **Writing** (R5.1). WAL mode, a busy timeout of 5 seconds, and each change one short `BEGIN IMMEDIATE`
   transaction. Reading a PDF happens before, outside any transaction (`prepare`, then `commit`). Every changed row
   gets the next value of the change counter.
+- **Versions.** The apps update one at a time, so one can open a library a newer app has changed. A new
+  schema version only adds tables and columns with defaults; writes update only the columns they name, so an
+  older app keeps what a newer one added, and it never lowers `PRAGMA user_version`. A version that changes what
+  existing rows mean raises `compatibility.oldestWriter`; an older app then only reads the library
+  (`canWrite`) and asks the user to update it.
 - **Changes** (R5.2). After a commit the store posts the Darwin notification
   `io.github.scooper4711.tableside.shared-library-changed`, observed as `LibraryChangeObserver` does. A reader
   keeps the last counter it saw and reads only the rows changed, and the deletions recorded, since then. The

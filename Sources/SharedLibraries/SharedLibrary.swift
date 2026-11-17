@@ -43,8 +43,12 @@ public final class SharedLibrary {
         for subfolder in [folder, sourcesFolder, picturesFolder, customFolder] {
             try FileManager.default.createDirectory(at: subfolder, withIntermediateDirectories: true)
         }
-        try LibrarySchema.migrate(try connection())
+        canWrite = try LibrarySchema.migrate(try connection())
     }
+
+    /// False when a newer version of one of the apps changed the library in a way this one can't write: it then
+    /// only reads it, and the user should update this app.
+    public private(set) var canWrite = true
 
     /// The library in the App Group's `Tableside` folder, or in `fallback` for an app outside the group, such as
     /// an ad hoc build (R1.2).
@@ -99,6 +103,7 @@ public final class SharedLibrary {
     /// other apps (R5.1, R5.2).
     @discardableResult
     func write<Result>(_ body: (LibraryWriter) throws -> Result) throws -> Result {
+        try requireWriting()
         let database = try connection()
         let result = try database.transaction {
             try database.run("UPDATE counter SET value = value + 1")
@@ -106,6 +111,14 @@ public final class SharedLibrary {
         }
         SharedLibraryChange.post()
         return result
+    }
+
+    /// Throws when a newer app changed the library in a way this one can't write.
+    func requireWriting() throws {
+        guard canWrite else {
+            throw SharedLibraryError(operation: "Saving to the shared library",
+                                     detail: "a newer version of a Tableside app changed it; update \(app.rawValue)")
+        }
     }
 
     private static func counter(in database: SQLiteDatabase) throws -> Int64 {
@@ -118,14 +131,21 @@ struct LibraryWriter {
     let database: SQLiteDatabase
     let counter: Int64
 
-    /// Adds a row, or replaces the row with the same key.
+    /// Adds a row, or updates the columns named of the row with the same key, leaving any others alone: columns a
+    /// newer app added keep their values when an older app writes (`LibrarySchema`).
     func upsert(_ table: LibraryTable, _ columns: [(String, SQLValue)]) throws {
         let names = columns.map(\.0) + ["changed"]
         let placeholders = Array(repeating: "?", count: names.count).joined(separator: ", ")
-        try database.run("INSERT OR REPLACE INTO \(table.rawValue) (\(names.joined(separator: ", "))) "
-                         + "VALUES (\(placeholders))", columns.map(\.1) + [.integer(counter)])
-        try database.run("DELETE FROM deletions WHERE tableName = ? AND rowKey = (SELECT \(table.keyExpression) "
-                         + "FROM \(table.rawValue) WHERE rowid = last_insert_rowid())", [.text(table.rawValue)])
+        let updates = names.filter { !table.keyColumns.contains($0) }.map { "\($0) = excluded.\($0)" }
+        try database.run("INSERT INTO \(table.rawValue) (\(names.joined(separator: ", "))) VALUES (\(placeholders)) "
+                         + "ON CONFLICT (\(table.keyColumns.joined(separator: ", "))) DO UPDATE SET "
+                         + updates.joined(separator: ", "), columns.map(\.1) + [.integer(counter)])
+        let key = table.keyColumns.compactMap { column -> String? in
+            guard case .text(let value) = columns.first(where: { $0.0 == column })?.1 else { return nil }
+            return value
+        }.joined(separator: "|")
+        try database.run("DELETE FROM deletions WHERE tableName = ? AND rowKey = ?",
+                         [.text(table.rawValue), .text(key)])
     }
 
     /// Deletes the rows matching `condition`, recording each in `deletions`.
