@@ -180,7 +180,7 @@ import Testing
         #expect(try device.library(.turnkeeper).picturePolicy() == .onDemand(limit: 5_000))
     }
 
-    @Test func updatesWhenAPictureWasShownOnlyAfterADay() throws {
+    @Test func updatesWhenAPictureWasShownOnlyAfterHalfAnHour() throws {
         let library = try device.library()
         try library.storeFetchedPicture(named: "a", from: try download(100, as: "a"))
         func shown() throws -> Double? {
@@ -191,8 +191,11 @@ import Testing
         try library.markPicturesShown(["a"])
         #expect(try shown() == recent)
 
-        try backdate(library, "a", seconds: 200_000)
+        try backdate(library, "a", seconds: 2_000)
+        let stale = try #require(try shown())
         try library.markPicturesShown(["a"])
+        #expect(try shown() == stale, "noted a moment ago by this app, so not looked up again")
+        try device.library().markPicturesShown(["a", "drawn here"])
         #expect(try #require(try shown()) > recent)
     }
 
@@ -210,6 +213,18 @@ import Testing
         _ = library.picture(of: entry, maxPixels: 32)
         let after = try library.connection().rows("SELECT shown FROM fetchedPictures").first?.real("shown")
         #expect(try #require(after) > (try #require(before)))
+    }
+
+    @Test func sparesAPictureLookedAtAgainWithinTheHour() throws {
+        let library = try device.library()
+        for name in ["a", "b"] {
+            try library.storeFetchedPicture(named: name, from: try download(100, as: name))
+            try backdate(library, name, seconds: 7_200)
+        }
+        try library.markPicturesShown(["a"])
+
+        try library.setPicturePolicy(.onDemand(limit: 100))
+        #expect(exists(library, "a") && !exists(library, "b"))
     }
 
     // MARK: Old files

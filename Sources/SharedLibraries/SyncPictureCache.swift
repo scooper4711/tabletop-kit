@@ -51,14 +51,20 @@ extension SharedLibrary {
         try database.run("DELETE FROM fetchedPictures")
     }
 
-    /// Notes that pictures were shown, for the cache's order of removal. An update is skipped when the picture was
-    /// shown in the last day, to spare the disk.
+    /// Notes that pictures were shown, for the cache's order of removal. A picture noted in the last half hour is
+    /// left as it is, which spares the disk and still keeps a picture in use inside the hour `evictFetchedPictures`
+    /// spares. Only a downloaded picture whose time is stale is written, so showing art takes no write lock.
     public func markPicturesShown(_ names: [String]) throws {
-        let database = try connection()
-        let now = Date().timeIntervalSinceReferenceDate
-        for name in names {
-            try database.run("UPDATE fetchedPictures SET shown = ? WHERE name = ? AND shown < ?",
-                             [.real(now), .text(name), .real(now - 86_400)])
+        let now = Date()
+        let stale = now.addingTimeInterval(-Self.pictureGrace / 2)
+        for name in names where picturesNotedShown[name, default: .distantPast] < stale {
+            picturesNotedShown[name] = now
+            let database = try connection()
+            let shown = try database.rows("SELECT shown FROM fetchedPictures WHERE name = ?", [.text(name)]).first?
+                .real("shown")
+            guard let shown, shown < stale.timeIntervalSinceReferenceDate else { continue }
+            try database.run("UPDATE fetchedPictures SET shown = ? WHERE name = ?",
+                             [.real(now.timeIntervalSinceReferenceDate), .text(name)])
         }
     }
 

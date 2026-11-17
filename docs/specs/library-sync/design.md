@@ -129,7 +129,9 @@ the digest is empty. A picture is referenced by `art.picture`, `prints.picture` 
 - **The cache limit** (R4.7). With `.onDemand(limit:)` and a limit, storing and setting the policy end by evicting
   the least recently shown, never one shown in the last hour. An evicted picture keeps its `cloudRecords` row, so it
   is missing again and is not uploaded back. `shown` is set when a picture is stored, when `picture(of:)` returns
-  it, and by `markPicturesShown`; an update is skipped when `shown` is less than a day old. Pictures the device drew
+  it, and by `markPicturesShown`. A picture noted in the last half hour is left as it is: that spares the disk,
+  keeps a picture in use inside the hour, and means showing art takes no write lock (the app remembers what it
+  noted, and only a downloaded picture with a stale time is written). Pictures the device drew
   from its own PDFs are never in `fetchedPictures`, so they are never evicted. No limit is not `.everything`: with no
   limit nothing is removed, but a picture still downloads only when first shown.
 - **Old files** (R4.4). `removeUnreferencedPictures` deletes files nothing names, leaving alone files modified in the
