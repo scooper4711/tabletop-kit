@@ -75,7 +75,7 @@ It uses the system's SQLite (`import SQLite3`), so the package keeps no dependen
 | `sources` | `ArtSource` without its location: id, title, game, byte count, reader version, art found, whether kept |
 | `sourceAccess` | how each app reaches a referenced PDF: source, app, encoded `SourceLocation` |
 | `watchedFolders` | each app's watched folders (bookmarks only work for the app that made them) |
-| `art` | `ArtEntry`: id, name, game, size, traits, fingerprint, palette, picture key |
+| `art` | `ArtEntry`: id, name, game, size, traits, fingerprint, palette, picture key, whether it needs a name |
 | `prints` | `ArtPrint` by key: entry, source, kind, front and back face, image index, copies |
 | `aliases` | old ID, app, entry |
 | `notes` | what is learned about art, by entry: user name, tags, tag model, suggested name, whether corrected |
@@ -180,6 +180,30 @@ keeping its API so Turnkeeper and Field Guide change only how they create it. Pa
   Shop makes from `library.json` version 2 in pawn-shop#27. A note the user corrected wins over one they didn't.
 - **Notes** (R3.3), schema version 3: `ArtNote` by entry, set by any ID of the art (`setNote(_:forArt:)`). When
   entries merge, the note moves with its art, a corrected note winning; art removed takes its note with it.
+
+## Art printed without a name (R2.3a)
+Pawn Shop's own library kept nameless pawns; the store dropped them (`report.unnamed`), so a PDF Turnkeeper or
+Field Guide read first would never give Pawn Shop its *Heroes & Villains* pawns (171 of the author's 9,848 still
+need names, all from that product; 242 pawns are printed in it). `StoreMerger` now keeps them, as Pawn Shop did:
+
+- **Key.** The picture and an empty name: `image:<digests>|`, or the fallback place (R2.4). The stand-in name isn't
+  in the key, so it doesn't depend on the product's title.
+- **Entry.** Name `Unknown <title>` (`NamelessProducts.standInName(forTitle:)`) and `art.needsName` set (schema
+  version 5, a column defaulting to 0; existing rows keep their meaning, so `oldestWriter` stays). An app shows a
+  note's `userName` over the stand-in, and the art stops needing a name for that app once it has one.
+- **Merging a nameless print**, after its key: in a product known to print no names (`NamelessProducts`: titles
+  containing "Heroes & Villains"), the first named creature art of the same game and size whose fingerprint is the
+  same art (`ArtFingerprint.isSameArt`: the same digests, or thumbnails at most `namingDistance` 15 apart, stricter
+  than `matchingDistance`, measured on Pawn Shop's library), counted in `report.namedFromOtherProducts`. Else art
+  still needing a name, same game and size, whose fingerprint `matches`. Else a new entry, counted in
+  `report.added` and `report.needingNames`.
+- **Merging a named print**, after its key and the same name: art still needing a name from a nameless product,
+  same game and size, the same art by `isSameArt`, takes the print's name and stops needing one.
+- **Items** printed without a name are still left out (`report.unnamed`).
+- **PDFs read before.** No app has shipped on the store before this, so no library holds a PDF read without its
+  nameless art, and nothing is read again.
+
+`isSameArt` and `NamelessProducts` move here from Pawn Shop, which uses the toolkit's.
 
 ## Who does what
 | Issue | Part |

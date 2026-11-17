@@ -26,6 +26,11 @@ Issues: tabletop-kit#15 (this spec), #16 and #33 (implementation), #44 (sync); P
   tokens ("Drone 1" to "Drone 6"), "Mantis, Deadly" and "Mantis, Giant". Names that differ only in case, accents,
   spaces or punctuation are the same name. One product printing a picture under one name in two sizes gives each
   size an ID.
+- R2.3a Art printed without a name (Paizo's *Heroes & Villains Pawn Collection* prints none) is kept, under a
+  stand-in name ("Unknown *product*") and marked as needing a name, whichever app reads its PDF. A picture another
+  product prints with a name gives it that name: when the nameless product is read, or when the named one is read
+  later. A name the user gives it (R3.3) names it in every app. Nameless items are left out, since an item card
+  needs a name.
 - R2.4 Art without a picture of its own (a page printed as one flattened image) gets an ID from its PDF, its page
   and its place on the page.
 - R2.5 Art printed by several products is one piece of art that answers to the ID of each print. It shows one of
