@@ -8,9 +8,26 @@ import Testing
     @Test func namesAnAppsDocumentsFolderOnTheIPadAsScrollkeepers() {
         let path = "/private/var/mobile/Containers/Data/Application/23170C81-51B2-4D19-B33D-244B7189E456/Documents"
         #expect(FolderName(path: path, homeDirectory: home)
-                == FolderName(title: "Scrollkeeper", location: "On My iPad"))
+                == FolderName(title: "Scrollkeeper", location: FolderName.onThisDevice))
         #expect(FolderName(path: path + "/Pathfinder/Bestiary", homeDirectory: home).title
                 == "Scrollkeeper ▸ Pathfinder ▸ Bestiary")
+    }
+
+    @Test func namesTheDownloadFolderTheToolkitSharesOnTheIPhone() {
+        let group = "/private/var/mobile/Containers/Shared/AppGroup/0F6C7E2A-4B1D-4C3E-9A8B-1D2E3F4A5B6C"
+        let path = group + "/Scrollkeeper/Files"
+        #expect(FolderName(path: path, homeDirectory: home)
+                == FolderName(title: "Scrollkeeper", location: FolderName.onThisDevice))
+        #expect(FolderName(path: path + "/Pathfinder/Bestiary", homeDirectory: home).title
+                == "Scrollkeeper ▸ Pathfinder ▸ Bestiary")
+        #expect(FolderName.place(ofFile: path + "/Pawns.pdf", homeDirectory: home)
+                == "Scrollkeeper · \(FolderName.onThisDevice)")
+    }
+
+    @Test func namesTheDeviceTheFilesAppDoes() {
+        #expect(FolderName.deviceLocation(machine: "iPhone17,1") == "On My iPhone")
+        #expect(FolderName.deviceLocation(machine: "iPad16,3") == "On My iPad")
+        #expect(FolderName.deviceLocation(machine: "") == "On My iPad")
     }
 
     @Test func namesScrollkeepersDownloadFolderOnTheMac() {
@@ -55,9 +72,9 @@ import Testing
     @Test func placesAPDFByItsFolder() {
         let documents = "/private/var/mobile/Containers/Data/Application/23170C81-51B2-4D19-B33D-244B7189E456/Documents"
         #expect(FolderName.place(ofFile: documents + "/Pathfinder/Pawns.pdf", homeDirectory: home)
-                == "Scrollkeeper ▸ Pathfinder · On My iPad")
+                == "Scrollkeeper ▸ Pathfinder · \(FolderName.onThisDevice)")
         #expect(FolderName.place(ofFile: documents + "/Pawns.pdf", homeDirectory: home)
-                == "Scrollkeeper · On My iPad")
+                == "Scrollkeeper · \(FolderName.onThisDevice)")
         #expect(FolderName.place(ofFile: home + "/Downloads/Pawns.pdf", homeDirectory: home) == "Downloads · ~")
     }
 
