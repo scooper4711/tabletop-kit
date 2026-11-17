@@ -2,9 +2,9 @@ import Foundation
 
 /// How a folder, or the folder of a file, is shown in the Tableside Toolkit apps: by a name and where it is, rather
 /// than by its path. Scrollkeeper's downloads read "Scrollkeeper ▸ <title folder>", wherever they are: the App
-/// Group folder the toolkit shares, Scrollkeeper's folder before it ran in the sandbox, or on the iPad an app's
-/// Documents folder, which the system names only "Documents" and the apps only watch through Import from
-/// Scrollkeeper.
+/// Group folder the toolkit shares (on the Mac or the iPhone and iPad), Scrollkeeper's folder before it ran in the
+/// sandbox, or on the iPhone and iPad an app's Documents folder, which the system names only "Documents" and the apps
+/// only watch through Import from Scrollkeeper.
 public struct FolderName: Equatable, Sendable {
     public let title: String
     public let location: String
@@ -22,8 +22,9 @@ public struct FolderName: Equatable, Sendable {
     /// The name of the folder at `path`; `homeDirectory` is shortened to `~` in the location of other folders.
     public init(path: String, homeDirectory: String = NSHomeDirectory()) {
         let components = path.split(separator: "/").map(String.init)
-        if let inside = Self.components(of: components, after: Self.iPadDocuments) {
-            self = Self.scrollkeeper(inside, location: "On My iPad")
+        if let inside = Self.components(of: components, after: Self.iOSDocuments)
+            ?? Self.components(of: components, after: Self.iOSSharedDownloads) {
+            self = Self.scrollkeeper(inside, location: Self.onThisDevice)
         } else if let inside = Self.components(of: components, after: Self.sharedDownloads)
                     ?? Self.components(of: components, after: Self.macDownloads) {
             self = Self.scrollkeeper(inside, location: "On this Mac")
@@ -42,10 +43,23 @@ public struct FolderName: Equatable, Sendable {
         return "\(name.title) · \(name.location)"
     }
 
-    /// An app's Documents folder on the iPad: `…/Containers/Data/Application/<app>/Documents`; nil stands for the
-    /// app's own component.
-    private static let iPadDocuments: [String?] = ["Containers", "Data", "Application", nil, "Documents"]
-    /// Scrollkeeper's download folder in the App Group the toolkit shares (`ToolkitGroup`).
+    /// Where the iPhone and iPad keep the apps' own folders, as the Files app names it: "On My iPhone" or
+    /// "On My iPad".
+    public static let onThisDevice = deviceLocation(machine: hardwareModel())
+
+    /// "On My iPhone" for an iPhone's hardware model (such as `iPhone17,1`), otherwise "On My iPad".
+    static func deviceLocation(machine: String) -> String {
+        machine.hasPrefix("iPhone") ? "On My iPhone" : "On My iPad"
+    }
+
+    /// An app's Documents folder on the iPhone and iPad: `…/Containers/Data/Application/<app>/Documents`; nil stands
+    /// for the app's own component.
+    private static let iOSDocuments: [String?] = ["Containers", "Data", "Application", nil, "Documents"]
+    /// Scrollkeeper's download folder in the App Group the toolkit shares on the iPhone and iPad.
+    private static let iOSSharedDownloads: [String?] = [
+        "Containers", "Shared", "AppGroup", nil, "Scrollkeeper", "Files"
+    ]
+    /// Scrollkeeper's download folder in the App Group the toolkit shares on the Mac (`ToolkitGroup`).
     private static let sharedDownloads: [String?] = ["Group Containers", nil, "Scrollkeeper", "Files"]
     /// Scrollkeeper's download folder on the Mac before it ran in the sandbox, or a build outside the App Group.
     private static let macDownloads: [String?] = ["Library", "Application Support", "Scrollkeeper", "Files"]
@@ -64,6 +78,20 @@ public struct FolderName: Equatable, Sendable {
             }
         }
         return nil
+    }
+
+    /// The hardware model, such as `iPhone17,1`; the simulator reports the model it simulates. Empty off iOS.
+    private static func hardwareModel() -> String {
+        #if os(iOS)
+        if let simulated = ProcessInfo.processInfo.environment["SIMULATOR_MODEL_IDENTIFIER"] { return simulated }
+        var size = 0
+        guard sysctlbyname("hw.machine", nil, &size, nil, 0) == 0, size > 0 else { return "" }
+        var model = [CChar](repeating: 0, count: size)
+        guard sysctlbyname("hw.machine", &model, &size, nil, 0) == 0 else { return "" }
+        return String(cString: model)
+        #else
+        return ""
+        #endif
     }
 
     private static func shortened(_ path: String, homeDirectory: String) -> String {
