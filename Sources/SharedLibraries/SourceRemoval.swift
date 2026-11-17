@@ -69,6 +69,7 @@ extension LibraryWriter {
             .compactMap { $0.text("picture") }
         try delete(from: .aliases, where: "entry IN (\(orphans))", [])
         try delete(from: .creatureArt, where: "entry IN (\(orphans))", [])
+        try delete(from: .notes, where: "entry IN (\(orphans))", [])
         try delete(from: .art, where: "id IN (\(orphans))", [])
         return pictures
     }

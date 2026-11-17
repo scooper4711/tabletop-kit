@@ -30,6 +30,8 @@ struct MovePlan {
             guard let folder = move.customArtFolder else { break }
             files.append((folder.appending(path: art.fileName), library.customFile(art.fileName)))
         }
+        files += move.keptPDFs.sorted { $0.key < $1.key }.map { ($1, library.keptFile(sourceID: $0)) }
+        files += move.pictureFiles.sorted { $0.key < $1.key }.map { ($1, library.pictureFile($0)) }
         self.files = files
     }
 
@@ -40,6 +42,7 @@ struct MovePlan {
         for (oldID, entry) in entries {
             try writer.addAlias(oldID, app: move.app, entry: try writer.merge(entry))
         }
+        try recordKeyedArt(with: writer)
         for creature in move.customCreatures { try writer.upsert(creature) }
         for art in move.customArt { try writer.upsert(art) }
         try recordCreatureArt(with: writer)
@@ -82,6 +85,23 @@ struct MovePlan {
     // MARK: Helpers
 
     static let oldFileName = "art-library.json"
+
+    /// Art the app keyed itself, its aliases, and its notes, a note the user corrected winning over one they
+    /// didn't (R6.2).
+    private func recordKeyedArt(with writer: LibraryWriter) throws {
+        for source in move.keyedSources { try writer.add(source, for: move.app) }
+        for entry in move.keyedArt { try writer.merge(entry) }
+        for (oldID, target) in move.aliases.sorted(by: { $0.key.uuidString < $1.key.uuidString }) {
+            guard let entry = try ArtRows.entryID(answeringTo: target, in: writer.database) else { continue }
+            try writer.addAlias(oldID, app: move.app, entry: entry)
+        }
+        for (id, note) in move.notes {
+            guard let entry = try ArtRows.entryID(answeringTo: id, in: writer.database) else { continue }
+            let known = try ArtRows.notes(in: writer.database, where: "entry = ?", [.text(entry.uuidString)])[entry]
+            if known?.isCorrected == true, !note.isCorrected { continue }
+            try writer.upsert(note, for: entry)
+        }
+    }
 
     /// The art chosen for creatures, library art found by the old ID's alias. A creature that has art chosen
     /// already, by an app that moved in before, keeps it.

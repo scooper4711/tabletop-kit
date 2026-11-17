@@ -4,7 +4,7 @@ import ArtExtraction
 /// `changed` column: the change counter's value when the row last changed.
 enum LibrarySchema {
     /// Each version's statements, applied in order to a database at an older version.
-    static let versions: [String] = [version1, version2]
+    static let versions: [String] = [version1, version2, version3]
 
     private static let version1 = """
         CREATE TABLE counter (id INTEGER PRIMARY KEY CHECK (id = 1), value INTEGER NOT NULL);
@@ -42,6 +42,12 @@ enum LibrarySchema {
         CREATE INDEX artByName ON art (foldedName, game);
         """
 
+    /// What is learned about art (R3.3): the user's name for it, its tags, and whether the user corrected them.
+    private static let version3 = """
+        CREATE TABLE notes (entry TEXT PRIMARY KEY, userName TEXT, tags BLOB NOT NULL, tagModel TEXT NOT NULL,
+            suggestedName TEXT NOT NULL, corrected INTEGER NOT NULL, changed INTEGER NOT NULL);
+        """
+
     /// Brings `database` up to the latest version, in one transaction.
     static func migrate(_ database: SQLiteDatabase) throws {
         try database.transaction {
@@ -67,7 +73,8 @@ extension LibrarySchema {
 
 /// A table whose rows sync, and how its rows are named in `deletions` and `LibraryChanges`.
 public enum LibraryTable: String, CaseIterable, Sendable {
-    case sources, sourceAccess, watchedFolders, art, prints, aliases, creatureArt, customCreatures, customArt, moves
+    case sources, sourceAccess, watchedFolders, art, prints, aliases, creatureArt, customCreatures, customArt, moves,
+         notes
 
     /// The SQL naming a row: its key, or its keys joined with `|`.
     var keyExpression: String {
@@ -78,6 +85,7 @@ public enum LibraryTable: String, CaseIterable, Sendable {
         case .prints: "key"
         case .aliases: "oldID"
         case .creatureArt: "subject"
+        case .notes: "entry"
         case .moves: "app"
         }
     }

@@ -59,6 +59,14 @@ public struct SharedArtEntry: Identifiable, Hashable, Sendable {
                  prints: prints.map(\.print), palette: palette)
     }
 
+    /// The entry `entry`, with `prints` in place of its own and its picture's file, keeping `entry`'s ID.
+    public init(_ entry: ArtEntry, prints: [SharedPrint], picture: String? = nil) {
+        self.init(entry, keys: [])
+        self.prints = prints
+        self.picture = picture
+        sortPrints()
+    }
+
     /// The entry `entry` with each print's key, in order.
     init(_ entry: ArtEntry, keys: [UUID]) {
         id = entry.id

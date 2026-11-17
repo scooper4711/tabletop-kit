@@ -170,8 +170,11 @@ keeping its API so Turnkeeper and Field Guide change only how they create it. Pa
   (`init(sharedLibraryFor:fallback:)`), whose `moveIn` an app calls at launch; an app whose move fails keeps its
   own (R6.5). On the shared library, `picture(id:)` also finds art by an alias, and a PDF this app can't reach is
   listed as read by the apps that can (R3.6), its art shown from its pictures.
-- **Pawn Shop's move.** `LibraryMove` also takes art, sources, aliases and notes already keyed, which Pawn Shop
-  makes from `library.json` version 2 in pawn-shop#27. `notes` arrives with it (schema version 2).
+- **Pawn Shop's move.** `LibraryMove` also takes art already keyed (`keyedArt`, `keyedSources`), `aliases` (old
+  ID to the ID or print key of its art), `notes` and the files to move (`keptPDFs`, `pictureFiles`), which Pawn
+  Shop makes from `library.json` version 2 in pawn-shop#27. A note the user corrected wins over one they didn't.
+- **Notes** (R3.3), schema version 3: `ArtNote` by entry, set by any ID of the art (`setNote(_:forArt:)`). When
+  entries merge, the note moves with its art, a corrected note winning; art removed takes its note with it.
 
 ## Who does what
 | Issue | Part |

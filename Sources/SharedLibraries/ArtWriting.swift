@@ -68,6 +68,7 @@ extension LibraryWriter {
     /// Takes out entry `old`, pointing its aliases and the creatures that chose it at `new`.
     func repoint(_ old: UUID, to new: UUID) throws {
         try delete(from: .art, where: "id = ?", [.text(old.uuidString)])
+        try moveNote(from: old, to: new)
         for table in [LibraryTable.aliases, .creatureArt] {
             try database.run("UPDATE \(table.rawValue) SET entry = ?, changed = ? WHERE entry = ?",
                              [.text(new.uuidString), .integer(counter), .text(old.uuidString)])
