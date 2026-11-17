@@ -20,9 +20,10 @@ Scrollkeeper holds.
 So the digests, with the name, are the art IDs' key: no PDF has to be read again to give existing art its new ID.
 
 ## Art IDs (R2)
-`ArtKey` in `ArtExtraction/Library` makes the keys, as name-based UUIDs (version 5, RFC 9562: SHA-1 of the
-namespace `2A674007-7209-4190-AA36-612838B41B5F` followed by the name in UTF-8, with the version and variant bits
-set). CryptoKit's `Insecure.SHA1` hashes; the name is the contract, so it is listed here exactly.
+`ArtKey` in `ArtExtraction/Library` makes the keys (`keys(for:)`, `entryID(among:)`), as name-based UUIDs
+(version 5, RFC 9562: SHA-1 of the namespace `2A674007-7209-4190-AA36-612838B41B5F` followed by the name in UTF-8,
+with the version and variant bits set). CryptoKit's `Insecure.SHA1` hashes; the name is the contract, so it is
+listed here exactly.
 
 - **Picture and name.** `image:`, the print's `imageDigests` (sorted, unique, lowercase hex) joined with `,`, then
   `|` and the folded name: lowercase, without diacritics, only letters and digits. A digest is the one
@@ -37,10 +38,11 @@ set). CryptoKit's `Insecure.SHA1` hashes; the name is the contract, so it is lis
 - **A new reader.** A PDF read again by a newer reader can read a name differently, which changes the key. A new
   print in the same source, with the same picture and face as an old one, records the old key as an alias.
 - **Fallback** (R2.4). Art without digests: `place:`, the PDF's SHA-256 (`ArtSource.id`), `|`, the zero-based page,
-  `|`, and the center of the front face as a fraction of the page's media box, each rounded to the nearest 1/20,
-  written `x,y` with two decimals. Two such pieces of art in one cell add `#2`, `#3` in reading order (top to
-  bottom, then left to right). A detector that moves a face by under 2.5% of the page keeps its key; the fallback
-  covers only the flattened pages above.
+  `|`, and the center of the front face in page space on a 30-point grid (about 1/20 of a Letter page; no page
+  size is needed, so a library moves in without opening its PDFs), written `x,y` as whole cells rounded to the
+  nearest. Two such pieces of art in one cell add `#2`, `#3` in reading order (top to bottom, then left to right).
+  A detector that moves a face by a few points usually keeps its key; the fallback covers only the flattened
+  pages above.
 - **The entry's ID** (R2.5). An `ArtEntry` keeps the key of each `ArtPrint` (`ArtPrint.key`). Its `id` is the first
   of them, ordering prints by kind for this purpose as pawn, token, figure, item, then by the key's string. A pawn
   comes first so that a pawn keeps its ID when a Battle Card adds a sharper picture (Pawn Shop's `SharperArt`).
@@ -145,7 +147,7 @@ Settled for pawn-shop#46's and the suite's open questions:
   on the front is part of the key.
 - **What is hashed:** the stream as `CGPDFStreamCopyData` gives it, which every library already stores. A reissue
   that encodes the art again merges by its thumbnail, as today, and the entry answers to both keys.
-- **The fallback place** is the face's center on a 1/20 grid, with reading order for ties.
+- **The fallback place** is the face's center on a 30-point grid, with reading order for ties.
 - **The same picture twice:** the folded name is always part of the key, so a picture shared by different
   creatures, in one product or across products, gives each its own ID (R2.3); size is added only where one product
   prints a picture under one name in two sizes.
