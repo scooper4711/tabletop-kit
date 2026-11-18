@@ -34,12 +34,33 @@ enum CardExtractor {
         let shared = ArtPage.sharedDigests(Array(pages.values))
         var result = ExtractionResult()
         for pair in pairs {
-            guard let text = stats.page(at: pair.stats)?.string, let card = read(text, of: kind),
+            guard let statsPage = stats.page(at: pair.stats), let card = read(statsPage, of: kind),
                   let page = pages[pair.art], let pawn = pawn(card, on: pair.art, page: page, shared: shared)
             else { continue }
             PawnExtractor.add(pawn, to: &result)
         }
         return result
+    }
+
+    /// The card a stat side describes. An item's name is looked for in the page's text as PDFKit gives it, and then
+    /// in its lines from the top down: PDFKit gives a page's text in the order it was set since macOS 27, which
+    /// puts the names of the Guns deck's cards last and a picture's placeholder before Deck of Endless Treasure's.
+    private static func read(_ page: PDFPage, of kind: CardDeck.Kind) -> CardStats? {
+        guard let text = page.string else { return nil }
+        if let card = read(text, of: kind) { return card }
+        return kind == .items ? read(linesFromTheTop(of: page), of: kind) : nil
+    }
+
+    /// The page's lines of text, the highest first and each row from the left, without pictures' placeholders.
+    static func linesFromTheTop(of page: PDFPage) -> String {
+        let lines = page.selection(for: page.bounds(for: .mediaBox))?.selectionsByLine() ?? []
+        let placed = lines.compactMap { line -> (text: String, bounds: CGRect)? in
+            let text = (line.string ?? "").replacingOccurrences(of: "\u{FFFC}", with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+            return text.isEmpty ? nil : (text, line.bounds(for: page))
+        }
+        return placed.sorted { ($0.bounds.maxY, -$0.bounds.minX) > ($1.bounds.maxY, -$1.bounds.minX) }
+            .map(\.text).joined(separator: "\n")
     }
 
     /// A creature card's stat side, or an item card's name as an item of medium size with no traits.

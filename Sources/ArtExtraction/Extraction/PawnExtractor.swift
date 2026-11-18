@@ -70,8 +70,10 @@ public enum PawnExtractionError: Error, Equatable, CustomStringConvertible {
 public enum PawnExtractor {
     /// Raised when extraction reads a PDF differently, so that PDFs read before are read again. 1: Battle Cards
     /// whose art pages credit the illustrator. 2: pawns printed without cut outlines. 3: item decks. 4: item decks
-    /// printed as pictures. 5: the pictures on covers and ads are no longer read as pawns.
-    public static let version = 5
+    /// printed as pictures. 5: the pictures on covers and ads are no longer read as pawns. 6: labels in the fonts
+    /// of pawn PDFs up to 2017 are read, a cover showing its pawns under its title gives none, and item cards'
+    /// names are found wherever PDFKit puts them in the page's text.
+    public static let version = 6
 
     /// The pawns in a pawn or token PDF, the creatures in a deck of Battle Cards, or the items in an item deck.
     public static func extract(from url: URL) throws -> ExtractionResult {

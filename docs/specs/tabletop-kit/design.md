@@ -115,10 +115,15 @@ Fists of the Ruby Phoenix, Alien Archive 1 & 2 and 3 & 4), 289 × 425 pt cards (
   it is printed inside (nearest that picture's edge) or else the nearest picture within 18 pt, judged at about the
   middle of the piece (its start moved half its estimated length along it). A picture with text is a pawn, with or
   without a copyright line; its foot is the edge nearest the middle of its text, and its head the edge across from it.
-- Only a page of pawns is read (`FigurePawns.isPawnPage`): one where at least 0.6 of the text, by characters, is
-  type of 12 pt or less within 18 pt of a pawn-size picture, masked or not (pages of scenery print some pieces
-  without transparency). Covers and ads show pawn-size pictures among titles, blurbs and lists of the product's
-  pawns, which would be read as names. Measured on 84 PDFs: pages of pawns 0.72 and up, covers and ads 0.49 at most.
+- Only a page of pawns is read (`FigurePawns.isPawnPage`): one with no type over 12 pt (a title) where at least 0.6
+  of the text, by characters, is within 18 pt of a pawn-size picture, masked or not (pages of scenery print some
+  pieces without transparency). Covers and ads show pawn-size pictures among titles, blurbs and lists of the
+  product's pawns, which would be read as names; Traps & Treasures' cover shows small copies of its pawns with
+  their labels. Measured on 84 PDFs: pages of pawns have no type over 8 pt and a share of 0.72 and up; every cover
+  and ad with pictures has a title of 29 pt or more.
+- `FontDecoder` reads a simple font's codes as single bytes whatever its ToUnicode map says: the maps of Paizo's
+  pawn PDFs up to 2017 list one-byte codes in a two-byte code space, beside a two-byte code for the space, and read
+  two bytes at a time their labels came out as control characters.
 - `PageScanner` records each piece of text's size (`Tf` times the text matrix's vertical scale) and direction.
   `LabelLines` rebuilds the label: pieces are grouped into lines across the text's direction and ordered along it,
   joined without spaces (the text carries its own), skipping a piece that starts within the previous piece's
@@ -134,7 +139,7 @@ Fists of the Ruby Phoenix, Alien Archive 1 & 2 and 3 & 4), 289 × 425 pt cards (
 - A page after the first that is one image covering 90% of it, with no text or outlines, is listed in
   `ExtractionResult.unreadablePages`.
 - `PawnExtractor.version` is 2, so PDFs in which version 1 found nothing are read again; 5 rereads PDFs whose
-  covers' and ads' pictures were read as pawns, which takes those out.
+  covers' and ads' pictures were read as pawns, which takes those out, and 6 those whose labels' fonts were misread.
 - Measured: Monster Core Pawn Box gives 411 pawns (202 before, 209 of them from pictures), Dawn of Flame 134
   (none before); NPC Core reports its 16 flattened pages.
 
@@ -170,6 +175,12 @@ Fists of the Ruby Phoenix, Alien Archive 1 & 2 and 3 & 4), 289 × 425 pt cards (
   identity" are skipped. An item becomes an `ExtractedPawn` of medium size with no traits and the
   `.item(imageIndex:)` shape, printed as `ArtKind.item`; `ArtEntry.isItem` and `LibraryArt.isItem` mark it, and
   `ArtMerger` merges items only with items. `PawnExtractor.version` 3 rereads PDFs read before item decks; 4 adds decks sold as pictures.
+- An item card's name is looked for in `PDFPage.string`, then in the page's lines from the top down
+  (`CardExtractor.linesFromTheTop`: `selectionsByLine` sorted by their bounds, pictures' placeholders left out).
+  Since macOS 27 PDFKit gives the text of Paizo's cards in the order it was set: the Guns deck's names come last,
+  after the copyright and the text, and a placeholder precedes Deck of Endless Treasure's. Read from the string
+  alone, seven item decks gave 297 names where they had given 475; with the lines they give those 475 again, and
+  three of Deck of Endless Treasure's own cards ("Start Here!" and its two tables of levels).
 - `ImageDeck.containing(_:)` takes a folder (or a JPG in one) whose name, or its parent's, names an item deck
   and that holds three or more `…Backs<n>.jpg`, each paired with `…Fronts<n>.jpg`. `ImageDeckExtractor` draws
   the backs at most 520 px on the long side, takes each pixel's median over all backs as the background, and

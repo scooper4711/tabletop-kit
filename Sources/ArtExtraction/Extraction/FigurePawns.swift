@@ -16,8 +16,8 @@ enum FigurePawns {
     /// Larger type is a title, not a pawn's label: labels are set in 7 and 8 point type, covers' titles in 13 point
     /// and up.
     static let largestLabelType: CGFloat = 12
-    /// The least share of its text that is pawns' labels on a page of pawns (see `labelShare`). Measured on Paizo's
-    /// pawn PDFs: 0.72 and up on pages of pawns, 0.49 at most on covers and ads.
+    /// The least share of its text that is beside pawn-size pictures on a page of pawns (see `labelShare`).
+    /// Measured on Paizo's pawn PDFs: 0.72 and up on pages of pawns, 0.01 on the one ad without a title.
     static let leastLabelShare = 0.6
 
     /// A pawn found from its picture, before its label is read.
@@ -64,20 +64,22 @@ enum FigurePawns {
         return !fronts.isEmpty && shared * 2 >= fronts.count
     }
 
-    /// True when most of the page's text is pawns' labels. A cover or an ad shows pawn-size pictures too, among
-    /// titles, blurbs and lists of the product's pawns, which would otherwise be read as those pictures' names.
+    /// True for a page that prints pawns and nothing else: it has no title, and most of its text is beside
+    /// pawn-size pictures, as labels are. A cover or an ad shows pawn-size pictures too, among blurbs and lists of
+    /// the product's pawns, which would otherwise be read as those pictures' names; a cover may even show small
+    /// copies of the pawns with their labels, under its title.
     static func isPawnPage(_ page: PageContent) -> Bool {
-        labelShare(of: page) >= leastLabelShare
+        let hasTitle = page.glyphs.contains { $0.fontSize > largestLabelType }
+        return !hasTitle && labelShare(of: page) >= leastLabelShare
     }
 
-    /// The share of the page's text, by its characters, that is label-size type printed within a label's reach of
-    /// a pawn-size picture; 1 on a page without text. Pictures without transparency count too: pages of scenery
-    /// print some pieces that way, labeled as the others are.
+    /// The share of the page's text, by its characters, printed within a label's reach of a pawn-size picture; 1
+    /// on a page without text. Pictures without transparency count too: pages of scenery print some pieces that
+    /// way, labeled as the others are.
     static func labelShare(of page: PageContent) -> Double {
         let pictures = page.images.filter(isPawnSize).map(\.rect)
         let labels = page.glyphs.filter { glyph in
-            glyph.fontSize <= largestLabelType
-                && pictures.contains { distance(from: middle(of: glyph), to: $0) <= labelReach }
+            pictures.contains { distance(from: middle(of: glyph), to: $0) <= labelReach }
         }
         let total = characterCount(of: page.glyphs)
         return total > 0 ? Double(characterCount(of: labels)) / Double(total) : 1

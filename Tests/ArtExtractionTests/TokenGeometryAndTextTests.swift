@@ -87,6 +87,33 @@ func streamObject(_ content: String) -> String {
         #expect(glyphs.map(\.text) == ["-ab", "cXY", "Z"])
     }
 
+    /// The map Paizo's pawn PDFs up to 2017 give their labels' fonts: one-byte codes in a two-byte code space.
+    let wideMap = """
+        begincmap
+        1 begincodespacerange <0000> <FFFF> endcodespacerange
+        3 beginbfchar
+        <04> <0058>
+        <05> <004A>
+        <0020> <0020>
+        endbfchar
+        endcmap
+        """
+
+    func glyphs(_ content: String, fontSubtype: String) -> [TextGlyph] {
+        let pdf = rawPDF(content: content, resources: "<< /Font << /F1 5 0 R >> >>", extraObjects: [
+            "<< /Type /Font /Subtype /\(fontSubtype) /BaseFont /Helvetica /ToUnicode 6 0 R >>", streamObject(wideMap)
+        ])
+        return PageScanner.scan(pdf.page(at: 1)!).glyphs
+    }
+
+    @Test func readsASimpleFontsCodesAsSingleBytesWhateverItsMapsCodeSpace() {
+        #expect(glyphs("BT /F1 12 Tf (\\004\\005 \\004) Tj ET", fontSubtype: "Type1").map(\.text) == ["XJ X"])
+    }
+
+    @Test func readsACompositeFontsCodesAtItsMapsLength() {
+        #expect(glyphs("BT /F1 12 Tf <000400050020> Tj ET", fontSubtype: "Type0").map(\.text) == ["XJ "])
+    }
+
     @Test func readsFontsWithoutAMapAsTextStrings() {
         #expect(scannedGlyphs("BT /F2 12 Tf (Hello) Tj ET").map(\.text) == ["Hello"])
     }

@@ -1,4 +1,5 @@
 import Foundation
+import PDFKit
 import Testing
 @testable import ArtExtraction
 import ArtExtractionTestSupport
@@ -42,6 +43,23 @@ import ArtExtractionTestSupport
         let result = try PawnExtractor.extract(from: file)
         #expect(result.pawns.map(\.name) == ["Healing Potion", "Bayonet", "Knuckle Duster"])
         #expect(result.pawns.allSatisfy { if case .item = $0.shape { $0.traits.isEmpty } else { false } })
+    }
+}
+
+/// Since macOS 27 PDFKit gives the text of Paizo's cards in the order it was set, not from the top down. It still
+/// reads a PDF drawn here from the top, so only the reordering is tested, not the deck that needs it.
+@Suite struct ItemCardOrderTests {
+    let folder = temporaryFolder()
+
+    @Test func readsAPagesLinesFromTheTopWithoutPicturesPlaceholders() throws {
+        let url = folder.appendingPathComponent("card.pdf")
+        try makePDF(size: cardPage, pages: [{ context in
+            context.draw(creatureArt(), in: CGRect(x: 200, y: 300, width: 60, height: 90))
+            drawText(context, "Damage 1d8 S", at: CGPoint(x: 12, y: 372))
+            drawText(context, "BATTLE AXE", at: CGPoint(x: 12, y: 400), size: 9)
+        }]).write(to: url)
+        let page = try #require(PDFDocument(url: url)?.page(at: 0))
+        #expect(CardExtractor.linesFromTheTop(of: page) == "BATTLE AXE\nDamage 1d8 S")
     }
 }
 
