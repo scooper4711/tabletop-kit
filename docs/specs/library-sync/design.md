@@ -106,7 +106,7 @@ that art, in one statement. No writer has to change.
    their pictures deleted after the transaction. Last, the incoming aliases are added unless they already find
    art. For an alias this device holds too, both devices settle on one row whichever applies the other's first:
    the app whose name sorts first and, when they name different art, the ID that sorts first; otherwise each
-   would send its reading over the other's for ever. A reading leaves out an alias that is also art's ID or a
+   would send its reading over the other's forever. A reading leaves out an alias that is also art's ID or a
    print's key.
    `sourceAccess` is never written, and `kept` stays as it was.
 4. **A source deleted.** The PDF is removed as `SharedLibrary.remove(sourceID:)` does, its kept copy and the
@@ -126,7 +126,9 @@ that art, in one statement. No writer has to change.
    reading also has nothing to upload when it differs only in what this device knows from its other PDFs and knows
    no key the incoming one doesn't (`SourceReading.isCovered`): a device lacking another PDF that prints the same
    art (its record not here yet, or unreadable to this version) gives the art fewer keys and another ID, and
-   sending that over the fuller reading would have the two devices upload over each other for ever.
+   sending that over the fuller reading would have the two devices upload over each other forever.
+   A known limit: the rule is applied only as a PDF's own record is merged in, so a device lacking one of three
+   PDFs that print the same art can still answer for the other two.
 
 On a failure the transaction rolls back and `applyRemote` throws, with every file as it was: files are only
 deleted or replaced after the commit.
@@ -170,7 +172,7 @@ the digest is empty. A picture is referenced by `art.picture`, `prints.picture` 
 - **Which picture stays** (R4.10). Art printed in two PDFs can have a picture from either, so two devices can name
   different ones. When a reading is merged, the art keeps the sharper of its picture here and the incoming one
   (`ArtPicture.stays`): more pixels on the long side, then the name that sorts first; any picture over none. Taking
-  the incoming one each time would have two devices that sync at the same moment swap pictures for ever, deleting
+  the incoming one each time would have two devices that sync at the same moment swap pictures forever, deleting
   and uploading each time. The loser is deleted once nothing names it. Reading a PDF follows the same rule
   (`LibraryWriter.setPicture`): a Battle Card's picture replaces the art's only when it stays over it. Giving art
   its Battle Card's picture whatever its size would have the sharper one deleted from iCloud before the next sync

@@ -48,7 +48,7 @@ extension RemoteApplication {
 
     /// Merges one piece of art, with the other art it is printed as. Of its picture and those of the art it joins
     /// here, the one that stays is the same on every device (`ArtPicture.stays`): taking the incoming one each time
-    /// would have two devices swap pictures for ever. Returns its ID here.
+    /// would have two devices swap pictures forever. Returns its ID here.
     private func merge(_ group: ReadingGroup, source: String) throws -> UUID {
         let art = ArtEntry(id: group.entry, name: group.name, game: group.game, size: group.size,
                            traits: group.traits, fingerprint: group.fingerprint, prints: [], palette: group.palette)
@@ -64,7 +64,7 @@ extension RemoteApplication {
     /// Adds an ID the art was known by, unless it finds art here already. Where this device holds the alias too,
     /// both devices settle on one row whichever applies the other's first: the app whose name sorts first and,
     /// when they name different art, the ID that sorts first. Otherwise each would send its own over the other's
-    /// for ever.
+    /// forever.
     private func settle(_ alias: ReadingAlias, ofArt entry: UUID) throws {
         let oldID = alias.oldID.uuidString
         guard let known = try database.rows("SELECT app, entry FROM aliases WHERE oldID = ?", [.text(oldID)]).first

@@ -42,7 +42,7 @@ extension SourceReading {
     /// True when this reading says nothing `other` doesn't: they differ at most in what each device knows from its
     /// other PDFs, this one knowing no key `other` doesn't. A device that lacks another PDF printing the same art
     /// (its record not here yet, or unreadable to this version) gives the art fewer keys and so another ID; sending
-    /// that over the fuller reading would have the two devices upload over each other for ever.
+    /// that over the fuller reading would have the two devices upload over each other forever.
     func isCovered(by other: SourceReading) -> Bool {
         var own = self, theirs = other
         own.groups = []
@@ -136,7 +136,7 @@ enum SyncPayloads {
     }
 
     /// The digest of `data` as this version encodes it: decoded and encoded again, never the bytes as they came,
-    /// or two versions that add different fields would upload over each other for ever.
+    /// or two versions that add different fields would upload over each other forever.
     static func digest(ofIncoming data: Data, kind: SyncKind) throws -> String {
         switch kind {
         case .source: SyncDigest.hex(of: try encode(try decode(SourceReading.self, from: data, kind: kind)))
