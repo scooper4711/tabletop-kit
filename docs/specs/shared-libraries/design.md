@@ -172,7 +172,8 @@ keeping its API so Turnkeeper and Field Guide change only how they create it. Pa
   `art.nameKey`, the folded part after the name's last comma (schema version 5).
 - **Pictures** (R3.2). Each new entry's picture is drawn from the print that made it and saved as
   `Pictures/<key>.heic`, at most 1,024 pixels on its long side; a token's or item's picture drawn at import is
-  kept as `<key>.png`. A figure added later (a Battle Card) draws the picture again, sharper. `picture(of:)` reads
+  kept as `<key>.png`. A figure added later (a Battle Card) draws the picture again, and the art takes it when it is
+  the sharper one (library sync design, "Pictures"). `picture(of:)` reads
   the file, else draws it from a PDF this app can reach and saves it, so moved-in entries get theirs on first use.
   Pictures are drawn after the write, a page per core: the *Monster Core Pawn Box* (415 pawns) reads in about
   9 seconds and draws in 5.

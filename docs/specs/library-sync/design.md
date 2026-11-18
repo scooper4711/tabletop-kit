@@ -171,8 +171,10 @@ the digest is empty. A picture is referenced by `art.picture`, `prints.picture` 
   different ones. When a reading is merged, the art keeps the sharper of its picture here and the incoming one
   (`ArtPicture.stays`): more pixels on the long side, then the name that sorts first; any picture over none. Taking
   the incoming one each time would have two devices that sync at the same moment swap pictures for ever, deleting
-  and uploading each time. The loser is deleted once nothing names it. Reading a PDF still gives art its Battle
-  Card's picture (shared libraries design); the next sync settles it by this rule.
+  and uploading each time. The loser is deleted once nothing names it. Reading a PDF follows the same rule
+  (`LibraryWriter.setPicture`): a Battle Card's picture replaces the art's only when it stays over it. Giving art
+  its Battle Card's picture whatever its size would have the sharper one deleted from iCloud before the next sync
+  named it again.
 - **Sizes.** A picture's size is noted when it is drawn or, for a token, saved. `measurePictures` notes those saved
   before version 6 from their files' headers; the engine calls it before it first sends.
 - **A missing file.** `picture(of:)` and `drawMissingPictures` save a drawing under the name the art has only when

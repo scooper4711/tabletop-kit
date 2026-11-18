@@ -137,10 +137,16 @@ extension SharedLibrary {
 }
 
 extension LibraryWriter {
-    /// Records the picture of the art that has the print `key`, wherever merging has put it since.
+    /// Records the picture of the art that has the print `key`, wherever merging has put it since. Art whose own
+    /// picture stays over it keeps that (`ArtPicture.stays`), as syncing would settle the two: taking the new one
+    /// would have the sharper one deleted from iCloud and then named again.
     func setPicture(_ picture: ArtPicture, ofArtPrinting key: UUID) throws {
-        try database.run("UPDATE art SET picture = ?, picturePixels = ?, changed = ? WHERE id = "
-                         + "(SELECT entry FROM prints WHERE key = ?)",
+        let art = "id = (SELECT entry FROM prints WHERE key = ?)"
+        let row = try database.rows("SELECT picture, picturePixels FROM art WHERE \(art)", [.text(key.uuidString)])
+            .first
+        let kept = row?.text("picture").map { ArtPicture(name: $0, pixels: Int(row?.integer("picturePixels") ?? 0)) }
+        if let kept, kept.name != picture.name, kept.stays(over: picture) { return }
+        try database.run("UPDATE art SET picture = ?, picturePixels = ?, changed = ? WHERE \(art)",
                          [.text(picture.name), .integer(Int64(picture.pixels)), .integer(counter),
                           .text(key.uuidString)])
     }

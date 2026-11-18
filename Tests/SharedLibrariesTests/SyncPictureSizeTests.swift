@@ -1,4 +1,5 @@
 import ArtExtraction
+import ArtExtractionTestSupport
 import Foundation
 @testable import SharedLibraries
 import Testing
@@ -65,5 +66,21 @@ import Testing
 
         try devices.exchange()
         #expect(try picture(in: first) == ArtPicture(name: "same.heic", pixels: 640))
+    }
+
+    @Test func keepsAPawnsSharperPictureWhenItsBattleCardIsRead() throws {
+        let device = devices.first
+        let goblin = DrawnPawn(rect: device.goblin.rect, art: creatureArt(variant: 0, scale: 4),
+                               name: "GOBLIN WARRIOR")
+        try first.add(try device.pawnBox([goblin]), keeping: true)
+        let sharp = try #require(try picture(in: first))
+        try first.markPicturesUploaded([sharp.name])
+        let deck = [DrawnCard(name: "GOBLIN WARRIOR", traits: "N SMALL GOBLIN HUMANOID",
+                              creature: creatureArt(variant: 0))]
+
+        try first.add(try writeCardDeck(deck, in: device.root), keeping: true)
+        #expect(try first.artEntries().first?.prints.map(\.print.kind) == [.figure, .pawn])
+        #expect(try picture(in: first) == sharp)
+        #expect(try first.picturesToDelete().isEmpty)
     }
 }

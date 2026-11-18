@@ -3,7 +3,8 @@ import CoreGraphics
 import Foundation
 
 /// A picture to draw from one of the art's prints, under the name that print gives it
-/// (`SharedLibrary.pictureName(drawnFrom:)`), which the art then takes.
+/// (`SharedLibrary.pictureName(drawnFrom:)`), which the art then takes unless its own picture is sharper
+/// (`ArtPicture.stays`).
 struct PictureJob: Equatable {
     var print: SharedPrint
     /// True when the art names this picture already and only its file is missing: its row is then left alone.
@@ -51,7 +52,8 @@ struct StoreMerger {
         var entry = try placed(found, print: print, into: &report)
         let drawsPicture = entry.picture == nil || (print.print.kind == .figure && !isDrawnFromFigure(entry))
         if drawsPicture, let kept = print.print.tokenFile {
-            entry.artPicture = ArtPicture(name: kept, pixels: library.pixels(ofPicture: kept))
+            let picture = ArtPicture(name: kept, pixels: library.pixels(ofPicture: kept))
+            if entry.artPicture?.stays(over: picture) != true { entry.artPicture = picture }
         }
         try writer.merge(entry)
         if drawsPicture, print.print.tokenFile == nil { pictures.append(PictureJob(print: print)) }
