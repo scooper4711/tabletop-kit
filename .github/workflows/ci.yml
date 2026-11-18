@@ -55,11 +55,9 @@ jobs:
 
       - name: Diagnose iOS support (temporary)
         run: |
-          id; xcode-select -p; xcodebuild -version
-          xcodebuild -showsdks | grep -i ios || true
-          xcrun simctl runtime list || true
-          xcrun simctl list runtimes || true
-          xcodebuild -scheme TabletopKit-Package -showdestinations 2>&1 | head -30
+          ls ~/Library/Developer/Xcode/DerivedData 2>&1 | head
+          time xcodebuild -scheme TabletopKit-Package -destination 'generic/platform=iOS Simulator' build 2>&1 \
+            | grep -E 'Compiling|SwiftCompile|BUILD|error|warning: unable|Build target' | sort | uniq -c | sort -rn | head -20
 
       - name: Build for iOS
         run: xcodebuild -scheme TabletopKit-Package -destination 'generic/platform=iOS Simulator' -quiet build
