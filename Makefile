@@ -20,6 +20,8 @@ coverage:
 clean:
 	rm -rf .build coverage
 
-# Checks the Mac App Store packaging script on a generated trial app.
+# Checks the Mac App Store packaging script on a generated trial app, and the library backup scripts on a made-up
+# home folder.
 test-scripts:
 	scripts/test-package-appstore.sh
+	scripts/test-libraries-backup.sh
