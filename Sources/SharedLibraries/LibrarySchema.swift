@@ -80,13 +80,14 @@ enum LibrarySchema {
         """
 
     /// What syncing through iCloud needs (library sync): what each record's copy in the cloud looks like, notes that
-    /// arrived before their art, the engine's saved state, and the pictures downloaded; and when the user last
-    /// changed each row they make, for settling edits made on two devices. All additions, so older apps carry on.
+    /// arrived before their art or that this version can't read, the engine's saved state, and the pictures
+    /// downloaded; and when the user last changed each row they make, for settling edits made on two devices. All
+    /// additions, so older apps carry on.
     private static let version6 = """
         CREATE TABLE cloudRecords (zone TEXT NOT NULL, name TEXT NOT NULL, kind TEXT NOT NULL, rowKey TEXT NOT NULL,
             systemFields BLOB, sentChanged INTEGER NOT NULL, digest TEXT NOT NULL, PRIMARY KEY (zone, name));
         CREATE TABLE parkedRecords (name TEXT PRIMARY KEY, kind TEXT NOT NULL, payload BLOB NOT NULL,
-            systemFields BLOB NOT NULL);
+            systemFields BLOB NOT NULL, unreadable INTEGER NOT NULL DEFAULT 0);
         CREATE TABLE syncState (key TEXT PRIMARY KEY, value BLOB NOT NULL);
         CREATE TABLE fetchedPictures (name TEXT PRIMARY KEY, bytes INTEGER NOT NULL, shown REAL NOT NULL);
         CREATE INDEX aliasesByEntry ON aliases (entry);

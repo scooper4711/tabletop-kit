@@ -4,11 +4,13 @@ import Foundation
 /// and those whose rows are gone. `cloudRecords` remembers what the cloud holds, shared by the apps on the device, so
 /// a record one app has sent isn't sent by another.
 extension SharedLibrary {
-    /// The records to save and to delete; neither while syncing is paused.
+    /// The records to save and to delete; neither while syncing is paused. A record whose copy in the cloud this
+    /// version can't read isn't saved over it: it waits for the version that can.
     public func syncCandidates() throws -> SyncCandidates {
         guard try !isSyncPaused else { return SyncCandidates() }
         let database = try connection()
         let known = try cloudRecords(inZone: SyncZone.library, in: database)
+        let unreadable = try unreadableRecordNames(in: database)
         var candidates = SyncCandidates()
         var live: Set<String> = []
         for kind in SyncKind.allCases {
@@ -16,6 +18,7 @@ extension SharedLibrary {
                 let name = SyncRecordName.make(kind, rowKey: rowKey)
                 live.insert(name)
                 if let record = known[name], record.isInStep(at: changed) { continue }
+                if unreadable.contains(name) { continue }
                 candidates.saves.append(SyncRecordID(kind: kind, name: name))
             }
         }
@@ -25,12 +28,13 @@ extension SharedLibrary {
         return candidates
     }
 
-    /// The record to send for `id`; nil when its row is gone, or when the cloud already holds this content (another
-    /// app sent it, or a write changed nothing that syncs).
+    /// The record to send for `id`; nil when its row is gone, when the cloud already holds this content (another
+    /// app sent it, or a write changed nothing that syncs), or when this version can't read the cloud's copy.
     public func outgoingRecord(_ id: SyncRecordID) throws -> OutgoingRecord? {
         let database = try connection()
         // The counter is read before the content: a change in between is then sent again, and dropped by its digest.
-        guard let row = try syncRow(of: id, in: database),
+        guard try !unreadableRecordNames(in: database).contains(id.name),
+              let row = try syncRow(of: id, in: database),
               let record = try syncRecord(id, rowKey: row.rowKey, in: database) else { return nil }
         let digest = SyncDigest.hex(of: record.payload)
         let known = try cloudRecord(named: id.name, in: database)

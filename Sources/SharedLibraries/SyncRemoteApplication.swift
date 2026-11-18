@@ -64,8 +64,10 @@ struct RemoteApplication {
 
     // MARK: Saved records
 
+    /// Merges a saved record in. What was kept aside under its name is older, and goes.
     mutating func applySaved(_ record: SyncRecord, fields: Data) throws {
         let kind = record.id.kind
+        try database.run("DELETE FROM parkedRecords WHERE name = ?", [.text(record.id.name)])
         let digest = try SyncPayloads.digest(ofIncoming: record.payload, kind: kind)
         let incoming = IncomingRecord(record: record, fields: fields, digest: digest)
         switch kind {
@@ -123,15 +125,12 @@ struct RemoteApplication {
 
     // MARK: Parked and settled
 
-    /// Tries again every note that arrived before its art.
+    /// Tries again every note that arrived before its art. Records this version can't read wait for another.
     private mutating func retryParked() throws {
         let before = parked
-        for row in try database.rows("SELECT * FROM parkedRecords ORDER BY name") {
-            guard let name = row.text("name"), let kind = row.text("kind").flatMap(SyncKind.init(rawValue:)),
-                  let payload = row.blob("payload"), let fields = row.blob("systemFields") else { continue }
-            try database.run("DELETE FROM parkedRecords WHERE name = ?", [.text(name)])
-            try applySaved(SyncRecord(id: SyncRecordID(kind: kind, name: name), payload: payload, title: name),
-                           fields: fields)
+        let waiting = try database.rows("SELECT * FROM parkedRecords WHERE unreadable = 0 ORDER BY name")
+        for case .saved(let record, let fields)? in waiting.map(SharedLibrary.parkedChange) {
+            try applySaved(record, fields: fields)
         }
         parked = before
     }

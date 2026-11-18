@@ -67,9 +67,9 @@ extension RemoteApplication {
 
     /// A record deleted elsewhere. A row with changes not yet sent stays, and is sent again; any other goes.
     mutating func applyDeleted(_ id: SyncRecordID) throws {
+        try database.run("DELETE FROM parkedRecords WHERE name = ?", [.text(id.name)])
         if id.kind == .source { return try removeSource(id) }
         let known = try library.cloudRecord(named: id.name, in: database)
-        try database.run("DELETE FROM parkedRecords WHERE name = ?", [.text(id.name)])
         try database.run("DELETE FROM cloudRecords WHERE zone = ? AND name = ?",
                          [.text(SyncZone.library), .text(id.name)])
         guard let rowKey = known?.rowKey ?? SyncRecordName.rowKey(of: id),

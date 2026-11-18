@@ -140,12 +140,6 @@ import Testing
         #expect(try otherApp.changeCounter() == counter)
     }
 
-    @Test func rollsBackWhenARecordCantBeRead() throws {
-        let bad = SyncRecord(id: SyncRecordID(kind: .source, name: "source-x"), payload: Data("{".utf8), title: "x")
-        #expect(throws: SharedLibraryError.self) { try second.applyRemote([.saved(bad, systemFields: Data([1]))]) }
-        #expect(try second.sources().isEmpty)
-    }
-
     @Test func settlesOnOneAppForAnAliasBothDevicesHold() throws {
         try first.add(devices.first.pawnBox(), keeping: false)
         try devices.exchange()

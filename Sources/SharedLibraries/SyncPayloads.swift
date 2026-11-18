@@ -102,6 +102,12 @@ enum SyncPayloads {
         }
     }
 
+    /// True when this version can read a saved record. A newer app may have written what this one doesn't know.
+    static func isReadable(_ change: RemoteChange) -> Bool {
+        guard case .saved(let record, _) = change else { return true }
+        return (try? digest(ofIncoming: record.payload, kind: record.id.kind)) != nil
+    }
+
     /// The digest of `data` as this version encodes it: decoded and encoded again, never the bytes as they came,
     /// or two versions that add different fields would upload over each other for ever.
     static func digest(ofIncoming data: Data, kind: SyncKind) throws -> String {

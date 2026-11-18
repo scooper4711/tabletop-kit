@@ -5,18 +5,43 @@ import Foundation
 extension SharedLibrary {
     /// Merges `changes` into the library in one transaction, and tells what it did. A change the library holds
     /// already is only noted, outside the transaction, so a second app on the device fetching the same records
-    /// changes nothing and tells nobody. Throws, with the library as it was, when a record can't be applied.
+    /// changes nothing and tells nobody. A record this version can't read is kept aside for one that can, and the
+    /// rest is applied. Throws, with the library as it was, when a record can't be applied.
     @discardableResult
     public func applyRemote(_ changes: [RemoteChange]) throws -> RemoteApplyReport {
         var report = RemoteApplyReport()
         var pending: [RemoteChange] = []
-        for change in changes {
-            if try holdsAlready(change) { report.unchanged += 1 } else { pending.append(change) }
+        for change in try parkedNowReadable(besides: changes) + changes {
+            switch try standing(of: change) {
+            case .unreadable: report.parked += 1
+            case .held: report.unchanged += 1
+            case .pending: pending.append(change)
+            }
         }
         guard !pending.isEmpty else { return report }
-        let application: RemoteApplication
+        let application = try applied(pending)
+        application.finish()
+        report.applied = application.applied
+        report.parked += application.parked
+        return report
+    }
+
+    // MARK: Helpers
+
+    /// What a change needs of the library.
+    private enum Standing {
+        /// This version can't read it: it is kept aside.
+        case unreadable
+        /// The library holds it already.
+        case held
+        /// It is to be merged in.
+        case pending
+    }
+
+    /// Applies `pending` in one transaction; a failure leaves every file as it was.
+    private func applied(_ pending: [RemoteChange]) throws -> RemoteApplication {
         do {
-            application = try write { writer in
+            return try write { writer in
                 var application = RemoteApplication(writer: writer, library: self)
                 try application.apply(Self.inApplyingOrder(pending))
                 return application
@@ -25,13 +50,7 @@ extension SharedLibrary {
             removeStagedImages()
             throw error
         }
-        application.finish()
-        report.applied = application.applied
-        report.parked = application.parked
-        return report
     }
-
-    // MARK: Helpers
 
     /// Deletions of a kind come before its saves, and the kinds in the order of `SyncKind`.
     private static func inApplyingOrder(_ changes: [RemoteChange]) -> [RemoteChange] {
@@ -45,30 +64,42 @@ extension SharedLibrary {
             .map(\.element)
     }
 
-    /// True when a change needs nothing from the library but a note of the server's fields: the record is the one
-    /// this device last saw, or its content is what the library holds. A deletion of what isn't here is held too.
-    private func holdsAlready(_ change: RemoteChange) throws -> Bool {
+    /// Sorts a change, noting what needs no transaction: a record this version can't read is kept aside, and one
+    /// the library holds has the server's fields noted. What was kept aside under the name of a change the library
+    /// holds is older than it, and goes: a note waiting for its art, deleted since, would otherwise come back.
+    private func standing(of change: RemoteChange) throws -> Standing {
         let database = try connection()
+        let isHeld: Bool
         switch change {
         case .deleted(let id):
-            // A note kept aside for art that hasn't arrived goes with its record, or it would come back later.
-            try database.run("DELETE FROM parkedRecords WHERE name = ?", [.text(id.name)])
-            return try cloudRecord(named: id.name, in: database) == nil && syncRow(of: id, in: database) == nil
+            isHeld = try cloudRecord(named: id.name, in: database) == nil && syncRow(of: id, in: database) == nil
         case .saved(let record, let fields):
-            let digest = try SyncPayloads.digest(ofIncoming: record.payload, kind: record.id.kind)
-            guard let row = try syncRow(of: record.id, in: database) else { return false }
-            let known = try cloudRecord(named: record.id.name, in: database)
-            if known?.digest == digest {
-                try database.run("UPDATE cloudRecords SET systemFields = ? WHERE zone = ? AND name = ?",
-                                 [.blob(fields), .text(SyncZone.library), .text(record.id.name)])
-                return true
+            guard let digest = try? SyncPayloads.digest(ofIncoming: record.payload, kind: record.id.kind) else {
+                try parkUnreadable(record, fields: fields, in: database)
+                return .unreadable
             }
-            guard let local = try syncRecord(record.id, rowKey: row.rowKey, in: database),
-                  SyncDigest.hex(of: local.payload) == digest else { return false }
-            try storeCloudRecord(CloudRecord(name: record.id.name, kind: record.id.kind.rawValue,
-                                             rowKey: row.rowKey, systemFields: fields, sentChanged: row.changed,
-                                             digest: digest), in: database)
+            isHeld = try holds(IncomingRecord(record: record, fields: fields, digest: digest), in: database)
+        }
+        guard isHeld else { return .pending }
+        try database.run("DELETE FROM parkedRecords WHERE name = ?", [.text(change.id.name)])
+        return .held
+    }
+
+    /// True when a saved record needs nothing from the library but a note of the server's fields: it is the one
+    /// this device last saw, or its content is what the library holds.
+    private func holds(_ incoming: IncomingRecord, in database: SQLiteDatabase) throws -> Bool {
+        let name = incoming.id.name
+        guard let row = try syncRow(of: incoming.id, in: database) else { return false }
+        if try cloudRecord(named: name, in: database)?.digest == incoming.digest {
+            try database.run("UPDATE cloudRecords SET systemFields = ? WHERE zone = ? AND name = ?",
+                             [.blob(incoming.fields), .text(SyncZone.library), .text(name)])
             return true
         }
+        guard let local = try syncRecord(incoming.id, rowKey: row.rowKey, in: database),
+              SyncDigest.hex(of: local.payload) == incoming.digest else { return false }
+        try storeCloudRecord(CloudRecord(name: name, kind: incoming.id.kind.rawValue, rowKey: row.rowKey,
+                                         systemFields: incoming.fields, sentChanged: row.changed,
+                                         digest: incoming.digest), in: database)
+        return true
     }
 }
