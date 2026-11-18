@@ -6,7 +6,8 @@ import Foundation
 struct FontDecoder {
     /// The text of each character code.
     private let map: [UInt32: String]
-    /// Bytes per character code: 1 for simple fonts, 2 for most composite fonts.
+    /// Bytes per character code: 1 for simple fonts, for composite fonts the longest code their map lists (2 for
+    /// most).
     private let codeLength: Int
 
     static let plain = FontDecoder(map: [:], codeLength: 1)
@@ -27,7 +28,17 @@ struct FontDecoder {
             self = .plain
             return
         }
-        self = Self.parse(cmap)
+        let parsed = Self.parse(cmap)
+        // A simple font's codes are single bytes whatever its map says: the maps of Paizo's pawn PDFs up to 2017
+        // list one-byte codes in a two-byte code space, beside a two-byte code for the space.
+        self = Self.isComposite(font) ? parsed : FontDecoder(map: parsed.map, codeLength: 1)
+    }
+
+    /// True for a composite font (`Type0`), whose codes may be longer than a byte.
+    private static func isComposite(_ font: CGPDFDictionaryRef) -> Bool {
+        var subtype: UnsafePointer<CChar>?
+        guard CGPDFDictionaryGetName(font, "Subtype", &subtype), let subtype else { return false }
+        return String(cString: subtype) == "Type0"
     }
 
     func text(of string: CGPDFStringRef) -> String {
