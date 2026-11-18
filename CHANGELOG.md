@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.0] - 2026-11-18
+
+### Added
+- Add iCloud entitlements to Developer ID builds
+- Keep the library's pictures in iCloud
+- Sync the library's zone through the engine
+- Host zone handlers on one sync engine
+- Add the TablesideSync target with its record coder
+
+### Fixed
+- Tell the library its iCloud account when syncing starts
+
+### Changed
+- Cover a reading refused without its asset
+
+[1.11.0]: https://github.com/scooper4711/tabletop-kit/releases/tag/v1.11.0
+
 ## [1.10.0] - 2026-11-18
 
 ### Added
