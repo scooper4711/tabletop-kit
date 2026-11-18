@@ -54,10 +54,7 @@ jobs:
           path: coverage/sonar-coverage.xml
 
       - name: Diagnose iOS support (temporary)
-        run: |
-          ls ~/Library/Developer/Xcode/DerivedData 2>&1 | head
-          time xcodebuild -scheme TabletopKit-Package -destination 'generic/platform=iOS Simulator' build 2>&1 \
-            | grep -E 'Compiling|SwiftCompile|BUILD|error|warning: unable|Build target' | sort | uniq -c | sort -rn | head -20
+        run: rm -rf ~/Library/Developer/Xcode/DerivedData/*abletop*-* && ls ~/Library/Developer/Xcode/DerivedData
 
       - name: Build for iOS
         run: xcodebuild -scheme TabletopKit-Package -destination 'generic/platform=iOS Simulator' -quiet build
