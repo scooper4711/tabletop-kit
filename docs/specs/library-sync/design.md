@@ -282,9 +282,10 @@ share), and the store makes every decision: this only hands records between the 
   dropped and stays dropped, so the next launch fetches everything again (applying is idempotent).
 - **Refused saves.** `serverRecordChanged`: the server's record is applied as a fetched one is, and the store then
   says whether the result still has to be sent. `unknownItem`: the stored system fields are forgotten and the
-  record is sent as new. `zoneNotFound`: the zones are saved again. `userDeletedZone`: syncing pauses, as below.
-  `quotaExceeded`: the status is `storageFull`, and nothing is queued again until the library changes or a fetch
-  brings something (R5.4). Anything else the engine retries.
+  record is sent as new. `zoneNotFound`: the server is forgotten, as a zone that is gone holds none of the
+  records, and the zones are saved again with everything. `userDeletedZone`: syncing pauses, as below.
+  `quotaExceeded`: the status is `storageFull`, and nothing is queued again until the library changes, a fetch
+  brings something or the server is forgotten (R5.4). Anything else the engine retries.
 - **A deleted zone.** Deleted by the user in Settings (`purged`): syncing pauses and the server is forgotten, until
   the app calls `resume()`, which uploads everything again (R5.3). While paused, fetched records are still merged
   in, and nothing is sent. Deleted any other way: the server is forgotten and everything is uploaded again (R5.2).

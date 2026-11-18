@@ -62,11 +62,8 @@ public actor LibrarySync {
 
     /// Turns syncing on again after the user deleted the library's iCloud data: everything is uploaded anew (R5.3).
     public func resume() async {
-        library.use { library in
-            try? library.setSyncPaused(false)
-            try? library.forgetServer()
-        }
-        outgoing = [:]
+        library.use { library in try? library.setSyncPaused(false) }
+        forgetServer()
         tracker.clear(.paused)
         await engine?.uploadEverything()
         startPictureRun()
@@ -134,10 +131,12 @@ public actor LibrarySync {
         tracker.report(.paused)
     }
 
-    /// Forgets what the server held: every record is then sent again, and merged with what is there.
+    /// Forgets what the server held: every record is then sent again, and merged with what is there. An iCloud
+    /// that was full is tried again, as what the server holds now isn't what filled it.
     func forgetServer() {
         library.use { library in try? library.forgetServer() }
         outgoing = [:]
+        isStorageFull = false
     }
 
     // MARK: Helpers

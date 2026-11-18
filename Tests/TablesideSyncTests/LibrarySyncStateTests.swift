@@ -134,6 +134,19 @@ import Testing
         #expect(await updates.next() == .upToDate)
     }
 
+    @Test func triesAFullICloudAgainOnResume() async throws {
+        let library = try await syncedLibrary()
+        _ = try library.setNote(ArtNote(tags: ["axe"]), forArt: try #require(try library.artEntries().first).id)
+        let change = try #require(await sync.pendingChanges().first)
+        let record = try #require(await engine.record(for: change.recordID))
+        await engine.sent(SentChanges(failedSaves: [(record, CKError(.quotaExceeded))]))
+        await engine.zonesDeleted([(LibraryRecordCoder.libraryZone, .purged)])
+        #expect(queue.added.isEmpty)
+
+        await sync.resume()
+        #expect(queue.added.count == SyncKind.allCases.count)
+    }
+
     @Test func tellsAnAppThatDoesNotSyncWhy() {
         #expect(SyncStatus.withoutSync(containerIdentifier: "") == .unsupported)
         #expect(SyncStatus.withoutSync(containerIdentifier: "iCloud.example") == .unavailable)

@@ -140,15 +140,18 @@ import Testing
         #expect(try #require(try library.outgoingRecord(id)).systemFields == nil)
     }
 
-    @Test func savesItsZonesAgainWhenTheServerHasNone() async throws {
-        try device.library().add(device.pawnBox(), keeping: false)
-        let record = try #require(await sync.pendingChanges().first.map(\.recordID))
-        let mine = try #require(await engine.record(for: record))
+    @Test func savesItsZonesAndEveryRecordAgainWhenTheServerHasNoZone() async throws {
+        let library = try device.library()
+        try device.fillWithEveryKind(library)
+        await syncing.sendEverything()
+        _ = try library.setNote(ArtNote(tags: ["axe"]), forArt: try #require(try library.artEntries().first).id)
+        let changed = try #require(await sync.pendingChanges().first.map(\.recordID))
+        let mine = try #require(await engine.record(for: changed))
         queue.clear()
 
         await engine.sent(SentChanges(failedSaves: [(mine, CKError(.zoneNotFound))]))
         #expect(queue.zones.map(\.zoneName) == ["Library", "Pictures"])
-        #expect(queuedSaves == [record.recordName])
+        #expect(queuedSaves.count == SyncKind.allCases.count && queuedSaves.contains(changed.recordName))
     }
 
     @Test func uploadsAgainAfterAZoneWasDeletedButNotForAnothersZone() async throws {
