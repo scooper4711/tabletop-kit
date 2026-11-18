@@ -96,11 +96,11 @@ that art, in one statement. No writer has to change.
    known to the cloud. What was kept aside under the name of any of these goes: it is older. A saved record this
    version can't read is kept aside here too ("Records kept aside").
 2. **In `SyncKind` order**, deletions of a kind before its saves; then the notes kept aside are tried again; then
-   `cloudRecords` is settled for every source touched or sharing art with one. Applying a record first drops what
+   `cloudRecords` is settled for every source applied. Applying a record first drops what
    was kept aside under its name.
 3. **A source saved.** A local reading by a newer reader stays, and is uploaded over the incoming one. An older
    local reading is taken out (`takeOutPrints`) and the incoming one merged: each group becomes a `SharedArtEntry`
-   merged with `merge(_:joining:)`, which also finds art by the group's other keys, so art the sender had as one
+   merged with `merge(_:with:)`, which also finds art by the group's other keys, so art the sender had as one
    piece becomes one piece here (R3.4). Of the group's picture and those of the art it joins here, the one that
    stays is chosen as "Pictures" says, not the incoming one. The old prints are then retired, their keys becoming aliases (R3.3), and
    their pictures deleted after the transaction. Last, the incoming aliases are added unless they already find
