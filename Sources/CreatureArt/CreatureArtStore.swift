@@ -45,6 +45,12 @@ public struct ArtImportSummary: Sendable {
     }
 }
 
+private extension ArtImportReport {
+    /// True when this app read the PDF: the library didn't have it already (a watched folder then only links it
+    /// to this app), and no other app was reading it.
+    var wasReadHere: Bool { !wasImported && !isReadByAnotherApp }
+}
+
 /// The creature art from the user's own Paizo PDFs, and the catalog the apps match creatures against
 /// (`LibraryArtMatcher`): kept in the library the three apps share (`SharedLibrary`), or in an art library of the
 /// app's own (`ArtLibrary`) until the app moves into the shared one. Reading PDFs and drawing art take a while, so
@@ -123,8 +129,7 @@ public actor CreatureArtStore {
         for result in results {
             switch result {
             case .success(let report):
-                // A PDF the library had already was only linked to this app, not read.
-                if !report.wasImported { summary.pdfs += 1 }
+                if report.wasReadHere { summary.pdfs += 1 }
                 summary.added += report.added
             case .failure(let error):
                 summary.pdfs += 1
@@ -146,7 +151,7 @@ public actor CreatureArtStore {
                 case .own(let library): try library.add(file, keeping: true)
                 case .shared(let library): try library.add(file, keeping: true)
                 }
-                if !report.wasImported { summary.pdfs += 1 }
+                if report.wasReadHere { summary.pdfs += 1 }
                 summary.added += report.added
             } catch {
                 summary.failures.append("\(file.lastPathComponent): \(error.localizedDescription)")
