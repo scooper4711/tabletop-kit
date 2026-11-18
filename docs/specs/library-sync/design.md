@@ -276,7 +276,8 @@ share), and the store makes every decision: this only hands records between the 
 - **Sending.** `pendingChanges` is `syncCandidates`. `record(for:)` is `outgoingRecord`, remembered by record name
   until the server takes it and `markSent` stores the fields it answered with.
 - **Local changes.** The library's Darwin notification, from this app or another, queues what there is to send
-  two seconds after the last one, so a run of changes goes up together.
+  two seconds after the last one, so a run of changes goes up together. The run of pictures it starts isn't
+  waited for, so the next change doesn't cancel a transfer under way.
 - **Fetched records** are decoded and applied with `applyRemote`. When that fails it is tried once more. When it
   fails again, syncing stops for this run with the status `failed`: nothing more is sent, and the engine's state is
   dropped and stays dropped, so the next launch fetches everything again (applying is idempotent).

@@ -48,6 +48,8 @@ public typealias FailedSave = (record: CKRecord, error: CKError)
 /// Where the engine is in a round of syncing, for a handler that shows it or waits for it.
 public enum SyncPhase: Sendable {
     case willFetch, didFetch, willSend, didSend
+    /// A zone's changes couldn't be fetched, in the fetch under way: `didFetch` still follows.
+    case fetchFailed
 }
 
 /// What the owner of one or more zones does for the engine that syncs them (library sync design, "The engine"). The

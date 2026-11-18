@@ -23,6 +23,8 @@ public actor LibrarySync {
     /// changes its PDF's reading, and a library moved in from an app's old one would send every reading over and
     /// over.
     var isDrawing = false
+    /// True when the fetch under way couldn't bring a zone's changes.
+    var hasFetchFailed = false
     private var engine: SyncEngine?
     private var notice: Task<Void, Never>?
     private let changeDelay: Duration
@@ -49,14 +51,15 @@ public actor LibrarySync {
     }
 
     /// Tells syncing the library changed, here or in another app on the device. What there is to send is queued
-    /// once the changes stop coming.
+    /// once the changes stop coming. The pictures' run is started and not waited for: the next change cancels
+    /// the wait, and must not cancel a transfer with it.
     public func libraryChanged() {
         notice?.cancel()
         notice = Task { [changeDelay] in
             try? await Task.sleep(for: changeDelay)
             guard !Task.isCancelled else { return }
             await self.sendChanges()
-            await self.syncPictures()
+            self.startPictureRun()
         }
     }
 

@@ -61,6 +61,20 @@ struct TestDevice {
     }
 }
 
+extension TestDevice {
+    /// Custom art another device sent, as a fetch brings it but without its image's file: merging it in fails.
+    func unmergeableRecord() throws -> CKRecord {
+        let other = try otherLibrary()
+        try fillWithEveryKind(other)
+        let sent = try serverRecords(of: other).first { $0.recordType == "CustomArt" }
+        let record = CKRecord(recordType: "CustomArt", recordID: .library("customArt-\(UUID().uuidString)"))
+        record["format"] = LibraryRecordCoder.format
+        record["payload"] = sent?["payload"]
+        record["image"] = CKAsset(fileURL: root.appending(path: "missing.png"))
+        return record
+    }
+}
+
 extension CKRecord.ID {
     /// The ID of a record of the library's zone.
     static func library(_ name: String) -> CKRecord.ID {

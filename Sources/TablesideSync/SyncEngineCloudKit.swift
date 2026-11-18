@@ -66,6 +66,7 @@ extension SyncPhase {
     init?(_ event: CKSyncEngine.Event) {
         switch event {
         case .willFetchChanges: self = .willFetch
+        case .didFetchRecordZoneChanges(let fetch) where fetch.error != nil: self = .fetchFailed
         case .didFetchChanges: self = .didFetch
         case .willSendChanges: self = .willSend
         case .didSendChanges: self = .didSend

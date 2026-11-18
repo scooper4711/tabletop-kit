@@ -111,10 +111,14 @@ extension LibrarySync: SyncZoneHandler {
 
     public func phaseChanged(_ phase: SyncPhase) {
         switch phase {
-        case .willFetch: tracker.begin(.fetching)
+        case .willFetch:
+            hasFetchFailed = false
+            tracker.begin(.fetching)
+        case .fetchFailed:
+            hasFetchFailed = true
         case .didFetch:
             tracker.end(.fetching)
-            fetchFinished()
+            fetchEnded()
         case .willSend:
             tracker.begin(.sending)
         case .didSend:

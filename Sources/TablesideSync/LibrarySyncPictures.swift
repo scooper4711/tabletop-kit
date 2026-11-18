@@ -64,11 +64,17 @@ extension LibrarySync {
         Task { await self.syncPictures() }
     }
 
-    /// A fetch has finished: it is now known which pictures art still uses, so the others can go.
-    func fetchFinished() {
+    /// A fetch has ended. When it brought every zone's changes and they are merged in, it is known which pictures
+    /// art still uses, so the others can go; when it didn't, none may go until a fetch does.
+    func fetchEnded() {
         guard let pictures else { return }
+        let isWhole = !hasFetchFailed && !hasStopped
         Task {
-            await pictures.fetchFinished()
+            if isWhole {
+                await pictures.fetchFinished()
+            } else {
+                await pictures.fetchFailed()
+            }
             await self.syncPictures()
         }
     }

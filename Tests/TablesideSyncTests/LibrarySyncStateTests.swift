@@ -81,12 +81,7 @@ import Testing
     @Test func stopsAndDropsTheEnginesStateWhenRecordsCannotBeMerged() async throws {
         let library = try await syncedLibrary()
         await engine.saveState(Data([1]))
-        let record = CKRecord(recordType: "CustomArt", recordID: .library("customArt-\(UUID().uuidString)"))
-        let sent = try #require(try device.serverRecords(of: try filledOtherLibrary())
-            .first { $0.recordType == "CustomArt" })
-        record["payload"] = sent["payload"]
-        record["image"] = CKAsset(fileURL: device.root.appending(path: "missing.png"))
-        await engine.receive(FetchedChanges(modifications: [record]))
+        await engine.receive(FetchedChanges(modifications: [try device.unmergeableRecord()]))
 
         guard case .failed(let reason) = await sync.status else {
             Issue.record("syncing didn't stop")
@@ -101,13 +96,6 @@ import Testing
         #expect(await engine.record(for: .library("note-1")) == nil)
         await engine.zonesDeleted([(LibraryRecordCoder.libraryZone, .purged)])
         #expect(await sync.status == .failed(reason))
-    }
-
-    /// Another device's library, holding a row of every kind.
-    func filledOtherLibrary() throws -> SharedLibrary {
-        let other = try device.otherLibrary()
-        try device.fillWithEveryKind(other)
-        return other
     }
 
     @Test func tellsWhatSyncingIsDoingAndWhenICloudIsFull() async throws {
