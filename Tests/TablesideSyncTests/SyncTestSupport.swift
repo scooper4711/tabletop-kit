@@ -2,6 +2,7 @@ import ArtExtractionTestSupport
 import CloudKit
 import CoreGraphics
 import Foundation
+import os
 import SharedLibraries
 @testable import TablesideSync
 
@@ -53,4 +54,39 @@ extension CKRecord.ID {
 /// The saved record a change holds; nil for a deletion.
 func savedRecord(_ change: RemoteChange?) -> SyncRecord? {
     if case .saved(let record, _) = change { record } else { nil }
+}
+
+/// Records what the engine queues to send.
+final class RecordingQueue: SyncChangeQueue {
+    private struct Queued {
+        var zones: [CKRecordZone.ID] = []
+        var added: [SyncChange] = []
+        var removed: [SyncChange] = []
+    }
+
+    private let queued = OSAllocatedUnfairLock(initialState: Queued())
+
+    var zones: [CKRecordZone.ID] { queued.withLock { $0.zones } }
+    var added: [SyncChange] { queued.withLock { $0.added } }
+    var removed: [SyncChange] { queued.withLock { $0.removed } }
+
+    func saveZones(_ zoneIDs: [CKRecordZone.ID]) { queued.withLock { $0.zones += zoneIDs } }
+    func add(_ changes: [SyncChange]) { queued.withLock { $0.added += changes } }
+    func remove(_ changes: [SyncChange]) { queued.withLock { $0.removed += changes } }
+
+    /// Forgets what was queued so far, to tell what a later step queues.
+    func clear() { queued.withLock { $0 = Queued() } }
+}
+
+/// Keeps the engine's state in memory.
+actor MemoryStateStore: SyncStateStore {
+    private(set) var state: Data?
+
+    func load() -> Data? { state }
+    func save(_ state: Data) { self.state = state }
+}
+
+/// A `serverRecordChanged` refusal, with the record the server holds.
+func conflict(with server: CKRecord) -> CKError {
+    CKError(.serverRecordChanged, userInfo: [CKRecordChangedErrorServerRecordKey: server])
 }

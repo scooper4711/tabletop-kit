@@ -229,6 +229,34 @@ These are the record types to deploy to Production in the CloudKit Console befor
   the store with an empty payload, which it keeps aside as it does any record this version can't read. A record
   of any other type, or of another zone, is ignored.
 
+### The engine
+
+`SyncEngine` is one `CKSyncEngine` for an app's private database, shared by the owners of its zones. An owner is a
+`SyncZoneHandler`: the library's is `LibrarySync`, and Turnkeeper's campaigns and Pawn Shop's custom pawns add
+theirs to the same engine later. The engine's own code takes plain values, so tests reach all of it but the
+CloudKit glue (`SyncEngineCloudKit`).
+
+- **Zones.** At its first start (no saved state) the engine saves every handler's zones. A handler names the
+  zones it fetches itself (`unfetchedZones`: the library's `Pictures`), and every fetch leaves those out.
+- **What to send.** A handler says what it has to send (`pendingChanges`), and the engine queues it: at each
+  start, after it hands the handler fetched changes or refused saves (merging can leave something to send), and
+  when told the handlers changed. When the handler then has no record for a queued save (the row is gone, or the
+  cloud holds this content already), the engine forgets the save; `CKSyncEngine` would otherwise keep it pending
+  forever.
+- **Routing.** Fetched and sent records go to the handler whose zone they are in. A delete the server refused
+  because it never had the record counts as deleted.
+- **Refused saves** go to the handler's `settle`, which says whether its zones must be saved again.
+- **The account.** On a sign-in or a change of account every handler is told the user, then the zones and what is
+  pending are queued again; on a sign-out it is told there is none. `CKSyncEngine` reports a sign-in at an app's
+  first start too, and the apps on a device share `cloudRecords`, so a handler forgets the server only when the
+  user isn't the one it knew (`syncState.account`): an app that starts syncing where another already does keeps
+  what that one learned, instead of sending every record again.
+- **A deleted zone** is told to every handler with its reason, since a handler may no longer list a zone that is
+  gone. A handler that answers true has its zones saved again and everything queued.
+- **State.** The engine's state goes to a `SyncStateStore`, which `LibrarySync` keeps in `syncState`.
+- **Subscriptions.** The subscription ID is `tableside-sync-` and the app's bundle identifier, so each app keeps its
+  own.
+
 ## Known limits
 
 - A PDF removed on one device while another is changing its art, or before another device's first sync, can come
