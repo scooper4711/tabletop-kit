@@ -35,7 +35,7 @@ go through `SharedLibrary.write` (no counter, no Darwin notification), except in
 |---|---|
 | `cloudRecords` | What this device knows the server holds, by zone and record name: kind, the local row's key (`rowKey`), the record's archived system fields (NULL once the server is known not to have it), the change counter it was last in step with (`sentChanged`), and the SHA-256 of the content the server holds |
 | `parkedRecords` | A note that arrived before its art, kept until the art does; and a record this version can't read (`unreadable` is 1), kept for a version that can |
-| `syncState` | `engine.<app raw value>` (the engine's saved state), `paused` (present when paused), `picturePolicy` (JSON; absent means `.onDemand(limit: nil)`) |
+| `syncState` | `engine.<app raw value>` (the engine's saved state), `paused` (present when paused), `picturePolicy` (JSON; absent means `.onDemand(limit: nil)`), `account` (the iCloud account `cloudRecords` describes) |
 | `fetchedPictures` | The pictures this device downloaded: file size and when each was last shown |
 | `aliasesByEntry` | An index on `aliases (entry)`, so a source's change counter is cheap |
 | `modified` | A column of `notes`, `creatureArt`, `customCreatures` and `customArt`: the user's last change, in seconds since the reference date, 0 before version 6 |
@@ -200,6 +200,148 @@ for a later scan. A file outside iCloud has no such value and is read as before.
 status alone, `isDownloaded(_:)`. The older kind of placeholder, a hidden `.<name>.icloud` file, isn't listed by
 `ProductScanner.artPDFs`.
 
+## The `TablesideSync` target
+
+`TablesideSync` imports CloudKit and puts a `CKSyncEngine` on the store. It is a target of its own so that an app
+that doesn't sync, and `SharedLibraries` itself, need no CloudKit.
+
+### Records in CloudKit
+
+`LibraryRecordCoder` turns a `SyncRecord` into a `CKRecord` and back. A record's name is the `SyncRecord`'s, and its
+kind is told from the name (`SyncRecordID(recordName:)`).
+
+| Type | Zone | Fields |
+|---|---|---|
+| `Source` | `Library` | `format` Int64 (1), `title` String, `payload` Asset (a reading can pass a record's 1 MB) |
+| `Note`, `CreatureArt`, `CustomCreature` | `Library` | `format`, `title`, `payload` Bytes |
+| `CustomArt` | `Library` | `format`, `title`, `payload` Bytes, `image` Asset |
+| `Picture` | `Pictures` | `image` Asset; the record's name is the file's name |
+
+These are the record types to deploy to Production in the CloudKit Console before a release.
+
+- A reading's JSON is written to `<library folder>/Sync/Outgoing/<app>/<record name>` for the upload and deleted
+  once the record is sent. The folder is each app's own, so one app clearing what an earlier run left behind
+  takes nothing from another app's upload.
+- An incoming asset's bytes are read while its event is handled: the file doesn't outlive it.
+- A record is built over the server's last known system fields when the store has them, so the save is a change
+  to that record and not a conflict.
+- A record of one of these types whose payload can't be read (a later `format`, a field that moved) is handed to
+  the store with an empty payload, which it keeps aside as it does any record this version can't read. A record
+  of any other type, or of another zone, is ignored.
+- The server's record that comes with a refused save has no asset files: CloudKit doesn't download them. A reading
+  refused that way is therefore kept aside too, and merged when the fetch that follows brings it whole; until then
+  this device doesn't send its own. The other kinds carry their payload in the record and are merged at once.
+
+### The engine
+
+`SyncEngine` is one `CKSyncEngine` for an app's private database, shared by the owners of its zones. An owner is a
+`SyncZoneHandler`: the library's is `LibrarySync`, and Turnkeeper's campaigns and Pawn Shop's custom pawns add
+theirs to the same engine later. The engine's own code takes plain values, so tests reach all of it but the
+CloudKit glue (`SyncEngineCloudKit`).
+
+- **Zones.** At its first start (no saved state) the engine saves every handler's zones. A handler names the
+  zones it fetches itself (`unfetchedZones`: the library's `Pictures`), and every fetch leaves those out.
+- **What to send.** A handler says what it has to send (`pendingChanges`), and the engine queues it: at each
+  start, after it hands the handler fetched changes or refused saves (merging can leave something to send), and
+  when told the handlers changed. When the handler then has no record for a queued save (the row is gone, or the
+  cloud holds this content already), the engine forgets the save; `CKSyncEngine` would otherwise keep it pending
+  forever.
+- **Routing.** Fetched and sent records go to the handler whose zone they are in. A delete the server refused
+  because it never had the record counts as deleted.
+- **Refused saves** go to the handler's `settle`, which says whether its zones must be saved again.
+- **The account.** On a sign-in or a change of account every handler is told the user, then the zones and what is
+  pending are queued again; on a sign-out it is told there is none. `CKSyncEngine` reports a sign-in at an app's
+  first start too, and the apps on a device share `cloudRecords`, so a handler forgets the server only when the
+  user isn't the one it knew (`syncState.account`): an app that starts syncing where another already does keeps
+  what that one learned, instead of sending every record again.
+- **A deleted zone** is told to every handler with its reason, since a handler may no longer list a zone that is
+  gone. A handler that answers true has its zones saved again and everything queued.
+- **State.** The engine's state goes to a `SyncStateStore`, which `LibrarySync` keeps in `syncState`.
+- **Subscriptions.** The subscription ID is `tableside-sync-` and the app's bundle identifier, so each app keeps its
+  own.
+
+### The library's handler
+
+`LibrarySync` owns the zones `Library` and `Pictures`. It opens a `SharedLibrary` of its own (the store isn't safe to
+share), and the store makes every decision: this only hands records between the store and the engine.
+
+- **Starting.** `LibrarySync.start(app:fallback:containerIdentifier:handlers:)` gives nothing when the build names
+  no container (`TablesideSyncContainer` in `Info.plist`, R6.1) or iCloud isn't available, and the app then works
+  on the device alone (R2.4); `SyncStatus.withoutSync` says which of the two it is. No `CKContainer` is made before
+  the name is checked: one the build has no entitlement for stops the app. Before the engine starts, the handler
+  applies the records kept aside that this version can now read (`applyRemote([])`), measures the pictures saved
+  before sizes were kept (`measurePictures`), and is told the account that is signed in, whether or not
+  `CKSyncEngine` reports a sign-in at that start.
+- **Sending.** `pendingChanges` is `syncCandidates`. `record(for:)` is `outgoingRecord`, remembered by record name
+  until the server takes it and `markSent` stores the fields it answered with.
+- **Local changes.** The library's Darwin notification, from this app or another, queues what there is to send
+  two seconds after the last one, so a run of changes goes up together.
+- **Fetched records** are decoded and applied with `applyRemote`. When that fails it is tried once more. When it
+  fails again, syncing stops for this run with the status `failed`: nothing more is sent, and the engine's state is
+  dropped and stays dropped, so the next launch fetches everything again (applying is idempotent).
+- **Refused saves.** `serverRecordChanged`: the server's record is applied as a fetched one is, and the store then
+  says whether the result still has to be sent. `unknownItem`: the stored system fields are forgotten and the
+  record is sent as new. `zoneNotFound`: the zones are saved again. `userDeletedZone`: syncing pauses, as below.
+  `quotaExceeded`: the status is `storageFull`, and nothing is queued again until the library changes or a fetch
+  brings something (R5.4). Anything else the engine retries.
+- **A deleted zone.** Deleted by the user in Settings (`purged`): syncing pauses and the server is forgotten, until
+  the app calls `resume()`, which uploads everything again (R5.3). While paused, fetched records are still merged
+  in, and nothing is sent. Deleted any other way: the server is forgotten and everything is uploaded again (R5.2).
+- **The account** (R5.1): see "The engine". A sign-out shows as `unavailable`.
+- **In the background.** `close()` closes the database and makes every later use close it again when done, until
+  `open()` (shared libraries R5.4).
+- **Status** (R2.5). `status` and `statusUpdates()` give `syncing` while a fetch, a send or a run of pictures is
+  under way and `upToDate` otherwise, unless something is wrong: `paused`, `storageFull`, `unavailable` or
+  `failed`. An app that isn't syncing shows `unsupported` or `unavailable`.
+
+### Pictures in iCloud
+
+`PictureCloud` keeps the pictures in step through a `PictureStore`: `CloudPictureStore` over the zone `Pictures` of
+the private database, or a stand-in in tests. It has a library of its own, so that drawing and transfers keep
+nothing else waiting. The store's bookkeeping is in "Pictures" above.
+
+- **Drawing comes first** (R4.8). At the start the pictures the art lacks are drawn, 100 at a time, until none is
+  left that this app can draw; a library moved in from an app's old one has about 10,000 to draw, once. Nothing
+  is sent until that is done: each picture drawn changes its PDF's reading, and the readings would be sent over
+  and over meanwhile. Fetched records are merged in all the same. Drawing stops for now when a picture can't be
+  drawn or saved and nothing else could be, as with a full disk.
+- **A run** uploads, downloads ahead and deletes, in that order. It starts when the drawing is done, after local
+  changes, after each finished fetch and each send (the first send makes the zones), on `resume()` and when the
+  policy is set. A run asked for while one is under way makes that one go round again. Nothing runs while
+  syncing is paused.
+- **Upload** (R4.1): 25 at a time until `picturesToUpload` is empty. Those iCloud holds already are only noted;
+  the rest are saved, and a save that finds the picture there already counts, as a picture never changes.
+- **Download when shown** (R4.2): an app calls `LibrarySync.fetchPictures(named:)` with `missingPictures(of:)` when
+  `picture(of:)` gives none. It downloads those the device lacks, stores them with `storeFetchedPicture`, notes
+  all of them as shown, and doesn't wait for whatever else syncing is doing.
+- **Download ahead** (R4.9): with `.everything`, the missing pictures are downloaded 25 at a time until none is
+  missing or a batch brings nothing. Those iCloud didn't have (no device has uploaded them yet) aren't asked for
+  again until the app next starts. These downloads don't count as shown.
+- **Delete** (R4.4): only once a fetch has finished in this run of the app, when it is known what art still
+  uses, `picturesToDelete` is deleted from iCloud, then `removeUnreferencedPictures` deletes the files here.
+- **A full iCloud** (R5.4) ends the run with the status `storageFull`, until a later run gets through. Any other
+  failure, as without a network, ends the run until the next one.
+- **The cache** (R4.3, R4.7): `LibrarySync` passes on `fetchedPicturesByteCount`, `clearFetchedPictures`,
+  `picturePolicy`, `setPicturePolicy` and `markPicturesShown`.
+
+### Builds (R6)
+
+An app syncs only when its `Info.plist` names the container under `TablesideSyncContainer`, and a build names it only
+when it is signed with the entitlements for it. App Store and Xcode builds carry both in the app's own files.
+A Developer ID build gets them from `scripts/add-icloud-entitlements.sh <app> <entitlements> <team ID> <provisioning
+profile>`, which apps reach at `.build/checkouts/tabletop-kit/scripts/`, as they do `package-appstore.sh`:
+
+- It embeds the provisioning profile and sets the application and team identifiers, the CloudKit service, the
+  containers, and the CloudKit and push environments in the entitlements to sign with. Keys that are there already
+  are replaced, so it can run again on the same files.
+- `ICLOUD_CONTAINERS` lists the containers, separated by spaces; the default is the suite's. Field Guide, whose lore
+  stays in a container of its own, names both.
+- `ICLOUD_ENVIRONMENT` is `Production` (the default) or `Development`. An iPad build installed from Xcode uses
+  Development, so a Mac build that is to sync with one does too.
+- `TablesideSyncContainer` is written when the suite's container is among them, and removed otherwise.
+
+`scripts/test-add-icloud-entitlements.sh` checks this on a generated app, from `make test-scripts`.
+
 ## Known limits
 
 - A PDF removed on one device while another is changing its art, or before another device's first sync, can come
@@ -214,9 +356,17 @@ status alone, `isDownloaded(_:)`. The older kind of placeholder, a hidden `.<nam
 - An app version from before `modified` existed writes 0, so its edits lose a conflict. One from before
   `picturePixels` leaves the old size when it gives art another picture, so that picture can win or lose wrongly.
 - A custom art's image isn't kept with a record this version can't read: applied later, the record brings no image.
+  The same goes for a custom art's record that comes with a refused save, so an image changed on two devices at
+  the same moment can stay different on the two until it is changed again.
 - Art's name, size, traits and fingerprint, where two devices differ, are still the incoming record's: two devices
   that sync at the same moment can swap them until one goes first.
 - Each app's engine fetches the same changes; the second finds them applied and writes nothing.
+- The CloudKit glue (`SyncEngineCloudKit`, `LibrarySyncStart`, `CloudPictureStore`) has no unit tests: a container
+  without the entitlement stops the process. The end-to-end check below covers it.
+- After iCloud data was deleted by the user, an app that starts for the first time still makes the two empty zones;
+  nothing is uploaded to them until `resume()`.
+- A picture iCloud didn't have when a device that keeps everything asked for it is asked for again only when the app
+  next starts.
 
 ## End-to-end check
 

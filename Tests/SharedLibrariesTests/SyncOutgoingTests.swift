@@ -144,6 +144,25 @@ import Testing
         #expect(SyncRecordName.rowKey(of: SyncRecordID(kind: .customArt, name: "note-7")) == nil)
     }
 
+    @Test func tellsARecordsKindFromItsName() throws {
+        for kind in SyncKind.allCases {
+            let name = SyncRecordName.make(kind, rowKey: "x")
+            #expect(SyncRecordID(recordName: name) == SyncRecordID(kind: kind, name: name))
+        }
+        #expect(SyncRecordID(recordName: "picture-x") == nil)
+    }
+
+    @Test func remembersTheAccountItSyncsWith() throws {
+        let library = try device.library(.turnkeeper)
+        #expect(try library.syncAccount() == nil)
+        try library.setSyncAccount("_user")
+        #expect(try device.library(.fieldGuide).syncAccount() == "_user")
+        try library.forgetServer()
+        #expect(try library.syncAccount() == "_user")
+        try library.setSyncAccount(nil)
+        #expect(try library.syncAccount() == nil)
+    }
+
     @Test func findsCreatureArtByTheHashOfItsSubject() throws {
         let (library, art) = try importedLibrary()
         try library.setCreatureArt(.library(art), for: "bestiary.goblin warrior ☠")

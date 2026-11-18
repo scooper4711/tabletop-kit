@@ -24,6 +24,13 @@ public struct SyncRecordID: Hashable, Sendable {
         self.kind = kind
         self.name = name
     }
+
+    /// The identity a record's name stands for; nil when no kind names its records that way.
+    public init?(recordName: String) {
+        guard let kind = SyncKind.allCases.first(where: { recordName.hasPrefix(SyncRecordName.prefix(of: $0)) })
+        else { return nil }
+        self.init(kind: kind, name: recordName)
+    }
 }
 
 /// A record as it travels between a library and the cloud.
@@ -95,7 +102,7 @@ enum SyncRecordName {
         return String(id.name.dropFirst(prefix(of: id.kind).count))
     }
 
-    private static func prefix(of kind: SyncKind) -> String {
+    static func prefix(of kind: SyncKind) -> String {
         switch kind {
         case .source: "source-"
         case .note: "note-"

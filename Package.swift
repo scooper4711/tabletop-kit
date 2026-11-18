@@ -14,6 +14,7 @@ let package = Package(
         .library(name: "AppNotices", targets: ["AppNotices"]),
         .library(name: "TablesideShared", targets: ["TablesideShared"]),
         .library(name: "SharedLibraries", targets: ["SharedLibraries"]),
+        .library(name: "TablesideSync", targets: ["TablesideSync"]),
         .executable(name: "CardArtImport", targets: ["CardArtImport"]),
         .library(name: "DemoLibrary", targets: ["DemoLibrary"]),
         .executable(name: "DemoLibraryTool", targets: ["DemoLibraryTool"])
@@ -38,6 +39,9 @@ let package = Package(
         .testTarget(name: "TablesideSharedTests", dependencies: ["TablesideShared"]),
         .target(name: "SharedLibraries", dependencies: ["ArtExtraction", "TablesideShared"]),
         .testTarget(name: "SharedLibrariesTests", dependencies: ["SharedLibraries", "ArtExtractionTestSupport"]),
+        .target(name: "TablesideSync", dependencies: ["SharedLibraries"]),
+        .testTarget(name: "TablesideSyncTests",
+                    dependencies: ["TablesideSync", "SharedLibraries", "ArtExtractionTestSupport"]),
         .target(name: "DemoLibrary", dependencies: ["ArtExtraction", "ArtExtractionTestSupport"]),
         .executableTarget(name: "DemoLibraryTool", dependencies: ["DemoLibrary"]),
         .testTarget(name: "DemoLibraryTests",
