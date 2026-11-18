@@ -52,8 +52,7 @@ struct StoreMerger {
         var entry = try placed(found, print: print, into: &report)
         let drawsPicture = entry.picture == nil || (print.print.kind == .figure && !isDrawnFromFigure(entry))
         if drawsPicture, let kept = print.print.tokenFile {
-            let picture = ArtPicture(name: kept, pixels: library.pixels(ofPicture: kept))
-            if entry.artPicture?.stays(over: picture) != true { entry.artPicture = picture }
+            entry.artPicture = ArtPicture(name: kept, pixels: library.pixels(ofPicture: kept))
         }
         try writer.merge(entry)
         if drawsPicture, print.print.tokenFile == nil { pictures.append(PictureJob(print: print)) }
