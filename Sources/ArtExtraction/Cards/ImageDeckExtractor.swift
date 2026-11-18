@@ -1,5 +1,4 @@
 import CoreGraphics
-import CryptoKit
 import Foundation
 import ImageIO
 import UniformTypeIdentifiers
@@ -27,7 +26,7 @@ enum ImageDeckExtractor {
                   let png = item.image.pngData() else { continue }
             let name = card.front.map(CardNameReader.name(onFront:)) ?? ""
             let face = PawnFace(pageIndex: card.number, rect: item.bounds, rotation: 0)
-            let digest = SHA256.hash(data: png).map { String(format: "%02x", $0) }.joined()
+            let digest = ContentDigest.hex(of: png)
             PawnExtractor.add(ExtractedPawn(name: name, size: .medium, front: face, back: face.mirroredCopy(),
                                             fingerprint: ArtFingerprint(imageDigests: [digest]), copies: 1,
                                             shape: .drawnItem(png)), to: &result)

@@ -1,4 +1,4 @@
-import CryptoKit
+import ArtExtraction
 import Foundation
 
 /// The kinds of record the library syncs, in the order fetched records are applied: a source brings the art
@@ -109,6 +109,6 @@ enum SyncRecordName {
 /// SHA-256 as lowercase hexadecimal, for content digests and names.
 enum SyncDigest {
     static func hex(of data: Data) -> String {
-        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        ContentDigest.hex(of: data)
     }
 }

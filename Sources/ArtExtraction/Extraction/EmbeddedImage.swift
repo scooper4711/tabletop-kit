@@ -1,5 +1,4 @@
 import CoreGraphics
-import CryptoKit
 import Foundation
 import ImageIO
 
@@ -24,17 +23,13 @@ public enum EmbeddedImage {
               let dictionary = CGPDFStreamGetDictionary(stream)
         else { return .empty }
         let image = decode(data, format: format, dictionary: dictionary)
-        return ImageIdentity(digest: digest(of: data), thumbnail: image.map(thumbnail(of:)) ?? [])
+        return ImageIdentity(digest: ContentDigest.hex(of: data), thumbnail: image.map(thumbnail(of:)) ?? [])
     }
 
     /// The digest an image's identity has, without decoding it; empty when its data can't be read.
     static func digest(of stream: CGPDFStreamRef) -> String {
         var format = CGPDFDataFormat.raw
-        return (CGPDFStreamCopyData(stream, &format) as Data?).map(digest(of:)) ?? ""
-    }
-
-    private static func digest(of data: Data) -> String {
-        SHA256.hash(data: data).map { String(format: "%02x", $0) }.joined()
+        return (CGPDFStreamCopyData(stream, &format) as Data?).map(ContentDigest.hex(of:)) ?? ""
     }
 
     /// True when the image has a soft mask, so it is transparent around the art it shows.
