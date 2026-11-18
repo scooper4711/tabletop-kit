@@ -257,6 +257,39 @@ CloudKit glue (`SyncEngineCloudKit`).
 - **Subscriptions.** The subscription ID is `tableside-sync-` and the app's bundle identifier, so each app keeps its
   own.
 
+### The library's handler
+
+`LibrarySync` owns the zones `Library` and `Pictures`. It opens a `SharedLibrary` of its own (the store isn't safe to
+share), and the store makes every decision: this only hands records between the store and the engine.
+
+- **Starting.** `LibrarySync.start(app:fallback:containerIdentifier:handlers:)` gives nothing when the build names
+  no container (`TablesideSyncContainer` in `Info.plist`, R6.1) or iCloud isn't available, and the app then works
+  on the device alone (R2.4); `SyncStatus.withoutSync` says which of the two it is. No `CKContainer` is made before
+  the name is checked: one the build has no entitlement for stops the app. Before the engine starts, the handler
+  applies the records kept aside that this version can now read (`applyRemote([])`) and measures the pictures saved
+  before sizes were kept (`measurePictures`).
+- **Sending.** `pendingChanges` is `syncCandidates`. `record(for:)` is `outgoingRecord`, remembered by record name
+  until the server takes it and `markSent` stores the fields it answered with.
+- **Local changes.** The library's Darwin notification, from this app or another, queues what there is to send
+  two seconds after the last one, so a run of changes goes up together.
+- **Fetched records** are decoded and applied with `applyRemote`. When that fails it is tried once more. When it
+  fails again, syncing stops for this run with the status `failed`: nothing more is sent, and the engine's state is
+  dropped and stays dropped, so the next launch fetches everything again (applying is idempotent).
+- **Refused saves.** `serverRecordChanged`: the server's record is applied as a fetched one is, and the store then
+  says whether the result still has to be sent. `unknownItem`: the stored system fields are forgotten and the
+  record is sent as new. `zoneNotFound`: the zones are saved again. `userDeletedZone`: syncing pauses, as below.
+  `quotaExceeded`: the status is `storageFull`, and nothing is queued again until the library changes or a fetch
+  brings something (R5.4). Anything else the engine retries.
+- **A deleted zone.** Deleted by the user in Settings (`purged`): syncing pauses and the server is forgotten, until
+  the app calls `resume()`, which uploads everything again (R5.3). While paused, fetched records are still merged
+  in, and nothing is sent. Deleted any other way: the server is forgotten and everything is uploaded again (R5.2).
+- **The account** (R5.1): see "The engine". A sign-out shows as `unavailable`.
+- **In the background.** `close()` closes the database and makes every later use close it again when done, until
+  `open()` (shared libraries R5.4).
+- **Status** (R2.5). `status` and `statusUpdates()` give `syncing` while a fetch, a send or a run of pictures is
+  under way and `upToDate` otherwise, unless something is wrong: `paused`, `storageFull`, `unavailable` or
+  `failed`. An app that isn't syncing shows `unsupported` or `unavailable`.
+
 ## Known limits
 
 - A PDF removed on one device while another is changing its art, or before another device's first sync, can come

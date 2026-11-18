@@ -11,9 +11,26 @@ struct TestDevice {
     let root = temporaryFolder()
 
     var folder: URL { root.appending(path: "Tableside") }
+    /// The library folder of another device, which reads the same PDF.
+    var otherFolder: URL { root.appending(path: "Other device") }
 
     func library(_ app: TablesideApp = .turnkeeper) throws -> SharedLibrary {
         try SharedLibrary(folder: folder, app: app)
+    }
+
+    func otherLibrary() throws -> SharedLibrary {
+        try SharedLibrary(folder: otherFolder, app: .fieldGuide)
+    }
+
+    /// Sends everything `library` has to send, and gives the records as the server then holds them.
+    func serverRecords(of library: SharedLibrary) throws -> [CKRecord] {
+        let coder = LibraryRecordCoder(outgoingFolder: root.appending(path: "Server"))
+        return try library.syncCandidates().saves.compactMap { id in
+            guard let outgoing = try library.outgoingRecord(id) else { return nil }
+            let record = try coder.record(for: outgoing)
+            try library.markSent(outgoing, systemFields: LibraryRecordCoder.systemFields(of: record))
+            return record
+        }
     }
 
     /// A pawn box PDF of a goblin and an ogre in this device's root folder. Asking again gives the same file, as
@@ -89,4 +106,41 @@ actor MemoryStateStore: SyncStateStore {
 /// A `serverRecordChanged` refusal, with the record the server holds.
 func conflict(with server: CKRecord) -> CKError {
     CKError(.serverRecordChanged, userInfo: [CKRecordChangedErrorServerRecordKey: server])
+}
+
+/// A device that syncs: its library's handler on an engine that records what it queues.
+struct SyncingDevice {
+    let device = TestDevice()
+    let queue = RecordingQueue()
+    let sync: LibrarySync
+    let engine: SyncEngine
+
+    init() async throws {
+        sync = try LibrarySync(folder: device.folder, app: .turnkeeper, changeDelay: .milliseconds(20))
+        await sync.prepare()
+        engine = SyncEngine(handlers: [sync], store: sync)
+        await sync.use(engine)
+        await engine.begin(with: queue, isFirstStart: true)
+    }
+
+    /// Hands the engine every record the handler has to save, as though the server took them all.
+    @discardableResult
+    func sendEverything() async -> [CKRecord] {
+        var records: [CKRecord] = []
+        for change in await sync.pendingChanges() {
+            guard case .save(let recordID) = change, let record = await engine.record(for: recordID) else { continue }
+            records.append(record)
+        }
+        await engine.sent(SentChanges(saved: records))
+        return records
+    }
+}
+
+/// Waits up to two seconds for `condition`; false when it never held.
+func eventually(_ condition: @Sendable () async -> Bool) async -> Bool {
+    for _ in 0..<200 {
+        if await condition() { return true }
+        try? await Task.sleep(for: .milliseconds(10))
+    }
+    return false
 }
