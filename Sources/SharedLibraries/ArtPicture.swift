@@ -42,16 +42,18 @@ extension SharedLibrary {
     public func measurePictures() throws -> Int {
         let unsized = try connection().rows("SELECT id, picture FROM art WHERE picture IS NOT NULL "
                                             + "AND picturePixels = 0 ORDER BY id")
-        let measured = unsized.compactMap { row -> (id: String, pixels: Int)? in
+        let measured = unsized.compactMap { row -> (id: String, picture: ArtPicture)? in
             guard let id = row.text("id"), let name = row.text("picture") else { return nil }
             let pixels = pixels(ofPicture: name)
-            return pixels > 0 ? (id, pixels) : nil
+            return pixels > 0 ? (id, ArtPicture(name: name, pixels: pixels)) : nil
         }
         guard !measured.isEmpty else { return 0 }
         try write { writer in
             for art in measured {
-                try writer.database.run("UPDATE art SET picturePixels = ?, changed = ? WHERE id = ?",
-                                        [.integer(Int64(art.pixels)), .integer(writer.counter), .text(art.id)])
+                // Only while the art still names the picture measured: another app may have given it another since.
+                try writer.database.run("UPDATE art SET picturePixels = ?, changed = ? WHERE id = ? AND picture = ?",
+                                        [.integer(Int64(art.picture.pixels)), .integer(writer.counter),
+                                         .text(art.id), .text(art.picture.name)])
             }
         }
         return measured.count
