@@ -35,7 +35,7 @@ go through `SharedLibrary.write` (no counter, no Darwin notification), except in
 |---|---|
 | `cloudRecords` | What this device knows the server holds, by zone and record name: kind, the local row's key (`rowKey`), the record's archived system fields (NULL once the server is known not to have it), the change counter it was last in step with (`sentChanged`), and the SHA-256 of the content the server holds |
 | `parkedRecords` | A note that arrived before its art, kept until the art does; and a record this version can't read (`unreadable` is 1), kept for a version that can |
-| `syncState` | `engine.<app raw value>` (the engine's saved state), `paused` (present when paused), `picturePolicy` (JSON; absent means `.onDemand(limit: nil)`) |
+| `syncState` | `engine.<app raw value>` (the engine's saved state), `paused` (present when paused), `picturePolicy` (JSON; absent means `.onDemand(limit: nil)`), `account` (the iCloud account `cloudRecords` describes) |
 | `fetchedPictures` | The pictures this device downloaded: file size and when each was last shown |
 | `aliasesByEntry` | An index on `aliases (entry)`, so a source's change counter is cheap |
 | `modified` | A column of `notes`, `creatureArt`, `customCreatures` and `customArt`: the user's last change, in seconds since the reference date, 0 before version 6 |
@@ -199,6 +199,35 @@ device meant to stay thin. So a file whose `ubiquitousItemDownloadingStatus` is 
 for a later scan. A file outside iCloud has no such value and is read as before. The decision is a function of the
 status alone, `isDownloaded(_:)`. The older kind of placeholder, a hidden `.<name>.icloud` file, isn't listed by
 `ProductScanner.artPDFs`.
+
+## The `TablesideSync` target
+
+`TablesideSync` imports CloudKit and puts a `CKSyncEngine` on the store. It is a target of its own so that an app
+that doesn't sync, and `SharedLibraries` itself, need no CloudKit.
+
+### Records in CloudKit
+
+`LibraryRecordCoder` turns a `SyncRecord` into a `CKRecord` and back. A record's name is the `SyncRecord`'s, and its
+kind is told from the name (`SyncRecordID(recordName:)`).
+
+| Type | Zone | Fields |
+|---|---|---|
+| `Source` | `Library` | `format` Int64 (1), `title` String, `payload` Asset (a reading can pass a record's 1 MB) |
+| `Note`, `CreatureArt`, `CustomCreature` | `Library` | `format`, `title`, `payload` Bytes |
+| `CustomArt` | `Library` | `format`, `title`, `payload` Bytes, `image` Asset |
+| `Picture` | `Pictures` | `image` Asset; the record's name is the file's name |
+
+These are the record types to deploy to Production in the CloudKit Console before a release.
+
+- A reading's JSON is written to `<library folder>/Sync/Outgoing/<app>/<record name>` for the upload and deleted
+  once the record is sent. The folder is each app's own, so one app clearing what an earlier run left behind
+  takes nothing from another app's upload.
+- An incoming asset's bytes are read while its event is handled: the file doesn't outlive it.
+- A record is built over the server's last known system fields when the store has them, so the save is a change
+  to that record and not a conflict.
+- A record of one of these types whose payload can't be read (a later `format`, a field that moved) is handed to
+  the store with an empty payload, which it keeps aside as it does any record this version can't read. A record
+  of any other type, or of another zone, is ignored.
 
 ## Known limits
 
