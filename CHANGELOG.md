@@ -5,6 +5,49 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.10.0] - 2026-11-18
+
+### Added
+- Keep the sharper picture when two devices drew different ones
+- Keep aside a synced record this version can't read
+- Link PDFs other devices read and skip undownloaded files
+- Track which pictures to upload, download and keep
+- Merge library records from other devices
+- Choose which library records to upload
+- Add schema version 6 with the time of each edit
+
+### Fixed
+- Count no PDF another app is reading
+- Tell when no picture could be drawn at all
+- Apply a record deleted and saved again in one batch
+- Note a picture's size only while the art still names it
+- Count no PDF a watched folder only links
+- Draw the other pictures when one can't be drawn
+- Keep custom art's image when its staged copy is gone
+- Keep the sharper picture when a Battle Card is read
+- Send nothing back for a PDF this device knows less about
+- Keep a row deleted here when its record is fetched again
+- Draw a missing picture only under its own print's name
+- Draw no more missing pictures than asked for
+- Link a synced PDF whichever reader read it
+- Keep a picture in use out of the cache's removals
+- Settle an alias two devices hold the same way
+- Change files only once a synced batch has committed
+- Read one cloud record per change, not the whole table
+
+### Changed
+- Spell forever as one word and note a limit of settling
+- Drop a picture check that never applied
+- Correct two statements in the sync design
+- Stop checking picture files once the limit is reached
+- Share one SHA-256 hex helper
+- Add scripts to back up and restore the apps' libraries
+- Describe the picture rule and records kept aside
+- Share how cloud records are read and stored
+- Specify syncing the libraries through iCloud
+
+[1.10.0]: https://github.com/scooper4711/tabletop-kit/releases/tag/v1.10.0
+
 ## [1.9.0] - 2026-11-17
 
 ### Added
