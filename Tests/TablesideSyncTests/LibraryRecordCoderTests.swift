@@ -78,6 +78,7 @@ import Testing
     @Test func handsOnARecordItCannotReadWithAnEmptyPayload() throws {
         let record = CKRecord(recordType: "Source", recordID: .library("source-abc"))
         record["format"] = Int64(2)
+        record["payload"] = Data("a later layout".utf8)
         let content = try #require(savedRecord(LibraryRecordCoder.remoteChange(from: record)))
         #expect(content.payload.isEmpty && content.title.isEmpty)
         let change = try #require(LibraryRecordCoder.remoteChange(from: record))

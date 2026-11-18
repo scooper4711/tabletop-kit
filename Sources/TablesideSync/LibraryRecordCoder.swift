@@ -107,7 +107,9 @@ struct LibraryRecordCoder: Sendable {
         outgoingFolder.appending(path: name, directoryHint: .notDirectory)
     }
 
+    /// A record's payload; empty in a later layout than this version reads, or when its asset can't be read.
     private static func payload(of record: CKRecord) -> Data {
+        guard record["format"] as? Int64 ?? format <= format else { return Data() }
         if let bytes = record["payload"] as? Data { return bytes }
         let file = (record["payload"] as? CKAsset)?.fileURL
         return file.flatMap { try? Data(contentsOf: $0) } ?? Data()

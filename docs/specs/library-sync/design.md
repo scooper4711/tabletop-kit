@@ -225,9 +225,10 @@ These are the record types to deploy to Production in the CloudKit Console befor
 - An incoming asset's bytes are read while its event is handled: the file doesn't outlive it.
 - A record is built over the server's last known system fields when the store has them, so the save is a change
   to that record and not a conflict.
-- A record of one of these types whose payload can't be read (a later `format`, a field that moved) is handed to
-  the store with an empty payload, which it keeps aside as it does any record this version can't read. A record
-  of any other type, or of another zone, is ignored.
+- A record of one of these types whose payload can't be read (a field that moved) is handed to the store with an
+  empty payload, which it keeps aside as it does any record this version can't read. So is a record whose `format`
+  is later than this version's, whatever its payload holds. A record of any other type, or of another zone, is
+  ignored.
 - The server's record that comes with a refused save has no asset files: CloudKit doesn't download them. A reading
   refused that way is therefore kept aside too, and merged when the fetch that follows brings it whole; until then
   this device doesn't send its own. The other kinds carry their payload in the record and are merged at once.
