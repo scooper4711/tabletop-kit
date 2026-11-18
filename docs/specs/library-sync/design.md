@@ -290,6 +290,36 @@ share), and the store makes every decision: this only hands records between the 
   under way and `upToDate` otherwise, unless something is wrong: `paused`, `storageFull`, `unavailable` or
   `failed`. An app that isn't syncing shows `unsupported` or `unavailable`.
 
+### Pictures in iCloud
+
+`PictureCloud` keeps the pictures in step through a `PictureStore`: `CloudPictureStore` over the zone `Pictures` of
+the private database, or a stand-in in tests. It has a library of its own, so that drawing and transfers keep
+nothing else waiting. The store's bookkeeping is in "Pictures" above.
+
+- **Drawing comes first** (R4.8). At the start the pictures the art lacks are drawn, 100 at a time, until none is
+  left that this app can draw; a library moved in from an app's old one has about 10,000 to draw, once. Nothing
+  is sent until that is done: each picture drawn changes its PDF's reading, and the readings would be sent over
+  and over meanwhile. Fetched records are merged in all the same. Drawing stops for now when a picture can't be
+  drawn or saved and nothing else could be, as with a full disk.
+- **A run** uploads, downloads ahead and deletes, in that order. It starts when the drawing is done, after local
+  changes, after each finished fetch and each send (the first send makes the zones), on `resume()` and when the
+  policy is set. A run asked for while one is under way makes that one go round again. Nothing runs while
+  syncing is paused.
+- **Upload** (R4.1): 25 at a time until `picturesToUpload` is empty. Those iCloud holds already are only noted;
+  the rest are saved, and a save that finds the picture there already counts, as a picture never changes.
+- **Download when shown** (R4.2): an app calls `LibrarySync.fetchPictures(named:)` with `missingPictures(of:)` when
+  `picture(of:)` gives none. It downloads those the device lacks, stores them with `storeFetchedPicture`, notes
+  all of them as shown, and doesn't wait for whatever else syncing is doing.
+- **Download ahead** (R4.9): with `.everything`, the missing pictures are downloaded 25 at a time until none is
+  missing or a batch brings nothing. Those iCloud didn't have (no device has uploaded them yet) aren't asked for
+  again until the app next starts. These downloads don't count as shown.
+- **Delete** (R4.4): only once a fetch has finished in this run of the app, when it is known what art still
+  uses, `picturesToDelete` is deleted from iCloud, then `removeUnreferencedPictures` deletes the files here.
+- **A full iCloud** (R5.4) ends the run with the status `storageFull`, until a later run gets through. Any other
+  failure, as without a network, ends the run until the next one.
+- **The cache** (R4.3, R4.7): `LibrarySync` passes on `fetchedPicturesByteCount`, `clearFetchedPictures`,
+  `picturePolicy`, `setPicturePolicy` and `markPicturesShown`.
+
 ## Known limits
 
 - A PDF removed on one device while another is changing its art, or before another device's first sync, can come

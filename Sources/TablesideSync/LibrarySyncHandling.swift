@@ -13,18 +13,19 @@ extension LibrarySync: SyncZoneHandler {
         [LibraryRecordCoder.picturesZone]
     }
 
-    /// The records the store has to save and to delete; none once syncing stopped, or while iCloud is full.
+    /// The records the store has to save and to delete; none once syncing stopped, while iCloud is full, or
+    /// until the pictures are drawn.
     public func pendingChanges() -> [SyncChange] {
-        guard !hasStopped, !isStorageFull,
+        guard !hasStopped, !isStorageFull, !isDrawing,
               let candidates = library.use({ library in try? library.syncCandidates() }) else { return [] }
         return candidates.saves.map { .save(LibraryRecordCoder.recordID(of: $0)) }
             + candidates.deletions.map { .delete(LibraryRecordCoder.recordID(of: $0)) }
     }
 
     /// The record to save, remembered until the server takes it; nil when its row is gone, when the cloud holds
-    /// this content already, or while syncing is paused or stopped.
+    /// this content already, while syncing is paused or stopped, or until the pictures are drawn.
     public func record(for recordID: CKRecord.ID) -> CKRecord? {
-        guard !hasStopped, let id = LibraryRecordCoder.syncID(of: recordID) else { return nil }
+        guard !hasStopped, !isDrawing, let id = LibraryRecordCoder.syncID(of: recordID) else { return nil }
         let built = library.use { library -> (OutgoingRecord, CKRecord)? in
             guard (try? library.isSyncPaused) == false, let outgoing = try? library.outgoingRecord(id),
                   let record = try? coder.record(for: outgoing) else { return nil }
@@ -108,9 +109,15 @@ extension LibrarySync: SyncZoneHandler {
     public func phaseChanged(_ phase: SyncPhase) {
         switch phase {
         case .willFetch: tracker.begin(.fetching)
-        case .didFetch: tracker.end(.fetching)
-        case .willSend: tracker.begin(.sending)
-        case .didSend: tracker.end(.sending)
+        case .didFetch:
+            tracker.end(.fetching)
+            fetchFinished()
+        case .willSend:
+            tracker.begin(.sending)
+        case .didSend:
+            // The first send makes the zones, so a run of pictures that found none can carry on.
+            tracker.end(.sending)
+            startPictureRun()
         }
     }
 

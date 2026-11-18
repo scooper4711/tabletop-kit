@@ -20,15 +20,18 @@ extension LibrarySync {
                              handlers: [any SyncZoneHandler] = []) async -> LibrarySync? {
         guard !containerIdentifier.isEmpty else { return nil }
         let container = CKContainer(identifier: containerIdentifier)
+        let database = container.privateCloudDatabase
         guard (try? await container.accountStatus()) == .available,
               let folder = try? SharedLibrary.standard(app: app, fallback: fallback).folder,
-              let sync = try? LibrarySync(folder: folder, app: app) else { return nil }
+              let sync = try? LibrarySync(folder: folder, app: app, pictureStore: CloudPictureStore(database: database))
+        else { return nil }
         await sync.prepare()
         let engine = SyncEngine(handlers: [sync] + handlers, store: sync)
         await sync.use(engine)
         await sync.observeChanges()
         let bundleIdentifier = Bundle.main.bundleIdentifier ?? app.rawValue
-        await engine.attach(to: container.privateCloudDatabase, subscriptionID: "tableside-sync-\(bundleIdentifier)")
+        await engine.attach(to: database, subscriptionID: "tableside-sync-\(bundleIdentifier)")
+        Task { await sync.drawPictures() }
         return sync
     }
 

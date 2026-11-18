@@ -144,3 +144,74 @@ func eventually(_ condition: @Sendable () async -> Bool) async -> Bool {
     }
     return false
 }
+
+/// A stand-in for the zone `Pictures`, which records what it is asked.
+actor FakePictureStore: PictureStore {
+    private(set) var held: [String: Data] = [:]
+    private(set) var asked: [[String]] = []
+    private(set) var uploads: [[String]] = []
+    private(set) var downloads: [[String]] = []
+    private(set) var deletions: [[String]] = []
+    private var failure: CKError.Code?
+    private var isHolding = false
+    private let folder = temporaryFolder()
+
+    func hold(_ data: Data, as name: String) { held[name] = data }
+    /// Makes every request fail with `code` until it is nil again.
+    func fail(with code: CKError.Code?) { failure = code }
+    /// Keeps `existing` from answering while true, so a run stays under way.
+    func keepWaiting(_ waits: Bool) { isHolding = waits }
+
+    func existing(_ names: [String]) async throws -> Set<String> {
+        asked.append(names)
+        while isHolding { try await Task.sleep(for: .milliseconds(5)) }
+        try check()
+        return Set(names.filter { held[$0] != nil })
+    }
+
+    func upload(_ files: [String: URL]) throws {
+        try check()
+        uploads.append(files.keys.sorted())
+        for (name, file) in files { held[name] = try Data(contentsOf: file) }
+    }
+
+    func download(_ names: [String]) throws -> [String: URL] {
+        try check()
+        downloads.append(names)
+        try FileManager.default.createDirectory(at: folder, withIntermediateDirectories: true)
+        var files: [String: URL] = [:]
+        for name in names {
+            guard let data = held[name] else { continue }
+            let file = folder.appending(path: UUID().uuidString)
+            try data.write(to: file)
+            files[name] = file
+        }
+        return files
+    }
+
+    func delete(_ names: [String]) throws {
+        try check()
+        deletions.append(names)
+        for name in names { held[name] = nil }
+    }
+
+    private func check() throws {
+        if let failure { throw CKError(failure) }
+    }
+}
+
+extension TestDevice {
+    /// Makes this device's library thin: it holds the art another device read and none of its pictures, which
+    /// `store` holds. Returns the library and the pictures' names.
+    func thinLibrary(with store: FakePictureStore) async throws -> (SharedLibrary, [String]) {
+        let other = try otherLibrary()
+        try other.add(pawnBox(), keeping: false)
+        let names = try other.picturesToUpload(limit: 100)
+        for name in names {
+            await store.hold(try Data(contentsOf: other.pictureFile(name)), as: name)
+        }
+        let library = try library()
+        try library.applyRemote(try serverRecords(of: other).compactMap(LibraryRecordCoder.remoteChange(from:)))
+        return (library, names)
+    }
+}

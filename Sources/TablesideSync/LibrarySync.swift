@@ -9,6 +9,8 @@ import SharedLibraries
 public actor LibrarySync {
     let library: LibraryHandle
     let coder: LibraryRecordCoder
+    /// The pictures' side of syncing; none in tests that leave pictures out.
+    let pictures: PictureCloud?
     /// The records handed to the engine, by name, until the server takes them.
     var outgoing: [String: OutgoingRecord] = [:]
     var tracker = SyncStatusTracker()
@@ -17,16 +19,22 @@ public actor LibrarySync {
     var hasStopped = false
     /// True from a save iCloud had no room for until something gives a reason to try again.
     var isStorageFull = false
+    /// True from the start until the pictures art lacks are drawn. Nothing is sent meanwhile: each picture drawn
+    /// changes its PDF's reading, and a library moved in from an app's old one would send every reading over and
+    /// over.
+    var isDrawing = false
     private var engine: SyncEngine?
     private var notice: Task<Void, Never>?
     private let changeDelay: Duration
     /// Kept so that the app hears of the library's changes for as long as it syncs.
     var observer: AnyObject?
 
-    /// Syncing for the library in `folder`. Local changes are sent `changeDelay` after the last one, so a run of
-    /// them goes up together.
-    init(folder: URL, app: TablesideApp, changeDelay: Duration = .seconds(2)) throws {
+    /// Syncing for the library in `folder`, with its pictures in `pictureStore`. Local changes are sent
+    /// `changeDelay` after the last one, so a run of them goes up together.
+    init(folder: URL, app: TablesideApp, changeDelay: Duration = .seconds(2),
+         pictureStore: (any PictureStore)? = nil) throws {
         library = try LibraryHandle(folder: folder, app: app)
+        pictures = try pictureStore.map { try PictureCloud(folder: folder, app: app, store: $0) }
         let outgoingFolder = folder.appending(path: "Sync/Outgoing/\(app.rawValue)", directoryHint: .isDirectory)
         coder = LibraryRecordCoder(outgoingFolder: outgoingFolder)
         self.changeDelay = changeDelay
@@ -48,6 +56,7 @@ public actor LibrarySync {
             try? await Task.sleep(for: changeDelay)
             guard !Task.isCancelled else { return }
             await self.sendChanges()
+            await self.syncPictures()
         }
     }
 
@@ -60,22 +69,27 @@ public actor LibrarySync {
         outgoing = [:]
         tracker.clear(.paused)
         await engine?.uploadEverything()
+        startPictureRun()
     }
 
     /// Closes the library's database, as when the app goes to the background on the iPad; whatever syncing still
     /// does closes it again when done, until `open()`.
-    public func close() {
+    public func close() async {
         library.close()
+        await pictures?.close()
     }
 
-    public func open() {
+    public func open() async {
         library.open()
+        await pictures?.open()
     }
 
     /// Gets the library ready before the engine starts: clears what an earlier run left of its uploads, applies
     /// the records kept aside that this version can now read, measures the pictures saved before sizes were kept,
-    /// so two devices settle on the sharper one, and shows a pause that is still on.
+    /// so two devices settle on the sharper one, and shows a pause that is still on. With pictures to look after,
+    /// nothing is sent until `drawPictures()` has drawn those the art lacks.
     func prepare() {
+        isDrawing = pictures != nil
         coder.removeOutgoingFiles()
         apply([])
         library.use { library in
