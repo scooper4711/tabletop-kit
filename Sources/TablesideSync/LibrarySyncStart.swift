@@ -26,6 +26,7 @@ extension LibrarySync {
               let sync = try? LibrarySync(folder: folder, app: app, pictureStore: CloudPictureStore(database: database))
         else { return nil }
         await sync.prepare()
+        if let user = try? await container.userRecordID() { await sync.accountChanged(to: user.recordName) }
         let engine = SyncEngine(handlers: [sync] + handlers, store: sync)
         await sync.use(engine)
         await sync.observeChanges()
