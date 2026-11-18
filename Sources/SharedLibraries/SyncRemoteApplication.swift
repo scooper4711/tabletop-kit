@@ -85,15 +85,25 @@ struct RemoteApplication {
     }
 
     /// Notes what the library holds of the record `incoming`: the server's fields and content. When the local row
-    /// now has that content, nothing is left to send; otherwise the row stays to be sent, merged.
+    /// now says nothing more than that content, nothing is left to send; otherwise the row stays to be sent, merged.
     func settle(_ incoming: IncomingRecord, rowKey: String) throws {
         var sentChanged = try library.cloudRecord(named: incoming.id.name, in: database)?.sentChanged ?? -1
         if let changed = try library.syncCounter(of: incoming.id.kind, rowKey: rowKey, in: database),
-           let local = try library.syncRecord(incoming.id, rowKey: rowKey, in: database),
-           SyncDigest.hex(of: local.payload) == incoming.digest {
+           try addsNothing(to: incoming, rowKey: rowKey) {
             sentChanged = changed
         }
         try store(incoming, rowKey: rowKey, sentChanged: sentChanged)
+    }
+
+    /// True when the local row has the content of `incoming`, or is a PDF's reading that only knows less of where
+    /// else its art is printed (`SourceReading.isCovered`).
+    private func addsNothing(to incoming: IncomingRecord, rowKey: String) throws -> Bool {
+        guard let local = try library.syncRecord(incoming.id, rowKey: rowKey, in: database) else { return false }
+        if SyncDigest.hex(of: local.payload) == incoming.digest { return true }
+        guard incoming.id.kind == .source else { return false }
+        let own = try SyncPayloads.decode(SourceReading.self, from: local.payload, kind: .source)
+        let theirs = try SyncPayloads.decode(SourceReading.self, from: incoming.record.payload, kind: .source)
+        return own.isCovered(by: theirs)
     }
 
     func store(_ incoming: IncomingRecord, rowKey: String, sentChanged: Int64) throws {

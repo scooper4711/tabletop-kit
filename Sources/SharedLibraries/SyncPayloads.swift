@@ -38,6 +38,31 @@ struct ReadingGroup: Codable, Equatable {
     var aliases: [ReadingAlias]
 }
 
+extension SourceReading {
+    /// True when this reading says nothing `other` doesn't: they differ at most in what each device knows from its
+    /// other PDFs, this one knowing no key `other` doesn't. A device that lacks another PDF printing the same art
+    /// (its record not here yet, or unreadable to this version) gives the art fewer keys and so another ID; sending
+    /// that over the fuller reading would have the two devices upload over each other for ever.
+    func isCovered(by other: SourceReading) -> Bool {
+        var own = self, theirs = other
+        own.groups = []
+        theirs.groups = []
+        guard own == theirs, groups.count == other.groups.count else { return false }
+        let others = Dictionary(other.groups.map { ($0.prints.first?.key, $0) }) { first, _ in first }
+        return groups.allSatisfy { group in others[group.prints.first?.key].map(group.isCovered) ?? false }
+    }
+}
+
+extension ReadingGroup {
+    /// True when the groups are the same but for the art's ID and its keys, of which `other` has all of this one's.
+    func isCovered(by other: ReadingGroup) -> Bool {
+        var own = self
+        own.entry = other.entry
+        own.keys = other.keys
+        return own == other && Set(keys).isSubset(of: other.keys)
+    }
+}
+
 struct ReadingPrint: Codable, Equatable {
     var key: UUID
     var kind: ArtKind

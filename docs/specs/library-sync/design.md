@@ -122,7 +122,11 @@ that art, in one statement. No writer has to change.
 7. **Those deleted.** With unsent local changes the row stays and is uploaded again; otherwise it goes, and a
    custom art's image once the transaction has committed.
 8. **Settling `cloudRecords`** after a save: the system fields and the incoming digest are stored. When the local
-   payload built again has the same digest, nothing is left to upload; otherwise the merged result is.
+   payload built again has the same digest, nothing is left to upload; otherwise the merged result is. A PDF's
+   reading also has nothing to upload when it differs only in what this device knows from its other PDFs and knows
+   no key the incoming one doesn't (`SourceReading.isCovered`): a device lacking another PDF that prints the same
+   art (its record not here yet, or unreadable to this version) gives the art fewer keys and another ID, and
+   sending that over the fuller reading would have the two devices upload over each other for ever.
 
 On a failure the transaction rolls back and `applyRemote` throws, with every file as it was: files are only
 deleted or replaced after the commit.

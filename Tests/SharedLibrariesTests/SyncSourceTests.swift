@@ -140,6 +140,49 @@ import Testing
         #expect(try otherApp.changeCounter() == counter)
     }
 
+    /// The first device's "pawns" and "cards", printing one piece of art, as it sends them; "cards" naming a game
+    /// this version doesn't know, so a device receiving both holds only "pawns" (R3.10).
+    func pawnsAndUnreadableCards() throws -> [RemoteChange] {
+        try first.write { writer in
+            try SyncFixture.addSource("pawns", to: writer)
+            try SyncFixture.addSource("cards", to: writer)
+            try writer.merge(SyncFixture.entry([.init(.pawn, SyncFixture.pawnKey, "pawns"),
+                                                .init(.figure, SyncFixture.figureKey, "cards")]))
+        }
+        return try first.sendEverything().map { change in
+            guard case .saved(var record, let fields) = change, record.id.name == "source-cards" else { return change }
+            var payload = try #require(try JSONSerialization.jsonObject(with: record.payload) as? [String: Any])
+            payload["game"] = "a game added since"
+            record.payload = try JSONSerialization.data(withJSONObject: payload)
+            return .saved(record, systemFields: fields)
+        }
+    }
+
+    @Test func sendsNothingBackForAPDFWhoseArtIsAlsoPrintedByOneThisDeviceLacks() throws {
+        let sent = try pawnsAndUnreadableCards()
+
+        let report = try second.applyRemote(sent)
+        #expect(report == RemoteApplyReport(applied: 1, parked: 1, unchanged: 0))
+        #expect(try second.sendEverything(fields: Data([2])).isEmpty)
+    }
+
+    @Test func settlesAfterOneAnswerWhenTheDeviceLackingAPDFChangesTheArt() throws {
+        try second.applyRemote(try pawnsAndUnreadableCards())
+        var renamed = SyncFixture.entry([.init(.pawn, SyncFixture.pawnKey, "pawns")])
+        renamed.name = "Ogre Chief"
+        try second.write { writer in try writer.merge(renamed) }
+        let change = try second.sendEverything(fields: Data([2]))
+        #expect(change.map(\.id.name) == ["source-pawns"])
+
+        try first.applyRemote(change)
+        #expect(try first.artEntries().map(\.name) == ["Ogre Chief"])
+        // Both PDFs print the renamed art, and "cards" stays unreadable to the second device.
+        let answer = try first.sendEverything(fields: Data([3]))
+        #expect(Set(answer.map(\.id.name)) == ["source-pawns", "source-cards"])
+        try second.applyRemote(answer.filter { $0.id.name == "source-pawns" })
+        #expect(try second.sendEverything(fields: Data([4])).isEmpty && first.syncCandidates().isEmpty)
+    }
+
     @Test func settlesOnOneAppForAnAliasBothDevicesHold() throws {
         try first.add(devices.first.pawnBox(), keeping: false)
         try devices.exchange()
