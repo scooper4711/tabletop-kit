@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.1] - 2026-11-18
+
+### Fixed
+- Keep pictures a failed fetch can't call unused
+- Ask again for a picture that failed to download
+- Send everything after a missing zone or a full iCloud
+- Keep aside a record in a later format
+
+### Changed
+- Say what raising the record format asks of a version
+- Start the sync engine without a flag argument
+
+[1.11.1]: https://github.com/scooper4711/tabletop-kit/releases/tag/v1.11.1
+
 ## [1.11.0] - 2026-11-18
 
 ### Added
