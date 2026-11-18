@@ -19,7 +19,7 @@ extension SharedLibrary {
         let names = try connection().rows("SELECT name FROM (\(Self.referencedPictures)) WHERE name NOT IN "
                                           + "(SELECT name FROM cloudRecords WHERE zone = ?) ORDER BY name",
                                           [.text(SyncZone.pictures)]).compactMap { $0.text("name") }
-        return Array(names.filter { hasPicture($0) }.prefix(limit))
+        return Array(names.lazy.filter { self.hasPicture($0) }.prefix(limit))
     }
 
     /// Remembers that iCloud holds the pictures.
@@ -64,7 +64,7 @@ extension SharedLibrary {
     public func missingPictureNames(limit: Int) throws -> [String] {
         let names = try connection().rows("SELECT name FROM (\(Self.referencedPictures)) ORDER BY name")
             .compactMap { $0.text("name") }
-        return Array(names.filter { !hasPicture($0) }.prefix(limit))
+        return Array(names.lazy.filter { !self.hasPicture($0) }.prefix(limit))
     }
 
     /// Removes the files in `Pictures` that nothing names, except those written in the last hour, which an import
