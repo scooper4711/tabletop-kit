@@ -320,6 +320,24 @@ nothing else waiting. The store's bookkeeping is in "Pictures" above.
 - **The cache** (R4.3, R4.7): `LibrarySync` passes on `fetchedPicturesByteCount`, `clearFetchedPictures`,
   `picturePolicy`, `setPicturePolicy` and `markPicturesShown`.
 
+### Builds (R6)
+
+An app syncs only when its `Info.plist` names the container under `TablesideSyncContainer`, and a build names it only
+when it is signed with the entitlements for it. App Store and Xcode builds carry both in the app's own files.
+A Developer ID build gets them from `scripts/add-icloud-entitlements.sh <app> <entitlements> <team ID> <provisioning
+profile>`, which apps reach at `.build/checkouts/tabletop-kit/scripts/`, as they do `package-appstore.sh`:
+
+- It embeds the provisioning profile and sets the application and team identifiers, the CloudKit service, the
+  containers, and the CloudKit and push environments in the entitlements to sign with. Keys that are there already
+  are replaced, so it can run again on the same files.
+- `ICLOUD_CONTAINERS` lists the containers, separated by spaces; the default is the suite's. Field Guide, whose lore
+  stays in a container of its own, names both.
+- `ICLOUD_ENVIRONMENT` is `Production` (the default) or `Development`. An iPad build installed from Xcode uses
+  Development, so a Mac build that is to sync with one does too.
+- `TablesideSyncContainer` is written when the suite's container is among them, and removed otherwise.
+
+`scripts/test-add-icloud-entitlements.sh` checks this on a generated app, from `make test-scripts`.
+
 ## Known limits
 
 - A PDF removed on one device while another is changing its art, or before another device's first sync, can come
@@ -337,6 +355,12 @@ nothing else waiting. The store's bookkeeping is in "Pictures" above.
 - Art's name, size, traits and fingerprint, where two devices differ, are still the incoming record's: two devices
   that sync at the same moment can swap them until one goes first.
 - Each app's engine fetches the same changes; the second finds them applied and writes nothing.
+- The CloudKit glue (`SyncEngineCloudKit`, `LibrarySyncStart`, `CloudPictureStore`) has no unit tests: a container
+  without the entitlement stops the process. The end-to-end check below covers it.
+- After iCloud data was deleted by the user, an app that starts for the first time still makes the two empty zones;
+  nothing is uploaded to them until `resume()`.
+- A picture iCloud didn't have when a device that keeps everything asked for it is asked for again only when the app
+  next starts.
 
 ## End-to-end check
 

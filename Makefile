@@ -20,8 +20,9 @@ coverage:
 clean:
 	rm -rf .build coverage
 
-# Checks the Mac App Store packaging script on a generated trial app, and the library backup scripts on a made-up
-# home folder.
+# Checks the Mac App Store packaging script on a generated trial app, the iCloud entitlements script on a generated
+# app, and the library backup scripts on a made-up home folder.
 test-scripts:
 	scripts/test-package-appstore.sh
+	scripts/test-add-icloud-entitlements.sh
 	scripts/test-libraries-backup.sh
