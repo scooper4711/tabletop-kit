@@ -32,6 +32,8 @@ and its settings, stay in its own spec.
 - R3.7 A note for art that hasn't arrived yet waits for it.
 - R3.8 Removing a PDF removes its art on every device.
 - R3.9 A PDF another device read is linked, not read again, when this device first sees the file.
+- R3.10 A record a newer app wrote that this one can't read waits for the app's update; everything else syncs, and
+  this app doesn't write over it.
 
 ## R4 Pictures
 - R4.1 Each art picture is an asset in the zone `Pictures`, uploaded once by a device that has it.
@@ -45,6 +47,7 @@ and its settings, stay in its own spec.
 - R4.8 A device that can reach the PDFs draws the pictures its art lacks, so they can be uploaded.
 - R4.9 A device can instead keep every picture: it downloads them all ahead of time, for use without internet, and
   removes none.
+- R4.10 When two devices have different pictures of one piece of art, every device ends with the sharper one.
 
 ## R5 Accounts and resets
 - R5.1 Another account signing in uploads the library to it.

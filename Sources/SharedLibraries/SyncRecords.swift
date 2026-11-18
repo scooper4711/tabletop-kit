@@ -75,7 +75,7 @@ public struct SyncCandidates: Equatable, Sendable {
 public struct RemoteApplyReport: Equatable, Sendable {
     /// Records merged into the library.
     public var applied = 0
-    /// Notes kept aside until the art they are about arrives.
+    /// Records kept aside: notes until the art they are about arrives, and what this version can't read.
     public var parked = 0
     /// Records the library had already, whose fields were only noted.
     public var unchanged = 0

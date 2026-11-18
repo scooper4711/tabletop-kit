@@ -75,7 +75,7 @@ It uses the system's SQLite (`import SQLite3`), so the package keeps no dependen
 | `sources` | `ArtSource` without its location: id, title, game, byte count, reader version, art found, whether kept |
 | `sourceAccess` | how each app reaches a referenced PDF: source, app, encoded `SourceLocation` |
 | `watchedFolders` | each app's watched folders (bookmarks only work for the app that made them) |
-| `art` | `ArtEntry`: id, name, game, size, traits, fingerprint, palette, picture key, whether it needs a name |
+| `art` | `ArtEntry`: id, name, game, size, traits, fingerprint, palette, picture key and its size in pixels (schema version 6), whether it needs a name |
 | `prints` | `ArtPrint` by key and source (two products printing one picture under one name share a key; schema version 5, which older apps only read): entry, kind, front and back face, image index, copies, a token's back picture |
 | `aliases` | old ID, app, entry |
 | `notes` | what is learned about art, by entry: user name, tags, tag model, suggested name, whether corrected, when changed (schema version 6) |

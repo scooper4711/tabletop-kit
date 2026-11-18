@@ -17,10 +17,12 @@ CloudKit: what to upload, how a record from another device is merged in, and the
 | What needs uploading | A device-local table, `cloudRecords`, shared by the apps on the device: each record's server change tag, the change counter it was last in step with, and the digest of its content. No echo, and two apps syncing at once are safe. |
 | Engine state | In the SQLite database (`syncState`), one row per app, so a restored backup carries a matching state. |
 | Picture names | A picture's name is opaque and its content never changes. A different rendering (a sharper print, a larger size cap later) is a new picture under a new name; the name syncs in the reading, so every device follows, and the old picture is deleted once nothing uses it. Nothing works out a picture's name from an art key: it reads the name from the row. |
+| Two devices' pictures of one art | The sharper stays: the one with more pixels on its long side, kept with the picture's name in the art's row and in the reading; of two as sharp, the one whose name sorts first. Every device decides alike, whichever applies the other's record first. |
 | Pictures on a device | One setting per device, `PicturePolicy`: `.onDemand(limit:)` downloads a picture when it is first shown and, with a limit in bytes, removes the least recently shown past it (nil: never removes); `.everything` downloads every picture ahead of time and never removes any. The default is `.onDemand(limit: nil)`; each app offers its own choices later. |
 | Removing a PDF | Syncs: its art, pictures and kept copy go on every device. The cloud keeps no tombstone, so a device that first syncs later with that PDF brings it back. |
 | iCloud data deleted by the user (`purged`) | Syncing pauses on the device until the app calls `resume()`. A zone deleted any other way is uploaded again, as Field Guide does. |
 | A user's edits on two devices | The later `modified` time wins; for notes, a corrected note beats an uncorrected one first. |
+| A record this version can't read | Kept aside, not an error: the rest of the batch is applied, this device doesn't send its own copy over it, and a later version of the app applies it. |
 | One engine per database | `SyncEngine` hosts several zone handlers, so Turnkeeper (a zone per campaign) and Pawn Shop (custom pawns) add theirs to the same engine later. Only the library's handler is written now. |
 
 ## Schema version 6
@@ -32,11 +34,12 @@ go through `SharedLibrary.write` (no counter, no Darwin notification), except in
 | Table | Rows |
 |---|---|
 | `cloudRecords` | What this device knows the server holds, by zone and record name: kind, the local row's key (`rowKey`), the record's archived system fields (NULL once the server is known not to have it), the change counter it was last in step with (`sentChanged`), and the SHA-256 of the content the server holds |
-| `parkedRecords` | A note that arrived before its art, kept until the art does |
+| `parkedRecords` | A note that arrived before its art, kept until the art does; and a record this version can't read (`unreadable` is 1), kept for a version that can |
 | `syncState` | `engine.<app raw value>` (the engine's saved state), `paused` (present when paused), `picturePolicy` (JSON; absent means `.onDemand(limit: nil)`) |
 | `fetchedPictures` | The pictures this device downloaded: file size and when each was last shown |
 | `aliasesByEntry` | An index on `aliases (entry)`, so a source's change counter is cheap |
 | `modified` | A column of `notes`, `creatureArt`, `customCreatures` and `customArt`: the user's last change, in seconds since the reference date, 0 before version 6 |
+| `picturePixels` | A column of `art`: the long side of its picture in pixels, 0 for a picture saved before version 6 until `measurePictures` has read its file |
 
 ## Records and payloads
 
@@ -53,13 +56,15 @@ and custom art's image file. The kinds, in the order fetched records are applied
 | `customArt` | `customArt-<UUID>` | `CustomArtPayload` |
 
 A reading's `ReadingGroup` is one piece of art as far as this PDF prints it: its ID on the sender (`entry`), its
-attributes and picture names, `keys` (every print key of the art, from any PDF), this PDF's `prints`, and the art's
+attributes, its picture's name and size, `keys` (every print key of the art, from any PDF), this PDF's `prints`, and the art's
 `aliases`. Payloads are `Codable` structs encoded by one `JSONEncoder` with sorted keys; dates are seconds since the
 reference date. `digest` is the SHA-256 of those bytes.
 
 **Rule for every later version:** fields are only added, as optionals, and a missing field keeps the local value. A
 digest is always taken of the payload **as this version encodes it** (decode the incoming bytes, encode again),
-never of the incoming bytes, or two app versions would upload over each other forever.
+never of the incoming bytes, or two app versions would upload over each other forever. A new value of an existing
+field (another game, kind of print or app) makes the record unreadable to the versions before it: see "Records kept
+aside".
 
 ## What to upload
 
@@ -67,7 +72,8 @@ A record's **change counter**: for a note, creature art, custom creature or cust
 source, the greatest `changed` of its `sources` row, its prints, the art those prints belong to, and the aliases of
 that art, in one statement. No writer has to change.
 
-- **Saves**: records whose counter is above their `cloudRecords.sentChanged`, or with no `cloudRecords` row.
+- **Saves**: records whose counter is above their `cloudRecords.sentChanged`, or with no `cloudRecords` row; but
+  those whose copy in the cloud this version can't read.
 - **Deletions**: `cloudRecords` rows of the zone `Library` with system fields whose row is gone. The `deletions`
   table isn't used.
 - Paused: neither.
@@ -86,13 +92,16 @@ that art, in one statement. No writer has to change.
    updates the stored system fields, outside `write`. When nothing else is left: no transaction, no counter, no
    notification. A second app on the device fetching the same records is a no-op (R2.3). A record whose content
    the library holds already is noted the same way, and so is a deletion of a record that is neither here nor
-   known to the cloud, which takes a parked note of that name with it.
-2. **In `SyncKind` order**, deletions of a kind before its saves; then parked records are tried again; then
-   `cloudRecords` is settled for every source touched or sharing art with one.
+   known to the cloud. What was kept aside under the name of any of these goes: it is older. A saved record this
+   version can't read is kept aside here too ("Records kept aside").
+2. **In `SyncKind` order**, deletions of a kind before its saves; then the notes kept aside are tried again; then
+   `cloudRecords` is settled for every source touched or sharing art with one. Applying a record first drops what
+   was kept aside under its name.
 3. **A source saved.** A local reading by a newer reader stays, and is uploaded over the incoming one. An older
    local reading is taken out (`takeOutPrints`) and the incoming one merged: each group becomes a `SharedArtEntry`
    merged with `merge(_:joining:)`, which also finds art by the group's other keys, so art the sender had as one
-   piece becomes one piece here (R3.4). The old prints are then retired, their keys becoming aliases (R3.3), and
+   piece becomes one piece here (R3.4). Of the group's picture and those of the art it joins here, the one that
+   stays is chosen as "Pictures" says, not the incoming one. The old prints are then retired, their keys becoming aliases (R3.3), and
    their pictures deleted after the transaction. Last, the incoming aliases are added unless they already find
    art. For an alias this device holds too, both devices settle on one row whichever applies the other's first:
    the app whose name sorts first and, when they name different art, the ID that sorts first; otherwise each
@@ -117,6 +126,19 @@ that art, in one statement. No writer has to change.
 On a failure the transaction rolls back and `applyRemote` throws, with every file as it was: files are only
 deleted or replaced after the commit.
 
+## Records kept aside
+
+`parkedRecords` holds what can't be applied yet, by record name, with the server's fields.
+
+- **A note without its art** (R3.7) is tried again at the end of every batch that is applied.
+- **A record this version can't read** (R3.10): a newer app wrote a value this one doesn't know. It is marked
+  `unreadable`, counted as parked, and the rest of the batch is applied. While it is there, the local row of that
+  name is no candidate and `outgoingRecord` returns nothing for it, so an older app never writes over what it
+  couldn't read. Every `applyRemote`, even with no changes, first tries the unreadable records this version can now
+  read, as changes of that batch; with none of those, an empty batch still opens no transaction. The engine calls
+  `applyRemote([])` when it starts, so an updated app catches up without waiting for another device.
+- A later copy of the record, or its deletion, replaces or drops what was kept aside under its name.
+
 ## Pictures
 
 Rows of the zone `Pictures` in `cloudRecords` have the kind `picture`; the name and `rowKey` are the file's name and
@@ -137,10 +159,22 @@ the digest is empty. A picture is referenced by `art.picture`, `prints.picture` 
 - **Old files** (R4.4). `removeUnreferencedPictures` deletes files nothing names, leaving alone files modified in the
   last hour: an import writes a picture's file before the row that names it. It also forgets cached pictures
   whose files are gone.
-- **Names** (R4.6). Only `SharedPictures.writePicture` and `StoreMerger.makePrint` name a new picture. Drawing a
-  picture for art that already names one whose file is missing (`picture(of:)`, `drawMissingPictures`) writes it
-  under that name and leaves the row alone: two devices reaching different PDFs of one art would otherwise rename
-  its picture back and forth for ever.
+- **Names** (R4.6). Only `SharedPictures.writePicture` and `StoreMerger.makePrint` name a new picture, the first
+  as `pictureName(drawnFrom:)` says. Art reads its picture's name from its row; that function only tells whether
+  a picture whose file is missing is one this device can draw again.
+- **Which picture stays** (R4.10). Art printed in two PDFs can have a picture from either, so two devices can name
+  different ones. When a reading is merged, the art keeps the sharper of its picture here and the incoming one
+  (`ArtPicture.stays`): more pixels on the long side, then the name that sorts first; any picture over none. Taking
+  the incoming one each time would have two devices that sync at the same moment swap pictures for ever, deleting
+  and uploading each time. The loser is deleted once nothing names it. Reading a PDF still gives art its Battle
+  Card's picture (shared libraries design); the next sync settles it by this rule.
+- **Sizes.** A picture's size is noted when it is drawn or, for a token, saved. `measurePictures` notes those saved
+  before version 6 from their files' headers; the engine calls it before it first sends.
+- **A missing file.** `picture(of:)` and `drawMissingPictures` save a drawing under the name the art has only when
+  that is the name of the print they draw from: the same picture, back again, and the row is left alone. For a
+  picture another print gave the art, `picture(of:)` returns a drawing without saving it and
+  `drawMissingPictures` draws nothing: the picture comes from iCloud. A stand-in saved under that name would pass
+  for the sharper original, never be replaced by it, and be sent to iCloud.
 - **Drawing** (R4.8). `drawMissingPictures(limit:)` draws up to `limit` pictures for art without one that has a
   print in a PDF this app can reach. Art moved in from an app's old library has none, and Pawn Shop draws pawns
   straight from the PDF.
@@ -168,7 +202,11 @@ status alone, `isDownloaded(_:)`. The older kind of placeholder, a hidden `.<nam
 - A watched folder in iCloud Drive is untested on real devices: whether the download status is reported for a
   folder reached through a bookmark, and what an app does when it draws from a PDF that is linked here but has since
   been removed from the device (the read then downloads it, and blocks until it has).
-- An app version from before `modified` existed writes 0, so its edits lose a conflict.
+- An app version from before `modified` existed writes 0, so its edits lose a conflict. One from before
+  `picturePixels` leaves the old size when it gives art another picture, so that picture can win or lose wrongly.
+- A custom art's image isn't kept with a record this version can't read: applied later, the record brings no image.
+- Art's name, size, traits and fingerprint, where two devices differ, are still the incoming record's: two devices
+  that sync at the same moment can swap them until one goes first.
 - Each app's engine fetches the same changes; the second finds them applied and writes nothing.
 
 ## End-to-end check
