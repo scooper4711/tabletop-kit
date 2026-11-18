@@ -175,6 +175,12 @@ Fists of the Ruby Phoenix, Alien Archive 1 & 2 and 3 & 4), 289 × 425 pt cards (
   identity" are skipped. An item becomes an `ExtractedPawn` of medium size with no traits and the
   `.item(imageIndex:)` shape, printed as `ArtKind.item`; `ArtEntry.isItem` and `LibraryArt.isItem` mark it, and
   `ArtMerger` merges items only with items. `PawnExtractor.version` 3 rereads PDFs read before item decks; 4 adds decks sold as pictures.
+- An item card's name is looked for in `PDFPage.string`, then in the page's lines from the top down
+  (`CardExtractor.linesFromTheTop`: `selectionsByLine` sorted by their bounds, pictures' placeholders left out).
+  Since macOS 27 PDFKit gives the text of Paizo's cards in the order it was set: the Guns deck's names come last,
+  after the copyright and the text, and a placeholder precedes Deck of Endless Treasure's. Read from the string
+  alone, seven item decks gave 297 names where they had given 475; with the lines they give those 475 again, and
+  three of Deck of Endless Treasure's own cards ("Start Here!" and its two tables of levels).
 - `ImageDeck.containing(_:)` takes a folder (or a JPG in one) whose name, or its parent's, names an item deck
   and that holds three or more `…Backs<n>.jpg`, each paired with `…Fronts<n>.jpg`. `ImageDeckExtractor` draws
   the backs at most 520 px on the long side, takes each pixel's median over all backs as the background, and
