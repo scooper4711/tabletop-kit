@@ -17,7 +17,8 @@ import Testing
         await sync.prepare()
         let engine = SyncEngine(handlers: [sync], store: sync)
         await sync.use(engine)
-        await engine.begin(with: queue, isFirstStart: true)
+        await engine.use(queue)
+        await engine.uploadEverything()
         return (sync, engine)
     }
 

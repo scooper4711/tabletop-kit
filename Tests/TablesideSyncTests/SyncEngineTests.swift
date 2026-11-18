@@ -68,10 +68,17 @@ actor FakeHandler: SyncZoneHandler {
         CKRecord(recordType: "Thing", recordID: recordID(name, in: zone))
     }
 
-    /// An engine over both handlers, started for the first time or again.
-    func engine(isFirstStart: Bool = false) async -> SyncEngine {
+    /// An engine over both handlers, before it starts.
+    func newEngine() async -> SyncEngine {
         let engine = SyncEngine(handlers: [library, campaign], store: store)
-        await engine.begin(with: queue, isFirstStart: isFirstStart)
+        await engine.use(queue)
+        return engine
+    }
+
+    /// An engine over both handlers, started as at every start but the first.
+    func engine() async -> SyncEngine {
+        let engine = await newEngine()
+        await engine.handlersChanged()
         return engine
     }
 
@@ -79,7 +86,7 @@ actor FakeHandler: SyncZoneHandler {
         await library.setPending([.save(recordID("a", in: "Library"))])
         await campaign.setPending([.delete(recordID("b", in: "Campaign"))])
 
-        _ = await engine(isFirstStart: true)
+        await newEngine().uploadEverything()
         #expect(queue.zones.map(\.zoneName) == ["Library", "Campaign"])
         #expect(queue.added == [.save(recordID("a", in: "Library")), .delete(recordID("b", in: "Campaign"))])
 

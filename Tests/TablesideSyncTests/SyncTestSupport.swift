@@ -120,7 +120,8 @@ struct SyncingDevice {
         await sync.prepare()
         engine = SyncEngine(handlers: [sync], store: sync)
         await sync.use(engine)
-        await engine.begin(with: queue, isFirstStart: true)
+        await engine.use(queue)
+        await engine.uploadEverything()
     }
 
     /// Hands the engine every record the handler has to save, as though the server took them all.

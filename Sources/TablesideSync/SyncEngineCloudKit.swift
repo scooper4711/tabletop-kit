@@ -14,7 +14,12 @@ extension SyncEngine {
         configuration.subscriptionID = subscriptionID
         let engine = CKSyncEngine(configuration)
         self.engine = engine
-        await begin(with: EngineQueue(engine: engine), isFirstStart: saved == nil)
+        use(EngineQueue(engine: engine))
+        if saved == nil {
+            await uploadEverything()
+        } else {
+            await handlersChanged()
+        }
     }
 }
 
