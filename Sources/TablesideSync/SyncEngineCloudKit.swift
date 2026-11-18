@@ -14,7 +14,12 @@ extension SyncEngine {
         configuration.subscriptionID = subscriptionID
         let engine = CKSyncEngine(configuration)
         self.engine = engine
-        await begin(with: EngineQueue(engine: engine), isFirstStart: saved == nil)
+        use(EngineQueue(engine: engine))
+        if saved == nil {
+            await uploadEverything()
+        } else {
+            await handlersChanged()
+        }
     }
 }
 
@@ -61,6 +66,7 @@ extension SyncPhase {
     init?(_ event: CKSyncEngine.Event) {
         switch event {
         case .willFetchChanges: self = .willFetch
+        case .didFetchRecordZoneChanges(let fetch) where fetch.error != nil: self = .fetchFailed
         case .didFetchChanges: self = .didFetch
         case .willSendChanges: self = .willSend
         case .didSendChanges: self = .didSend

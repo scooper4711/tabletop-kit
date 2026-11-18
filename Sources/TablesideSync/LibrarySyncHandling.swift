@@ -58,7 +58,9 @@ extension LibrarySync: SyncZoneHandler {
     }
 
     /// Settles refused saves. A record the server holds in another version is merged in as a fetched one is, and
-    /// the store then says whether the result still has to be sent. Anything not named here the engine retries.
+    /// the store then says whether the result still has to be sent. A zone the server lacks holds none of the
+    /// records, so the server is forgotten and everything goes up with the zones. Anything not named here the
+    /// engine retries.
     public func settle(_ failures: [FailedSave]) -> Bool {
         var savesZones = false
         var conflicts: [RemoteChange] = []
@@ -80,6 +82,7 @@ extension LibrarySync: SyncZoneHandler {
                 break
             }
         }
+        if savesZones { forgetServer() }
         if !conflicts.isEmpty { apply(conflicts) }
         return savesZones
     }
@@ -108,10 +111,14 @@ extension LibrarySync: SyncZoneHandler {
 
     public func phaseChanged(_ phase: SyncPhase) {
         switch phase {
-        case .willFetch: tracker.begin(.fetching)
+        case .willFetch:
+            hasFetchFailed = false
+            tracker.begin(.fetching)
+        case .fetchFailed:
+            hasFetchFailed = true
         case .didFetch:
             tracker.end(.fetching)
-            fetchFinished()
+            fetchEnded()
         case .willSend:
             tracker.begin(.sending)
         case .didSend:

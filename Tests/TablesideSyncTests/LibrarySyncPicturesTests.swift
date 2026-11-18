@@ -17,7 +17,8 @@ import Testing
         await sync.prepare()
         let engine = SyncEngine(handlers: [sync], store: sync)
         await sync.use(engine)
-        await engine.begin(with: queue, isFirstStart: true)
+        await engine.use(queue)
+        await engine.uploadEverything()
         return (sync, engine)
     }
 
@@ -99,6 +100,62 @@ import Testing
         #expect(await store.deletions.isEmpty)
         await engine.phaseChanged(.didFetch)
         #expect(await eventually { await store.deletions == [names] })
+    }
+
+    /// Syncing on a device whose pictures iCloud holds and nothing uses any more.
+    func syncingWithUnusedPictures() async throws -> (LibrarySync, SyncEngine) {
+        let library = try device.library()
+        try library.add(device.pawnBox(), keeping: false)
+        let (sync, engine) = try await syncing()
+        await sync.drawPictures()
+        try library.remove(sourceID: try #require(try library.sources().first).id)
+        return (sync, engine)
+    }
+
+    /// Whether iCloud still holds every picture once the run a fetch started has had time to end, and another
+    /// has run after it.
+    func deletesNothing(_ sync: LibrarySync) async -> Bool {
+        try? await Task.sleep(for: .milliseconds(100))
+        await sync.syncPictures()
+        return await store.deletions.isEmpty
+    }
+
+    @Test func keepsUnusedPicturesWhenAFetchDidNotBringEverything() async throws {
+        let (sync, engine) = try await syncingWithUnusedPictures()
+        let names = try #require(await store.uploads.first)
+        await engine.phaseChanged(.willFetch)
+        await engine.phaseChanged(.fetchFailed)
+        await engine.phaseChanged(.didFetch)
+        #expect(await deletesNothing(sync))
+
+        await engine.phaseChanged(.willFetch)
+        await engine.phaseChanged(.didFetch)
+        #expect(await eventually { await store.deletions == [names] })
+    }
+
+    @Test func keepsUnusedPicturesOnceFetchedRecordsCouldNotBeMerged() async throws {
+        let (sync, engine) = try await syncingWithUnusedPictures()
+        await engine.phaseChanged(.willFetch)
+        await engine.receive(FetchedChanges(modifications: [try device.unmergeableRecord()]))
+        await engine.phaseChanged(.didFetch)
+        #expect(await deletesNothing(sync))
+    }
+
+    @Test func letsAPictureRunCarryOnWhenTheLibraryChangesAgain() async throws {
+        try device.library().add(device.pawnBox(), keeping: false)
+        let (sync, _) = try await syncing()
+        await sync.drawPictures()
+        try await store.delete(try #require(await store.uploads.first))
+        try device.library().forgetServer()
+        await store.keepWaiting(true)
+        await sync.libraryChanged()
+        #expect(await eventually { await store.asked.count == 2 })
+
+        await sync.libraryChanged()
+        try await Task.sleep(for: .milliseconds(100))
+        await store.keepWaiting(false)
+        #expect(await eventually { await store.uploads.count == 2 })
+        #expect(await store.asked.count == 2)
     }
 
     @Test func uploadsThePicturesAgainOnResumeAndClosesBothLibraries() async throws {

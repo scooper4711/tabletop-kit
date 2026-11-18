@@ -23,6 +23,8 @@ public actor LibrarySync {
     /// changes its PDF's reading, and a library moved in from an app's old one would send every reading over and
     /// over.
     var isDrawing = false
+    /// True when the fetch under way couldn't bring a zone's changes.
+    var hasFetchFailed = false
     private var engine: SyncEngine?
     private var notice: Task<Void, Never>?
     private let changeDelay: Duration
@@ -49,24 +51,22 @@ public actor LibrarySync {
     }
 
     /// Tells syncing the library changed, here or in another app on the device. What there is to send is queued
-    /// once the changes stop coming.
+    /// once the changes stop coming. The pictures' run is started and not waited for: the next change cancels
+    /// the wait, and must not cancel a transfer with it.
     public func libraryChanged() {
         notice?.cancel()
         notice = Task { [changeDelay] in
             try? await Task.sleep(for: changeDelay)
             guard !Task.isCancelled else { return }
             await self.sendChanges()
-            await self.syncPictures()
+            self.startPictureRun()
         }
     }
 
     /// Turns syncing on again after the user deleted the library's iCloud data: everything is uploaded anew (R5.3).
     public func resume() async {
-        library.use { library in
-            try? library.setSyncPaused(false)
-            try? library.forgetServer()
-        }
-        outgoing = [:]
+        library.use { library in try? library.setSyncPaused(false) }
+        forgetServer()
         tracker.clear(.paused)
         await engine?.uploadEverything()
         startPictureRun()
@@ -134,10 +134,12 @@ public actor LibrarySync {
         tracker.report(.paused)
     }
 
-    /// Forgets what the server held: every record is then sent again, and merged with what is there.
+    /// Forgets what the server held: every record is then sent again, and merged with what is there. An iCloud
+    /// that was full is tried again, as what the server holds now isn't what filled it.
     func forgetServer() {
         library.use { library in try? library.forgetServer() }
         outgoing = [:]
+        isStorageFull = false
     }
 
     // MARK: Helpers

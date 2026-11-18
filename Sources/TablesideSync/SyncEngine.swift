@@ -19,23 +19,18 @@ actor SyncEngine {
         self.store = store
     }
 
-    /// Sends changes to `queue`: at the first start with every handler's zones, at every start with what the
-    /// handlers have to send.
-    func begin(with queue: any SyncChangeQueue, isFirstStart: Bool) async {
+    /// Sends changes to `queue` from now on. A start then queues what there is to send: `uploadEverything()` the
+    /// first time, `handlersChanged()` every time after.
+    func use(_ queue: any SyncChangeQueue) {
         self.queue = queue
-        if isFirstStart {
-            await uploadEverything()
-        } else {
-            await handlersChanged()
-        }
     }
 
-    /// Queues what every handler has to send now.
+    /// Queues what every handler has to send now, as at every start but the first.
     func handlersChanged() async {
         for handler in handlers { await queueChanges(of: handler) }
     }
 
-    /// Queues every handler's zones and what it has to send, as at a first sync.
+    /// Queues every handler's zones and what it has to send, as at a first start.
     func uploadEverything() async {
         for handler in handlers { await upload(handler) }
     }

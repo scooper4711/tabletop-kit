@@ -100,6 +100,15 @@ import Testing
         #expect(await store.downloads.count == 1)
     }
 
+    @Test func takesOnlyAPictureICloudLacksForAbsent() throws {
+        let record = CKRecord(recordType: CloudPictureStore.recordType, recordID: .library("picture.png"))
+        #expect(try CloudPictureStore.heldRecord(.success(record)) === record)
+        #expect(try CloudPictureStore.heldRecord(.failure(CKError(.unknownItem))) == nil)
+        #expect(throws: CKError.self) {
+            try CloudPictureStore.heldRecord(.failure(CKError(.requestRateLimited)))
+        }
+    }
+
     @Test func drawsThePicturesArtLacksFromThePDFsItCanReach() async throws {
         let (library, names) = try readLibrary()
         for name in names { try FileManager.default.removeItem(at: library.pictureFile(name)) }

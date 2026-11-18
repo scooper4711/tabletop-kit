@@ -225,9 +225,14 @@ These are the record types to deploy to Production in the CloudKit Console befor
 - An incoming asset's bytes are read while its event is handled: the file doesn't outlive it.
 - A record is built over the server's last known system fields when the store has them, so the save is a change
   to that record and not a conflict.
-- A record of one of these types whose payload can't be read (a later `format`, a field that moved) is handed to
-  the store with an empty payload, which it keeps aside as it does any record this version can't read. A record
-  of any other type, or of another zone, is ignored.
+- A record of one of these types whose payload can't be read (a field that moved) is handed to the store with an
+  empty payload, which it keeps aside as it does any record this version can't read. So is a record whose `format`
+  is later than this version's, whatever its payload holds. A record of any other type, or of another zone, is
+  ignored.
+- **Raising `format`.** Nothing of a record in a later format is kept, and the engine's change token is past it,
+  so a device that is then updated neither reads the record nor sends its own copy until another device changes
+  it. The version that raises `format` must therefore make each device fetch again what its earlier versions
+  kept aside: dropping the engine's state once does it, as applying is idempotent.
 - The server's record that comes with a refused save has no asset files: CloudKit doesn't download them. A reading
   refused that way is therefore kept aside too, and merged when the fetch that follows brings it whole; until then
   this device doesn't send its own. The other kinds carry their payload in the record and are merged at once.
@@ -275,15 +280,17 @@ share), and the store makes every decision: this only hands records between the 
 - **Sending.** `pendingChanges` is `syncCandidates`. `record(for:)` is `outgoingRecord`, remembered by record name
   until the server takes it and `markSent` stores the fields it answered with.
 - **Local changes.** The library's Darwin notification, from this app or another, queues what there is to send
-  two seconds after the last one, so a run of changes goes up together.
+  two seconds after the last one, so a run of changes goes up together. The run of pictures it starts isn't
+  waited for, so the next change doesn't cancel a transfer under way.
 - **Fetched records** are decoded and applied with `applyRemote`. When that fails it is tried once more. When it
   fails again, syncing stops for this run with the status `failed`: nothing more is sent, and the engine's state is
   dropped and stays dropped, so the next launch fetches everything again (applying is idempotent).
 - **Refused saves.** `serverRecordChanged`: the server's record is applied as a fetched one is, and the store then
   says whether the result still has to be sent. `unknownItem`: the stored system fields are forgotten and the
-  record is sent as new. `zoneNotFound`: the zones are saved again. `userDeletedZone`: syncing pauses, as below.
-  `quotaExceeded`: the status is `storageFull`, and nothing is queued again until the library changes or a fetch
-  brings something (R5.4). Anything else the engine retries.
+  record is sent as new. `zoneNotFound`: the server is forgotten, as a zone that is gone holds none of the
+  records, and the zones are saved again with everything. `userDeletedZone`: syncing pauses, as below.
+  `quotaExceeded`: the status is `storageFull`, and nothing is queued again until the library changes, a fetch
+  brings something or the server is forgotten (R5.4). Anything else the engine retries.
 - **A deleted zone.** Deleted by the user in Settings (`purged`): syncing pauses and the server is forgotten, until
   the app calls `resume()`, which uploads everything again (R5.3). While paused, fetched records are still merged
   in, and nothing is sent. Deleted any other way: the server is forgotten and everything is uploaded again (R5.2).
@@ -316,9 +323,12 @@ nothing else waiting. The store's bookkeeping is in "Pictures" above.
   all of them as shown, and doesn't wait for whatever else syncing is doing.
 - **Download ahead** (R4.9): with `.everything`, the missing pictures are downloaded 25 at a time until none is
   missing or a batch brings nothing. Those iCloud didn't have (no device has uploaded them yet) aren't asked for
-  again until the app next starts. These downloads don't count as shown.
+  again until the app next starts. A picture that failed to download any other way ends the run instead, and is
+  asked for again in the next. These downloads don't count as shown.
 - **Delete** (R4.4): only once a fetch has finished in this run of the app, when it is known what art still
-  uses, `picturesToDelete` is deleted from iCloud, then `removeUnreferencedPictures` deletes the files here.
+  uses, `picturesToDelete` is deleted from iCloud, then `removeUnreferencedPictures` deletes the files here. A
+  fetch that couldn't bring a zone's changes (`SyncPhase.fetchFailed`), or whose records couldn't be merged in,
+  doesn't count, and takes back what an earlier one allowed.
 - **A full iCloud** (R5.4) ends the run with the status `storageFull`, until a later run gets through. Any other
   failure, as without a network, ends the run until the next one.
 - **The cache** (R4.3, R4.7): `LibrarySync` passes on `fetchedPicturesByteCount`, `clearFetchedPictures`,

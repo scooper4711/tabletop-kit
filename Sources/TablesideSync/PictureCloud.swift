@@ -85,6 +85,12 @@ actor PictureCloud {
         hasFetched = true
     }
 
+    /// Notes that a fetch didn't bring everything, or that what it brought couldn't be merged in: what art still
+    /// uses isn't known until a fetch finishes.
+    func fetchFailed() {
+        hasFetched = false
+    }
+
     func close() {
         library.close()
     }
