@@ -318,9 +318,12 @@ nothing else waiting. The store's bookkeeping is in "Pictures" above.
   all of them as shown, and doesn't wait for whatever else syncing is doing.
 - **Download ahead** (R4.9): with `.everything`, the missing pictures are downloaded 25 at a time until none is
   missing or a batch brings nothing. Those iCloud didn't have (no device has uploaded them yet) aren't asked for
-  again until the app next starts. These downloads don't count as shown.
+  again until the app next starts. A picture that failed to download any other way ends the run instead, and is
+  asked for again in the next. These downloads don't count as shown.
 - **Delete** (R4.4): only once a fetch has finished in this run of the app, when it is known what art still
-  uses, `picturesToDelete` is deleted from iCloud, then `removeUnreferencedPictures` deletes the files here.
+  uses, `picturesToDelete` is deleted from iCloud, then `removeUnreferencedPictures` deletes the files here. A
+  fetch that couldn't bring a zone's changes (`SyncPhase.fetchFailed`), or whose records couldn't be merged in,
+  doesn't count, and takes back what an earlier one allowed.
 - **A full iCloud** (R5.4) ends the run with the status `storageFull`, until a later run gets through. Any other
   failure, as without a network, ends the run until the next one.
 - **The cache** (R4.3, R4.7): `LibrarySync` passes on `fetchedPicturesByteCount`, `clearFetchedPictures`,

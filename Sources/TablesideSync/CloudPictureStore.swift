@@ -29,10 +29,10 @@ struct CloudPictureStore: PictureStore {
 
     /// Copies each asset out of CloudKit's cache, which doesn't keep it.
     func download(_ names: [String]) async throws -> [String: URL] {
-        let found = try await database.records(for: names.map(Self.recordID))
+        let found = try await database.records(for: names.map(Self.recordID)).compactMapValues(Self.heldRecord)
         var files: [String: URL] = [:]
-        for (recordID, result) in found {
-            guard let asset = (try? result.get())?["image"] as? CKAsset, let source = asset.fileURL else { continue }
+        for (recordID, record) in found {
+            guard let source = (record["image"] as? CKAsset)?.fileURL else { continue }
             let copy = FileManager.default.temporaryDirectory.appending(path: UUID().uuidString)
             try FileManager.default.copyItem(at: source, to: copy)
             files[recordID.recordName] = copy
@@ -45,6 +45,16 @@ struct CloudPictureStore: PictureStore {
                                                        atomically: false)
         for result in results.deleteResults.values {
             if case .failure(let error) = result, (error as? CKError)?.code != .unknownItem { throw error }
+        }
+    }
+
+    /// The record a request brought; nil for one iCloud doesn't hold. Any other failure is thrown, so that a
+    /// picture that couldn't be downloaded isn't taken for one iCloud lacks.
+    static func heldRecord(_ result: Result<CKRecord, any Error>) throws -> CKRecord? {
+        do {
+            return try result.get()
+        } catch let error as CKError where error.code == .unknownItem {
+            return nil
         }
     }
 
