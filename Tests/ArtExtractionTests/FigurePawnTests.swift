@@ -99,6 +99,17 @@ import ArtExtractionTestSupport
         #expect(try extract(cover).pawns.isEmpty)
     }
 
+    /// Traps & Treasures' cover shows small copies of its pawns, labels and all.
+    @Test func ignoresPawnsShownUnderACoversTitle() throws {
+        let shown = [DrawnFigurePawn(rect: CGRect(x: 200, y: 400, width: 60, height: 60), art: goblin, name: "SPIKES"),
+                     DrawnFigurePawn(rect: CGRect(x: 270, y: 400, width: 60, height: 60), art: ogre, name: "LEVER")]
+        let cover = makePDF(pages: [{ context in
+            shown.forEach { $0.draw(context) }
+            drawText(context, "PC", at: CGPoint(x: 250, y: 100), size: 36)
+        }])
+        #expect(try extract(cover).pawns.isEmpty)
+    }
+
     @Test func readsPawnsAmongLabeledPiecesWithoutTransparency() throws {
         let pawn = DrawnFigurePawn(rect: CGRect(x: 20, y: 600, width: 100, height: 146), art: goblin,
                                    name: "COMM UNIT")
