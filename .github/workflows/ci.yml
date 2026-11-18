@@ -53,9 +53,6 @@ jobs:
           name: coverage
           path: coverage/sonar-coverage.xml
 
-      - name: Diagnose iOS support (temporary)
-        run: rm -rf ~/Library/Developer/Xcode/DerivedData/*abletop*-* && ls ~/Library/Developer/Xcode/DerivedData
-
       - name: Build for iOS
         run: xcodebuild -scheme TabletopKit-Package -destination 'generic/platform=iOS Simulator' -quiet build
 
