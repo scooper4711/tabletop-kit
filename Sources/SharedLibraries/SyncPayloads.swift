@@ -27,6 +27,8 @@ struct ReadingGroup: Codable, Equatable {
     var fingerprint: ArtFingerprint
     var palette: [Double]
     var picture: String?
+    /// The long side of `picture` in pixels; 0 when not known.
+    var picturePixels: Int
     var needsName: Bool
     /// Every print key of the art, from any PDF, sorted: how art the sender had as one piece becomes one piece.
     var keys: [UUID]

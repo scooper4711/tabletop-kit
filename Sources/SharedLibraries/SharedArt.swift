@@ -60,6 +60,8 @@ public struct SharedArtEntry: Identifiable, Hashable, Sendable {
     public var prints: [SharedPrint]
     /// Its picture's file in the library's `Pictures` folder (R3.2), once drawn.
     public var picture: String?
+    /// The long side of its picture, in pixels; 0 when the picture was saved before sizes were kept.
+    public var picturePixels = 0
     /// True while the art has a stand-in name because none was printed (R2.3a).
     public var needsName = false
 

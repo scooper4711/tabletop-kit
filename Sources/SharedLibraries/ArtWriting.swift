@@ -30,15 +30,20 @@ extension LibraryWriter {
     /// Adds a piece of art, merging it by key (R2.5): a print whose key the library has joins that entry, with every
     /// print of both, and `incoming`'s name, size and prints over the entry's; a name the entry has wins over a
     /// stand-in (R2.3a). The merged entry takes the ID its prints give it, and what pointed at an entry it replaces
-    /// points at it. Returns its ID. `keys` are print keys besides `incoming`'s that name art to join, as when a
-    /// synced reading says its art is also printed elsewhere.
+    /// points at it. Returns its ID.
     @discardableResult
-    func merge(_ incoming: SharedArtEntry, joining keys: [UUID] = []) throws -> UUID {
-        let known = try entries(withPrintKeys: incoming.prints.map(\.key) + keys)
+    func merge(_ incoming: SharedArtEntry) throws -> UUID {
+        try merge(incoming, with: try entries(printedAs: incoming.prints.map(\.key)))
+    }
+
+    /// Merges `incoming` with `known`, the art it joins: that of `entries(printedAs:)` for its prints' keys and
+    /// any others naming art to join, as when a synced reading says its art is also printed elsewhere.
+    @discardableResult
+    func merge(_ incoming: SharedArtEntry, with known: [SharedArtEntry]) throws -> UUID {
         var merged = incoming
         for other in known {
             if merged.palette.isEmpty { merged.palette = other.palette }
-            if merged.picture == nil { merged.picture = other.picture }
+            if merged.picture == nil { merged.artPicture = other.artPicture }
             merged.traits += other.traits.filter { !merged.traits.contains($0) }
             let known = Set(merged.prints.map(\.id))
             merged.prints += other.prints.filter { !known.contains($0.id) }
@@ -63,7 +68,8 @@ extension LibraryWriter {
 
     // MARK: Helpers
 
-    private func entries(withPrintKeys keys: [UUID]) throws -> [SharedArtEntry] {
+    /// The art that has a print with one of `keys`, by ID.
+    func entries(printedAs keys: [UUID]) throws -> [SharedArtEntry] {
         guard !keys.isEmpty else { return [] }
         let placeholders = Array(repeating: "?", count: keys.count).joined(separator: ", ")
         return try ArtRows.entries(in: database, where: "id IN (SELECT entry FROM prints WHERE key IN "
@@ -88,6 +94,7 @@ extension LibraryWriter {
                           ("fingerprint", try ArtRows.encoded(entry.fingerprint)),
                           ("palette", try ArtRows.encoded(entry.palette)),
                           ("picture", entry.picture.map { .text($0) } ?? .null),
+                          ("picturePixels", .integer(Int64(entry.picturePixels))),
                           ("foldedName", .text(ArtKey.foldedName(entry.name))),
                           ("nameKey", .text(CreatureName.familyKey(entry.name))),
                           ("needsName", .integer(entry.needsName ? 1 : 0))])

@@ -51,7 +51,8 @@ extension SharedLibrary {
         let prints = entry.prints.filter { $0.print.sourceID == source }.map(readingPrint)
         return ReadingGroup(entry: entry.id, name: entry.name, game: entry.game, size: entry.size,
                             traits: entry.traits, fingerprint: entry.fingerprint, palette: entry.palette,
-                            picture: entry.picture, needsName: entry.needsName,
+                            picture: entry.picture, picturePixels: entry.picture == nil ? 0 : entry.picturePixels,
+                            needsName: entry.needsName,
                             keys: entry.prints.map(\.key).sorted { $0.uuidString < $1.uuidString },
                             prints: prints.sorted { $0.key.uuidString < $1.key.uuidString }, aliases: aliases)
     }

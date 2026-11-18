@@ -81,8 +81,8 @@ enum LibrarySchema {
 
     /// What syncing through iCloud needs (library sync): what each record's copy in the cloud looks like, notes that
     /// arrived before their art or that this version can't read, the engine's saved state, and the pictures
-    /// downloaded; and when the user last changed each row they make, for settling edits made on two devices. All
-    /// additions, so older apps carry on.
+    /// downloaded; when the user last changed each row they make, for settling edits made on two devices; and how
+    /// sharp each art's picture is, for settling on one of two. All additions, so older apps carry on.
     private static let version6 = """
         CREATE TABLE cloudRecords (zone TEXT NOT NULL, name TEXT NOT NULL, kind TEXT NOT NULL, rowKey TEXT NOT NULL,
             systemFields BLOB, sentChanged INTEGER NOT NULL, digest TEXT NOT NULL, PRIMARY KEY (zone, name));
@@ -95,6 +95,7 @@ enum LibrarySchema {
         ALTER TABLE creatureArt ADD COLUMN modified REAL NOT NULL DEFAULT 0;
         ALTER TABLE customCreatures ADD COLUMN modified REAL NOT NULL DEFAULT 0;
         ALTER TABLE customArt ADD COLUMN modified REAL NOT NULL DEFAULT 0;
+        ALTER TABLE art ADD COLUMN picturePixels INTEGER NOT NULL DEFAULT 0;
         """
 
     /// Brings `database` up to this app's version, in one transaction, and tells whether this app may write it:
