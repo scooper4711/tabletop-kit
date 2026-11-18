@@ -6,7 +6,8 @@ import SharedLibraries
 /// reading travels as an asset, since it can pass a record's 1 MB limit; every other payload as bytes in the record.
 struct LibraryRecordCoder: Sendable {
     /// The layout of a record's fields. A later layout this version can't read is kept aside, as an unreadable
-    /// payload is.
+    /// payload is, but without its bytes: the version that raises this must make each device fetch again what
+    /// its earlier versions kept aside (library sync design, "Records in CloudKit").
     static let format: Int64 = 1
     static let libraryZone = CKRecordZone.ID(zoneName: SyncZone.library, ownerName: CKCurrentUserDefaultName)
     static let picturesZone = CKRecordZone.ID(zoneName: SyncZone.pictures, ownerName: CKCurrentUserDefaultName)

@@ -229,6 +229,10 @@ These are the record types to deploy to Production in the CloudKit Console befor
   empty payload, which it keeps aside as it does any record this version can't read. So is a record whose `format`
   is later than this version's, whatever its payload holds. A record of any other type, or of another zone, is
   ignored.
+- **Raising `format`.** Nothing of a record in a later format is kept, and the engine's change token is past it,
+  so a device that is then updated neither reads the record nor sends its own copy until another device changes
+  it. The version that raises `format` must therefore make each device fetch again what its earlier versions
+  kept aside: dropping the engine's state once does it, as applying is idempotent.
 - The server's record that comes with a refused save has no asset files: CloudKit doesn't download them. A reading
   refused that way is therefore kept aside too, and merged when the fetch that follows brings it whole; until then
   this device doesn't send its own. The other kinds carry their payload in the record and are merged at once.
