@@ -121,10 +121,14 @@ public actor CreatureArtStore {
         }
         var summary = ArtImportSummary()
         for result in results {
-            summary.pdfs += 1
             switch result {
-            case .success(let report): summary.added += report.added
-            case .failure(let error): summary.failures.append(error.localizedDescription)
+            case .success(let report):
+                // A PDF the library had already was only linked to this app, not read.
+                if !report.wasImported { summary.pdfs += 1 }
+                summary.added += report.added
+            case .failure(let error):
+                summary.pdfs += 1
+                summary.failures.append(error.localizedDescription)
             }
         }
         return summary
