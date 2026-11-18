@@ -88,9 +88,10 @@ that art, in one statement. No writer has to change.
 
 `applyRemote` applies fetched and conflicting server records alike, in one `write` transaction.
 
-1. **Skip what is known.** A saved record whose re-encoded digest equals the stored one, with its row present, only
-   updates the stored system fields, outside `write`. When nothing else is left: no transaction, no counter, no
-   notification. A second app on the device fetching the same records is a no-op (R2.3). A record whose content
+1. **Skip what is known.** A saved record whose re-encoded digest equals the stored one only updates the stored
+   system fields, outside `write`. That holds with its row gone too: the row was deleted here since, and merging
+   the record in again would undo a deletion still to send. When nothing else is left: no transaction, no counter,
+   no notification. A second app on the device fetching the same records is a no-op (R2.3). A record whose content
    the library holds already is noted the same way, and so is a deletion of a record that is neither here nor
    known to the cloud. What was kept aside under the name of any of these goes: it is older. A saved record this
    version can't read is kept aside here too ("Records kept aside").

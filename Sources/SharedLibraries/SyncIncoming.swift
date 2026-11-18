@@ -86,16 +86,17 @@ extension SharedLibrary {
     }
 
     /// True when a saved record needs nothing from the library but a note of the server's fields: it is the one
-    /// this device last saw, or its content is what the library holds.
+    /// this device last saw, or its content is what the library holds. The one last seen is held even with its row
+    /// gone: the row was deleted here since, and merging the record in again would undo a deletion still to send.
     private func holds(_ incoming: IncomingRecord, in database: SQLiteDatabase) throws -> Bool {
         let name = incoming.id.name
-        guard let row = try syncRow(of: incoming.id, in: database) else { return false }
         if try cloudRecord(named: name, in: database)?.digest == incoming.digest {
             try database.run("UPDATE cloudRecords SET systemFields = ? WHERE zone = ? AND name = ?",
                              [.blob(incoming.fields), .text(SyncZone.library), .text(name)])
             return true
         }
-        guard let local = try syncRecord(incoming.id, rowKey: row.rowKey, in: database),
+        guard let row = try syncRow(of: incoming.id, in: database),
+              let local = try syncRecord(incoming.id, rowKey: row.rowKey, in: database),
               SyncDigest.hex(of: local.payload) == incoming.digest else { return false }
         try storeCloudRecord(CloudRecord(name: name, kind: incoming.id.kind.rawValue, rowKey: row.rowKey,
                                          systemFields: incoming.fields, sentChanged: row.changed,
