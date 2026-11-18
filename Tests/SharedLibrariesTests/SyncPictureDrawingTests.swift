@@ -64,7 +64,8 @@ import Testing
         #expect(try library.drawMissingPictures(limit: 100) == 1)
         #expect(try library.artEntries().filter { $0.picture != nil }.count == 1)
         #expect(try library.artEntry(id: blocked.id)?.picture == nil)
-        #expect(try library.drawMissingPictures(limit: 100) == 0)
+        // With only that one left, nothing is drawn, and the caller is told why.
+        #expect(throws: SharedLibraryError.self) { try library.drawMissingPictures(limit: 100) }
     }
 
     // MARK: A picture another print gave the art

@@ -9,11 +9,13 @@ extension SharedLibrary {
     /// is gone gets it back only from the print that picture was drawn from; any other picture comes from iCloud.
     /// A picture that can't be drawn or saved is passed over, so it doesn't keep the art after it from theirs, and
     /// is tried again by the next call. Returns how many it drew; 0 means none are left that this app can draw.
+    /// Throws when it drew none and one failed, as with a full disk.
     public func drawMissingPictures(limit: Int) throws -> Int {
         guard limit > 0 else { return 0 }
         let reachable = Set(try sources().filter { status(of: $0) == .available }.map(\.id))
         guard !reachable.isEmpty else { return 0 }
         var remaining = try idsOfArtWithoutPicture()[...]
+        var failure: Error?
         while !remaining.isEmpty {
             var jobs: [String: [PictureJob]] = [:]
             var queued = 0
@@ -25,9 +27,11 @@ extension SharedLibrary {
                     queued += 1
                 }
             }
-            let drawn = try draw(jobs)
-            if drawn > 0 { return drawn }
+            let drawing = try draw(jobs)
+            if drawing.drawn > 0 { return drawing.drawn }
+            failure = failure ?? drawing.failure
         }
+        if let failure { throw failure }
         return 0
     }
 
@@ -52,13 +56,16 @@ extension SharedLibrary {
         }
     }
 
-    private func draw(_ jobs: [String: [PictureJob]]) throws -> Int {
+    private func draw(_ jobs: [String: [PictureJob]]) throws -> PictureDrawing {
         let sources = try self.sources()
-        var drawn = 0
+        var total = PictureDrawing()
         for (sourceID, sourceJobs) in jobs {
-            guard let source = sources.first(where: { $0.id == sourceID }) else { continue }
-            drawn += try withFile(of: source) { url in try drawPictures(sourceJobs, from: url).drawn } ?? 0
+            guard let source = sources.first(where: { $0.id == sourceID }),
+                  let drawing = try withFile(of: source, { url in try drawPictures(sourceJobs, from: url) })
+            else { continue }
+            total.drawn += drawing.drawn
+            total.failure = total.failure ?? drawing.failure
         }
-        return drawn
+        return total
     }
 }

@@ -56,7 +56,6 @@ extension SharedLibrary {
 
     /// Draws the pictures a PDF's art needs from the PDF at `file`, a page per core, and records them. A picture
     /// that can't be drawn doesn't cost the others theirs: it is told of in the answer's `failure`.
-    @discardableResult
     func drawPictures(_ jobs: [PictureJob], from file: URL) throws -> PictureDrawing {
         let pages = Array(Dictionary(grouping: jobs) { $0.print.print.face.pageIndex })
         let drawn = DrawnPictures()
