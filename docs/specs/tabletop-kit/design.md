@@ -111,10 +111,14 @@ Fists of the Ruby Phoenix, Alien Archive 1 & 2 and 3 & 4), 289 × 425 pt cards (
 
 ## Pawns without outlines (`ArtExtraction/Extraction/FigurePawns.swift`)
 - `PawnExtractor.foundArt` reads pages with no sized outlines and no tokens for `FigurePawns`: each image with a
-  soft mask at least 36 pt across. Each piece of text belongs to the picture it is printed inside (nearest that
-  picture's edge) or else the nearest picture within 18 pt, judged at about the middle of the piece (its start moved
-  half its estimated length along it). A picture is a pawn only when its text includes "©" or "Paizo", which leaves
-  out covers; its foot is the edge nearest the middle of its text, and its head the edge across from it.
+  soft mask at least 36 pt across and no longer than a gargantuan outline. Each piece of text belongs to the picture
+  it is printed inside (nearest that picture's edge) or else the nearest picture within 18 pt, judged at about the
+  middle of the piece (its start moved half its estimated length along it). A picture with text is a pawn, with or
+  without a copyright line; its foot is the edge nearest the middle of its text, and its head the edge across from it.
+- Only a page of pawns is read (`FigurePawns.isPawnPage`): one where at least 0.6 of the text, by characters, is
+  type of 12 pt or less within 18 pt of a pawn-size picture, masked or not (pages of scenery print some pieces
+  without transparency). Covers and ads show pawn-size pictures among titles, blurbs and lists of the product's
+  pawns, which would be read as names. Measured on 84 PDFs: pages of pawns 0.72 and up, covers and ads 0.49 at most.
 - `PageScanner` records each piece of text's size (`Tf` times the text matrix's vertical scale) and direction.
   `LabelLines` rebuilds the label: pieces are grouped into lines across the text's direction and ordered along it,
   joined without spaces (the text carries its own), skipping a piece that starts within the previous piece's
@@ -129,7 +133,8 @@ Fists of the Ruby Phoenix, Alien Archive 1 & 2 and 3 & 4), 289 × 425 pt cards (
   transform as `PawnFace`.
 - A page after the first that is one image covering 90% of it, with no text or outlines, is listed in
   `ExtractionResult.unreadablePages`.
-- `PawnExtractor.version` is 2, so PDFs in which version 1 found nothing are read again.
+- `PawnExtractor.version` is 2, so PDFs in which version 1 found nothing are read again; 5 rereads PDFs whose
+  covers' and ads' pictures were read as pawns, which takes those out.
 - Measured: Monster Core Pawn Box gives 411 pawns (202 before, 209 of them from pictures), Dawn of Flame 134
   (none before); NPC Core reports its 16 flattened pages.
 

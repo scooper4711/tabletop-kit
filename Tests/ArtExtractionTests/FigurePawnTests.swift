@@ -76,6 +76,47 @@ import ArtExtractionTestSupport
         #expect(try extract(figurePawnPDF(pages: [[cover]])).pawns.isEmpty)
     }
 
+    @Test func ignoresPicturesAmongAnAdsText() throws {
+        let pictures = [DrawnFigurePawn(rect: CGRect(x: 20, y: 600, width: 100, height: 146), art: goblin,
+                                        name: "177. ZAHRA", copyright: false),
+                        DrawnFigurePawn(rect: CGRect(x: 130, y: 600, width: 100, height: 146), art: ogre,
+                                        name: "24) AVENNA", copyright: false)]
+        let advertisement = makePDF(pages: [{ context in
+            pictures.forEach { $0.draw(context) }
+            for line in 0..<12 {
+                drawText(context, "KEY MONSTERS AND NPCS COME ALIVE ON YOUR TABLETOP",
+                         at: CGPoint(x: 300, y: 400 - CGFloat(line) * 12), size: 9)
+            }
+        }])
+        #expect(try extract(advertisement).pawns.isEmpty)
+    }
+
+    @Test func ignoresAPictureUnderACoversTitle() throws {
+        let cover = makePDF(pages: [{ [goblin] context in
+            context.draw(goblin, in: CGRect(x: 200, y: 400, width: 100, height: 146))
+            drawText(context, "PAWN COLLECTION", at: CGPoint(x: 204, y: 380), size: 32)
+        }])
+        #expect(try extract(cover).pawns.isEmpty)
+    }
+
+    @Test func readsPawnsAmongLabeledPiecesWithoutTransparency() throws {
+        let pawn = DrawnFigurePawn(rect: CGRect(x: 20, y: 600, width: 100, height: 146), art: goblin,
+                                   name: "COMM UNIT")
+        let scenery = makePDF(pages: [{ context in
+            pawn.draw(context)
+            for column in 1...4 {
+                let rect = CGRect(x: 20 + CGFloat(column) * 110, y: 600, width: 100, height: 146)
+                context.draw(artImage(variant: column), in: rect)
+                drawText(context, "WALL OF FIRE", at: CGPoint(x: rect.minX + 4, y: rect.minY - 9), size: 8)
+            }
+        }])
+        #expect(try extract(scenery).pawns.map(\.name) == ["Comm Unit"])
+    }
+
+    @Test func aPageWithoutTextIsOneOfPawns() {
+        #expect(FigurePawns.isPawnPage(PageContent()))
+    }
+
     @Test func reportsPagesPrintedAsOneFlattenedPicture() throws {
         let flattened = artImage(variant: 0, width: 85, height: 110)
         let pdf = makePDF(pages: [

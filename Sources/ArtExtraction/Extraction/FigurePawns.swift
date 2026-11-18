@@ -1,9 +1,10 @@
 import CoreGraphics
 import Foundation
 
-/// Pawns printed without cut outlines (the second half of Monster Core Pawn Box, Dawn of Flame): each picture with
-/// its own transparency, no larger than a pawn, that has a label beside it is a pawn, and the label marks its foot.
-/// A copyright line is not needed: nothing about a pawn requires one, and it is left out of the name.
+/// Pawns printed without cut outlines (the second half of Monster Core Pawn Box, Dawn of Flame): on a page of
+/// pawns (`isPawnPage`), each picture with its own transparency, no larger than a pawn, that has a label beside it
+/// is a pawn, and the label marks its foot. A copyright line is not needed: nothing about a pawn requires one, and
+/// it is left out of the name.
 enum FigurePawns {
     /// Smaller pictures are badges and icons, not pawns.
     static let smallestFigure: CGFloat = 36
@@ -12,6 +13,12 @@ enum FigurePawns {
     static let largestFigure = PawnSize.gargantuan.outlineSize.height + PawnSize.tolerance
     /// How far outside its picture a pawn's label may be printed.
     static let labelReach: CGFloat = 18
+    /// Larger type is a title, not a pawn's label: labels are set in 7 and 8 point type, covers' titles in 13 point
+    /// and up.
+    static let largestLabelType: CGFloat = 12
+    /// The least share of its text that is pawns' labels on a page of pawns (see `labelShare`). Measured on Paizo's
+    /// pawn PDFs: 0.72 and up on pages of pawns, 0.49 at most on covers and ads.
+    static let leastLabelShare = 0.6
 
     /// A pawn found from its picture, before its label is read.
     struct Found {
@@ -33,8 +40,9 @@ enum FigurePawns {
         var rotation: Int { Outline(rect: image.rect, headEdge: headEdge).uprightRotation }
     }
 
-    /// The pawns a page prints as pictures with labels.
+    /// The pawns a page prints as pictures with labels; none on a page that isn't one of pawns.
     static func figures(on page: PageContent) -> [Found] {
+        guard isPawnPage(page) else { return [] }
         let candidates = page.images.indices.filter { isCandidate(page.images[$0]) }
         var labels: [Int: [TextGlyph]] = [:]
         for glyph in page.glyphs {
@@ -56,11 +64,37 @@ enum FigurePawns {
         return !fronts.isEmpty && shared * 2 >= fronts.count
     }
 
+    /// True when most of the page's text is pawns' labels. A cover or an ad shows pawn-size pictures too, among
+    /// titles, blurbs and lists of the product's pawns, which would otherwise be read as those pictures' names.
+    static func isPawnPage(_ page: PageContent) -> Bool {
+        labelShare(of: page) >= leastLabelShare
+    }
+
+    /// The share of the page's text, by its characters, that is label-size type printed within a label's reach of
+    /// a pawn-size picture; 1 on a page without text. Pictures without transparency count too: pages of scenery
+    /// print some pieces that way, labeled as the others are.
+    static func labelShare(of page: PageContent) -> Double {
+        let pictures = page.images.filter(isPawnSize).map(\.rect)
+        let labels = page.glyphs.filter { glyph in
+            glyph.fontSize <= largestLabelType
+                && pictures.contains { distance(from: middle(of: glyph), to: $0) <= labelReach }
+        }
+        let total = characterCount(of: page.glyphs)
+        return total > 0 ? Double(characterCount(of: labels)) / Double(total) : 1
+    }
+
+    private static func characterCount(of glyphs: [TextGlyph]) -> Int {
+        glyphs.reduce(0) { $0 + $1.text.count }
+    }
+
     private static func isCandidate(_ image: ImagePlacement) -> Bool {
-        guard let stream = image.stream, min(image.rect.width, image.rect.height) >= smallestFigure,
-              max(image.rect.width, image.rect.height) <= largestFigure
-        else { return false }
+        guard let stream = image.stream, isPawnSize(image) else { return false }
         return EmbeddedImage.hasSoftMask(stream)
+    }
+
+    private static func isPawnSize(_ image: ImagePlacement) -> Bool {
+        min(image.rect.width, image.rect.height) >= smallestFigure
+            && max(image.rect.width, image.rect.height) <= largestFigure
     }
 
     /// The picture a piece of text belongs to: the one it is printed inside, nearest that picture's edge, or else
