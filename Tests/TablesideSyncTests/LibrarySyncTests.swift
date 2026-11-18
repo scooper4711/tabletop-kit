@@ -105,6 +105,27 @@ import Testing
         #expect(again.recordID == .library("note-\(art.uuidString)"))
     }
 
+    @Test func keepsAReadingRefusedWithoutItsAssetAsideUntilAFetchBringsIt() async throws {
+        let other = try device.otherLibrary()
+        try other.add(device.pawnBox(), keeping: false)
+        let server = try #require(try device.serverRecords(of: other).first)
+        let library = try device.library()
+        try library.add(device.pawnBox(), keeping: false)
+        let mine = try #require(await engine.record(for: server.recordID))
+        queue.clear()
+
+        // CloudKit hands over the server's record of a refused save without its asset files.
+        let bare = CKRecord(recordType: server.recordType, recordID: server.recordID)
+        await engine.sent(SentChanges(failedSaves: [(mine, conflict(with: bare))]))
+        #expect(queue.added.isEmpty)
+        #expect(await sync.pendingChanges().isEmpty)
+
+        await engine.receive(FetchedChanges(modifications: [server]))
+        #expect(queue.added.isEmpty)
+        #expect(try library.syncCandidates().isEmpty)
+        #expect(await sync.status == .upToDate)
+    }
+
     @Test func sendsARecordTheServerLostAsANewOne() async throws {
         let library = try device.library()
         try library.add(device.pawnBox(), keeping: false)

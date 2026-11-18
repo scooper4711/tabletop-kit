@@ -228,6 +228,9 @@ These are the record types to deploy to Production in the CloudKit Console befor
 - A record of one of these types whose payload can't be read (a later `format`, a field that moved) is handed to
   the store with an empty payload, which it keeps aside as it does any record this version can't read. A record
   of any other type, or of another zone, is ignored.
+- The server's record that comes with a refused save has no asset files: CloudKit doesn't download them. A reading
+  refused that way is therefore kept aside too, and merged when the fetch that follows brings it whole; until then
+  this device doesn't send its own. The other kinds carry their payload in the record and are merged at once.
 
 ### The engine
 
@@ -266,8 +269,9 @@ share), and the store makes every decision: this only hands records between the 
   no container (`TablesideSyncContainer` in `Info.plist`, R6.1) or iCloud isn't available, and the app then works
   on the device alone (R2.4); `SyncStatus.withoutSync` says which of the two it is. No `CKContainer` is made before
   the name is checked: one the build has no entitlement for stops the app. Before the engine starts, the handler
-  applies the records kept aside that this version can now read (`applyRemote([])`) and measures the pictures saved
-  before sizes were kept (`measurePictures`).
+  applies the records kept aside that this version can now read (`applyRemote([])`), measures the pictures saved
+  before sizes were kept (`measurePictures`), and is told the account that is signed in, whether or not
+  `CKSyncEngine` reports a sign-in at that start.
 - **Sending.** `pendingChanges` is `syncCandidates`. `record(for:)` is `outgoingRecord`, remembered by record name
   until the server takes it and `markSent` stores the fields it answered with.
 - **Local changes.** The library's Darwin notification, from this app or another, queues what there is to send
@@ -352,6 +356,8 @@ profile>`, which apps reach at `.build/checkouts/tabletop-kit/scripts/`, as they
 - An app version from before `modified` existed writes 0, so its edits lose a conflict. One from before
   `picturePixels` leaves the old size when it gives art another picture, so that picture can win or lose wrongly.
 - A custom art's image isn't kept with a record this version can't read: applied later, the record brings no image.
+  The same goes for a custom art's record that comes with a refused save, so an image changed on two devices at
+  the same moment can stay different on the two until it is changed again.
 - Art's name, size, traits and fingerprint, where two devices differ, are still the incoming record's: two devices
   that sync at the same moment can swap them until one goes first.
 - Each app's engine fetches the same changes; the second finds them applied and writes nothing.
