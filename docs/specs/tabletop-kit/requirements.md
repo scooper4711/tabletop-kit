@@ -30,8 +30,9 @@ share. It contains no Paizo art or text.
   title across the top of its front. The pictures are kept in the library, as token art is.
 - R1.7 Pawns printed without cut outlines (the second half of Monster Core Pawn Box, Dawn of Flame) are found
   from their pictures: each picture with its own transparency is a pawn, named from the label under it, its back
-  the same picture mirrored on the following page. Pages that are a single flattened image with no text (the
-  second half of NPC Core Pawn Box) give no pawns and are reported as unreadable.
+  the same picture mirrored on the following page. Covers and ads, whose pictures stand among titles, blurbs and
+  lists, give no pawns. Pages that are a single flattened image with no text (the second half of NPC Core Pawn
+  Box) give no pawns and are reported as unreadable.
 - R1.8 A product's readable title comes from its file name: "PZO1234 Pathfinder Pawns- Bestiary Box PDF.pdf"
   becomes "Pathfinder Pawns: Bestiary Box".
 
