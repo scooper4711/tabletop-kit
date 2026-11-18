@@ -11,8 +11,11 @@ extension SharedLibrary {
     public func applyRemote(_ changes: [RemoteChange]) throws -> RemoteApplyReport {
         var report = RemoteApplyReport()
         var pending: [RemoteChange] = []
+        let deleted = Set(changes.compactMap { change in
+            if case .deleted(let id) = change { id.name } else { nil }
+        })
         for change in try parkedNowReadable(besides: changes) + changes {
-            switch try standing(of: change) {
+            switch try standing(of: change, deletedInBatch: deleted) {
             case .unreadable: report.parked += 1
             case .held: report.unchanged += 1
             case .pending: pending.append(change)
@@ -67,7 +70,9 @@ extension SharedLibrary {
     /// Sorts a change, noting what needs no transaction: a record this version can't read is kept aside, and one
     /// the library holds has the server's fields noted. What was kept aside under the name of a change the library
     /// holds is older than it, and goes: a note waiting for its art, deleted since, would otherwise come back.
-    private func standing(of change: RemoteChange) throws -> Standing {
+    /// A saved record the batch also deletes is never held: its deletion, applied first, takes what the library
+    /// knew of it, and the save then stands for a new record.
+    private func standing(of change: RemoteChange, deletedInBatch deleted: Set<String>) throws -> Standing {
         let database = try connection()
         let isHeld: Bool
         switch change {
@@ -78,7 +83,8 @@ extension SharedLibrary {
                 try parkUnreadable(record, fields: fields, in: database)
                 return .unreadable
             }
-            isHeld = try holds(IncomingRecord(record: record, fields: fields, digest: digest), in: database)
+            isHeld = try !deleted.contains(record.id.name)
+                && holds(IncomingRecord(record: record, fields: fields, digest: digest), in: database)
         }
         guard isHeld else { return .pending }
         try database.run("DELETE FROM parkedRecords WHERE name = ?", [.text(change.id.name)])

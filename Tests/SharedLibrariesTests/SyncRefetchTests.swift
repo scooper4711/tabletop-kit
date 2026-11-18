@@ -56,6 +56,17 @@ import Testing
         #expect(try first.syncCandidates().deletions.map(\.name) == ["source-\(source.id)"])
     }
 
+    @Test func takesARecordDeletedAndSavedAgainInOneBatchOverARowDeletedHere() throws {
+        let gremlin = creature(named: "Gremlin")
+        try first.save(gremlin)
+        let saved = try first.sendEverything()
+        try first.removeCustomCreature(id: gremlin.id)
+
+        try first.applyRemote(saved.map { .deleted($0.id) } + saved)
+        #expect(try first.customCreatures().map(\.id) == [gremlin.id])
+        #expect(try first.syncCandidates().isEmpty)
+    }
+
     @Test func takesAnEditFromElsewhereOverARowDeletedHere() throws {
         let gremlin = creature(named: "Gremlin")
         try first.save(gremlin)
