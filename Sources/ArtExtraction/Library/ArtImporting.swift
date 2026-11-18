@@ -159,7 +159,7 @@ extension ArtLibrary {
     public static func digest(of url: URL) throws -> String {
         if let files = folderFiles(url) {
             let listing = files.map { "\($0.lastPathComponent):\(byteCount(of: $0))" }.joined(separator: "\n")
-            return SHA256.hash(data: Data(listing.utf8)).map { String(format: "%02x", $0) }.joined()
+            return ContentDigest.hex(of: Data(listing.utf8))
         }
         let handle = try FileHandle(forReadingFrom: url)
         defer { try? handle.close() }
@@ -167,6 +167,6 @@ extension ArtLibrary {
         while let chunk = try handle.read(upToCount: 1 << 20), !chunk.isEmpty {
             hasher.update(data: chunk)
         }
-        return hasher.finalize().map { String(format: "%02x", $0) }.joined()
+        return ContentDigest.hex(hasher.finalize())
     }
 }

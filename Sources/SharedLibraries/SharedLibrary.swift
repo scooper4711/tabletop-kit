@@ -35,6 +35,8 @@ public final class SharedLibrary {
     /// The app using it, for what is only its own: access to PDFs, watched folders, claims.
     public let app: TablesideApp
     private var database: SQLiteDatabase?
+    /// When this app last noted each picture as shown, so showing it again costs no query (`markPicturesShown`).
+    var picturesNotedShown: [String: Date] = [:]
 
     /// The library in `folder`, created empty when there is none.
     public init(folder: URL, app: TablesideApp) throws {

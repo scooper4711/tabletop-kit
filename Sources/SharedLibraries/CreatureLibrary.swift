@@ -104,6 +104,21 @@ extension SharedLibrary {
         customFolder.appending(path: fileName)
     }
 
+    /// Where an image from another device waits until the change that brings it has been saved (library sync).
+    func stagedCustomFile(_ fileName: String) -> URL {
+        customFolder.appending(path: fileName + Self.stagedSuffix)
+    }
+
+    /// Removes the images left waiting by a change that failed.
+    func removeStagedImages() {
+        let files = (try? FileManager.default.contentsOfDirectory(at: customFolder, includingPropertiesForKeys: nil))
+        for file in files ?? [] where file.lastPathComponent.hasSuffix(Self.stagedSuffix) {
+            try? FileManager.default.removeItem(at: file)
+        }
+    }
+
+    private static let stagedSuffix = ".incoming"
+
     /// The art chosen for each creature, by its bestiary key or `custom.<id>`.
     public func creatureArt() throws -> [String: CreatureArtChoice] {
         var choices: [String: CreatureArtChoice] = [:]
@@ -132,24 +147,32 @@ extension SharedLibrary {
 }
 
 extension LibraryWriter {
-    func upsert(_ creature: CustomCreatureRecord) throws {
+    /// The four `upsert`s of what the user makes take `modified`, the time of the user's change, which settles
+    /// edits made on two devices (library sync).
+    func upsert(_ creature: CustomCreatureRecord, modified: Date = Date()) throws {
         try upsert(.customCreatures, [("id", .text(creature.id.uuidString)),
                                       ("campaign", creature.campaignID.map { .text($0.uuidString) } ?? .null),
                                       ("sharedVersion", Self.value(of: creature.sharedVersion)),
-                                      ("record", .blob(creature.record))])
+                                      ("record", .blob(creature.record)), Self.modified(modified)])
     }
 
-    func upsert(_ art: CustomArtRecord) throws {
+    func upsert(_ art: CustomArtRecord, modified: Date = Date()) throws {
         try upsert(.customArt, [("id", .text(art.id.uuidString)), ("file", .text(art.fileName)),
-                                ("sharedVersion", Self.value(of: art.sharedVersion)), ("record", .blob(art.record))])
+                                ("sharedVersion", Self.value(of: art.sharedVersion)), ("record", .blob(art.record)),
+                                Self.modified(modified)])
     }
 
-    func upsert(_ choice: CreatureArtChoice, for subject: String) throws {
+    func upsert(_ choice: CreatureArtChoice, for subject: String, modified: Date = Date()) throws {
         let (entry, custom): (SQLValue, SQLValue) = switch choice {
         case .library(let id): (.text(id.uuidString), .null)
         case .custom(let id): (.null, .text(id.uuidString))
         }
-        try upsert(.creatureArt, [("subject", .text(subject)), ("entry", entry), ("customArt", custom)])
+        try upsert(.creatureArt, [("subject", .text(subject)), ("entry", entry), ("customArt", custom),
+                                  Self.modified(modified)])
+    }
+
+    static func modified(_ date: Date) -> (String, SQLValue) {
+        ("modified", .real(date.timeIntervalSinceReferenceDate))
     }
 
     private static func value(of date: Date?) -> SQLValue {

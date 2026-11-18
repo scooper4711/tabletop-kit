@@ -2,9 +2,13 @@ import ArtExtraction
 import CoreGraphics
 import Foundation
 
-/// A picture to draw after a PDF's art is written, from one of its prints.
+/// A picture to draw from one of the art's prints, under the name that print gives it
+/// (`SharedLibrary.pictureName(drawnFrom:)`), which the art then takes unless its own picture is sharper
+/// (`ArtPicture.stays`).
 struct PictureJob: Equatable {
     var print: SharedPrint
+    /// True when the art names this picture already and only its file is missing: its row is then left alone.
+    var isRedraw = false
 }
 
 /// Merges the art found in one PDF into the shared library, inside one write, as `ArtMerger` does for
@@ -47,7 +51,9 @@ struct StoreMerger {
         let print = try makePrint(of: found, key: key)
         var entry = try placed(found, print: print, into: &report)
         let drawsPicture = entry.picture == nil || (print.print.kind == .figure && !isDrawnFromFigure(entry))
-        if drawsPicture, let kept = print.print.tokenFile { entry.picture = kept }
+        if drawsPicture, let kept = print.print.tokenFile {
+            entry.artPicture = ArtPicture(name: kept, pixels: library.pixels(ofPicture: kept))
+        }
         try writer.merge(entry)
         if drawsPicture, print.print.tokenFile == nil { pictures.append(PictureJob(print: print)) }
     }

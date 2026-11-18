@@ -33,11 +33,17 @@ extension LibraryWriter {
     /// points at it. Returns its ID.
     @discardableResult
     func merge(_ incoming: SharedArtEntry) throws -> UUID {
-        let known = try entries(withPrintKeys: incoming.prints.map(\.key))
+        try merge(incoming, with: try entries(printedAs: incoming.prints.map(\.key)))
+    }
+
+    /// Merges `incoming` with `known`, the art it joins: that of `entries(printedAs:)` for its prints' keys and
+    /// any others naming art to join, as when a synced reading says its art is also printed elsewhere.
+    @discardableResult
+    func merge(_ incoming: SharedArtEntry, with known: [SharedArtEntry]) throws -> UUID {
         var merged = incoming
         for other in known {
             if merged.palette.isEmpty { merged.palette = other.palette }
-            if merged.picture == nil { merged.picture = other.picture }
+            if merged.picture == nil { merged.artPicture = other.artPicture }
             merged.traits += other.traits.filter { !merged.traits.contains($0) }
             let known = Set(merged.prints.map(\.id))
             merged.prints += other.prints.filter { !known.contains($0.id) }
@@ -62,7 +68,8 @@ extension LibraryWriter {
 
     // MARK: Helpers
 
-    private func entries(withPrintKeys keys: [UUID]) throws -> [SharedArtEntry] {
+    /// The art that has a print with one of `keys`, by ID.
+    func entries(printedAs keys: [UUID]) throws -> [SharedArtEntry] {
         guard !keys.isEmpty else { return [] }
         let placeholders = Array(repeating: "?", count: keys.count).joined(separator: ", ")
         return try ArtRows.entries(in: database, where: "id IN (SELECT entry FROM prints WHERE key IN "
@@ -87,6 +94,7 @@ extension LibraryWriter {
                           ("fingerprint", try ArtRows.encoded(entry.fingerprint)),
                           ("palette", try ArtRows.encoded(entry.palette)),
                           ("picture", entry.picture.map { .text($0) } ?? .null),
+                          ("picturePixels", .integer(Int64(entry.picturePixels))),
                           ("foldedName", .text(ArtKey.foldedName(entry.name))),
                           ("nameKey", .text(CreatureName.familyKey(entry.name))),
                           ("needsName", .integer(entry.needsName ? 1 : 0))])

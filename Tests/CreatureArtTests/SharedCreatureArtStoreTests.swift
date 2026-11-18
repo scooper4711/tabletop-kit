@@ -43,6 +43,24 @@ struct SharedCreatureArtStoreTests {
         #expect(await store.addNewFiles().message == "No new PDFs of creature art.")
     }
 
+    @Test("A PDF the library has from another app is only linked, and counts as nothing new")
+    func countsNoPDFItOnlyLinks() async throws {
+        let (files, pdf) = try downloads()
+        try shared(.pawnShop).add(pdf, keeping: false)
+        let summary = await try store().importFolder(files) { _ in }
+        #expect(summary.pdfs == 0 && summary.added == 0 && summary.failures.isEmpty)
+        #expect(summary.message == "No new PDFs of creature art.")
+        #expect(try shared().sources().first?.access[.turnkeeper] != nil)
+    }
+
+    @Test("A PDF another app is reading counts as nothing new")
+    func countsNoPDFAnotherAppIsReading() async throws {
+        let (files, pdf) = try downloads()
+        #expect(try shared(.pawnShop).claim(sourceID: try ArtLibrary.prepare(pdf).digest))
+        let summary = await try store().importFolder(files) { _ in }
+        #expect(summary.pdfs == 0 && summary.added == 0 && summary.failures.isEmpty)
+    }
+
     @Test("A deleted PDF is missing, but its art still shows from its pictures")
     func keepsArtOfMissingPDFs() async throws {
         let store = try store()
