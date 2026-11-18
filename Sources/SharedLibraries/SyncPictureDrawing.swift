@@ -7,7 +7,8 @@ extension SharedLibrary {
     /// Draws up to `limit` pictures for art without one that has a print in a PDF this app can reach. Art with no
     /// picture takes that of the first such print in its order, figures first. Art that names a picture whose file
     /// is gone gets it back only from the print that picture was drawn from; any other picture comes from iCloud.
-    /// Returns how many it drew; 0 means none are left that this app can draw.
+    /// A picture that can't be drawn or saved is passed over, so it doesn't keep the art after it from theirs, and
+    /// is tried again by the next call. Returns how many it drew; 0 means none are left that this app can draw.
     public func drawMissingPictures(limit: Int) throws -> Int {
         guard limit > 0 else { return 0 }
         let reachable = Set(try sources().filter { status(of: $0) == .available }.map(\.id))
@@ -56,7 +57,7 @@ extension SharedLibrary {
         var drawn = 0
         for (sourceID, sourceJobs) in jobs {
             guard let source = sources.first(where: { $0.id == sourceID }) else { continue }
-            drawn += try withFile(of: source) { url in try drawPictures(sourceJobs, from: url) } ?? 0
+            drawn += try withFile(of: source) { url in try drawPictures(sourceJobs, from: url).drawn } ?? 0
         }
         return drawn
     }

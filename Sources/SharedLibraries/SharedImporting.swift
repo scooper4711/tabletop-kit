@@ -42,7 +42,7 @@ extension SharedLibrary {
             try writer.retire(older, app: app)
             return merger.pictures
         }
-        try drawPictures(pictures, from: prepared.file)
+        if let failure = try drawPictures(pictures, from: prepared.file).failure { throw failure }
         return report
     }
 

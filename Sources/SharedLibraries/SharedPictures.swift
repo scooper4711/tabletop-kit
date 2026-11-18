@@ -54,10 +54,10 @@ extension SharedLibrary {
         return found ?? nil
     }
 
-    /// Draws the pictures a PDF's art needs from the PDF at `file`, a page per core, and records them. Returns how
-    /// many it drew.
+    /// Draws the pictures a PDF's art needs from the PDF at `file`, a page per core, and records them. A picture
+    /// that can't be drawn doesn't cost the others theirs: it is told of in the answer's `failure`.
     @discardableResult
-    func drawPictures(_ jobs: [PictureJob], from file: URL) throws -> Int {
+    func drawPictures(_ jobs: [PictureJob], from file: URL) throws -> PictureDrawing {
         let pages = Array(Dictionary(grouping: jobs) { $0.print.print.face.pageIndex })
         let drawn = DrawnPictures()
         DispatchQueue.concurrentPerform(iterations: pages.count) { index in
@@ -68,13 +68,14 @@ extension SharedLibrary {
                 drawn.add(Result { DrawnPicture(job: job, picture: try writePicture(of: figure, print: job.print)) })
             }
         }
-        let pictures = try drawn.pictures()
+        let pictures = drawn.pictures
         let new = pictures.filter { !$0.job.isRedraw }
-        guard !new.isEmpty else { return pictures.count }
-        try write { writer in
-            for drawn in new { try writer.setPicture(drawn.picture, ofArtPrinting: drawn.job.print.key) }
+        if !new.isEmpty {
+            try write { writer in
+                for drawn in new { try writer.setPicture(drawn.picture, ofArtPrinting: drawn.job.print.key) }
+            }
         }
-        return pictures.count
+        return PictureDrawing(drawn: pictures.count, failure: drawn.failure)
     }
 
     // MARK: Helpers
@@ -152,22 +153,35 @@ extension LibraryWriter {
     }
 }
 
+/// What drawing a batch of pictures did.
+struct PictureDrawing {
+    /// How many pictures were drawn and saved.
+    var drawn = 0
+    /// Why a picture couldn't be drawn or saved: the first such failure, the others having been drawn all the same.
+    var failure: Error?
+}
+
 /// A picture drawn for a job.
 private struct DrawnPicture {
     var job: PictureJob
     var picture: ArtPicture
 }
 
-/// The pictures drawn on several threads at once, or the first failure.
+/// The pictures drawn on several threads at once, and the first failure.
 private final class DrawnPictures: @unchecked Sendable {
     private let lock = NSLock()
-    private var results: [Result<DrawnPicture, Error>] = []
+    private var drawn: [DrawnPicture] = []
+    private var firstFailure: Error?
 
     func add(_ result: Result<DrawnPicture, Error>) {
-        lock.withLock { results.append(result) }
+        lock.withLock {
+            switch result {
+            case .success(let picture): drawn.append(picture)
+            case .failure(let error): firstFailure = firstFailure ?? error
+            }
+        }
     }
 
-    func pictures() throws -> [DrawnPicture] {
-        try lock.withLock { try results.map { try $0.get() } }
-    }
+    var pictures: [DrawnPicture] { lock.withLock { drawn } }
+    var failure: Error? { lock.withLock { firstFailure } }
 }

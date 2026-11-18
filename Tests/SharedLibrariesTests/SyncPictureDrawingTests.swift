@@ -47,6 +47,26 @@ import Testing
         #expect(library.pixels(ofPicture: "nothing.heic") == 0)
     }
 
+    // MARK: A picture that can't be drawn
+
+    @Test func drawsTheOtherPicturesWhenOneCantBeSaved() throws {
+        let device = devices.first
+        let old = try ArtLibrary(folder: device.root.appending(path: "Pawn Shop/Creature Art"))
+        try old.add(device.pawnBox(), keeping: true)
+        let library = try device.library(.turnkeeper)
+        try library.moveIn(LibraryMove(app: .turnkeeper, artFolder: old.folder))
+        let blocked = try #require(try library.artEntries().min { $0.id.uuidString < $1.id.uuidString })
+        let name = SharedLibrary.pictureName(drawnFrom: try #require(blocked.prints.first))
+        // A folder where the picture's file would go, so the picture can't be saved.
+        try FileManager.default.createDirectory(at: library.pictureFile(name).appending(path: "in the way"),
+                                                withIntermediateDirectories: true)
+
+        #expect(try library.drawMissingPictures(limit: 100) == 1)
+        #expect(try library.artEntries().filter { $0.picture != nil }.count == 1)
+        #expect(try library.artEntry(id: blocked.id)?.picture == nil)
+        #expect(try library.drawMissingPictures(limit: 100) == 0)
+    }
+
     // MARK: A picture another print gave the art
 
     /// Names the first art's picture as another device would after drawing it from a print this one lacks.
