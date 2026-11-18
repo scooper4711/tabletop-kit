@@ -4,9 +4,10 @@ import Foundation
 /// Drawing the pictures art lacks, so they can be uploaded (R4.8). Art moved in from an app's old library has no
 /// saved picture until something shows it, and Pawn Shop draws pawns straight from the PDF.
 extension SharedLibrary {
-    /// Draws up to `limit` pictures for art without one (no picture, or its file is gone) that has a print in a PDF
-    /// this app can reach: the first such print in the art's order, figures first. Art already named for a picture
-    /// is drawn under that name. Returns how many it drew; 0 means none are left that this app can draw.
+    /// Draws up to `limit` pictures for art without one that has a print in a PDF this app can reach. Art with no
+    /// picture takes that of the first such print in its order, figures first. Art that names a picture whose file
+    /// is gone gets it back only from the print that picture was drawn from; any other picture comes from iCloud.
+    /// Returns how many it drew; 0 means none are left that this app can draw.
     public func drawMissingPictures(limit: Int) throws -> Int {
         guard limit > 0 else { return 0 }
         let reachable = Set(try sources().filter { status(of: $0) == .available }.map(\.id))
@@ -43,8 +44,10 @@ extension SharedLibrary {
         let entries = try ArtRows.entries(in: try connection(), where: "id IN (\(placeholders))",
                                           ids.map { .text($0) })
         return entries.sorted { $0.id.uuidString < $1.id.uuidString }.compactMap { entry in
-            entry.prints.first { reachable.contains($0.print.sourceID) }
-                .map { PictureJob(print: $0, name: entry.picture) }
+            let prints = entry.prints.filter { reachable.contains($0.print.sourceID) }
+            guard let named = entry.picture else { return prints.first.map { PictureJob(print: $0) } }
+            return prints.first { Self.pictureName(drawnFrom: $0) == named }
+                .map { PictureJob(print: $0, isRedraw: true) }
         }
     }
 

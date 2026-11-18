@@ -48,7 +48,8 @@ import Testing
         try library.write { writer in try writer.addAlias(UUID(), app: .turnkeeper, entry: art) }
         #expect(try library.syncCandidates().saves == [SyncRecordID(kind: .source, name: "source-\(source.id)")])
         try library.sendEverything()
-        try library.write { writer in try writer.setPicture("new.heic", ofArtPrinting: art) }
+        let picture = ArtPicture(name: "new.heic", pixels: 512)
+        try library.write { writer in try writer.setPicture(picture, ofArtPrinting: art) }
         #expect(try library.syncCandidates().saves.map(\.kind) == [.source])
     }
 
