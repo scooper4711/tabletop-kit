@@ -56,9 +56,11 @@ struct RemoteApplication {
                 try? FileManager.default.removeItem(at: library.customFile(file))
             }
         }
+        // In one step, so the image the row had stays when the staged one is gone: another app on the device that
+        // applied the same record has put it in place already.
         for file in stagedImages {
-            try? FileManager.default.removeItem(at: library.customFile(file))
-            try? FileManager.default.moveItem(at: library.stagedCustomFile(file), to: library.customFile(file))
+            _ = try? FileManager.default.replaceItemAt(library.customFile(file),
+                                                       withItemAt: library.stagedCustomFile(file))
         }
     }
 

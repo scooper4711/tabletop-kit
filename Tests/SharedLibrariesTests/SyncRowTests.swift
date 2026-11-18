@@ -170,6 +170,25 @@ import Testing
         #expect(try Data(contentsOf: second.customFile("a.png")) == Data([1, 2, 3]))
     }
 
+    @Test func keepsCustomArtsImageWhenItsStagedCopyIsGoneBeforeItIsPutInPlace() throws {
+        let art = CustomArtRecord(id: UUID(), fileName: "a.png", sharedVersion: nil, record: Data())
+        try first.save(art, image: Data([1]))
+        try devices.exchange()
+        try first.save(CustomArtRecord(id: art.id, fileName: "a.png", sharedVersion: nil, record: Data([2])),
+                       image: Data([3]))
+        let update = try first.sendEverything(fields: Data([2]))
+        let application = try second.write { writer in
+            var application = RemoteApplication(writer: writer, library: second)
+            try application.apply(update)
+            return application
+        }
+
+        // As when another app on the device, applying the same record, has put the staged image in place.
+        try FileManager.default.removeItem(at: second.stagedCustomFile("a.png"))
+        application.finish()
+        #expect(FileManager.default.fileExists(atPath: second.customFile("a.png").path))
+    }
+
     @Test func forgetsANoteKeptAsideWhenItIsDeletedBeforeItsArtArrives() throws {
         let sender = try devices.first.library()
         try sender.write { writer in
