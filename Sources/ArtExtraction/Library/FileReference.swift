@@ -42,8 +42,8 @@ public struct FileReference: Codable, Hashable, Sendable {
 
     private static func bookmark(for url: URL) throws -> Data {
         #if os(macOS)
-        // Outside the sandbox there is no security scope to keep; a plain bookmark still follows the file.
-        if let scoped = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil,
+        if usesSecurityScope(),
+           let scoped = try? url.bookmarkData(options: .withSecurityScope, includingResourceValuesForKeys: nil,
                                               relativeTo: nil) {
             return scoped
         }
@@ -53,9 +53,16 @@ public struct FileReference: Codable, Hashable, Sendable {
 
     private static var resolutionOptions: [URL.BookmarkResolutionOptions] {
         #if os(macOS)
-        [.withSecurityScope, []]
+        usesSecurityScope() ? [.withSecurityScope, []] : [[]]
         #else
         [[]]
         #endif
+    }
+
+    /// Whether bookmarks need a security scope: only in a sandboxed Mac app. Outside the sandbox there is no scope to
+    /// keep, and asking for one goes through ScopedBookmarkAgent, which runs only in a desktop session: without one
+    /// (a CI runner in the background, say) the request waits forever instead of failing.
+    static func usesSecurityScope(environment: [String: String] = ProcessInfo.processInfo.environment) -> Bool {
+        environment["APP_SANDBOX_CONTAINER_ID"] != nil
     }
 }
