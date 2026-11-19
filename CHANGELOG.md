@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.11.4] - 2026-11-19
+
+### Fixed
+- Stop remembering a file from hanging in an unsandboxed process with no desktop session, such as a CI runner
+
+[1.11.4]: https://github.com/scooper4711/tabletop-kit/releases/tag/v1.11.4
+
 ## [1.11.3] - 2026-11-18
 
 ### Fixed
