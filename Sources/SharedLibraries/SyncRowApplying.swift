@@ -43,10 +43,15 @@ extension RemoteApplication {
     mutating func applyCustomCreature(_ payload: CustomCreaturePayload, _ incoming: IncomingRecord) throws {
         let key = payload.id.uuidString
         if try !keepsLocal(.customCreature, key: key, over: payload.modified) {
-            try writer.upsert(CustomCreatureRecord(id: payload.id, campaignID: payload.campaign,
-                                                   sharedVersion: payload.sharedVersion.map(SharedLibrary.date),
-                                                   record: payload.record),
-                              modified: SharedLibrary.date(payload.modified))
+            let creature = CustomCreatureRecord(id: payload.id, name: payload.name ?? "", campaignID: payload.campaign,
+                                                sharedVersion: payload.sharedVersion.map(SharedLibrary.date),
+                                                record: payload.record, game: payload.game, size: payload.size)
+            let modified = SharedLibrary.date(payload.modified)
+            if payload.name == nil {
+                try writer.upsertKeepingName(creature, modified: modified)
+            } else {
+                try writer.upsert(creature, modified: modified)
+            }
         }
         try settle(incoming, rowKey: key)
         countApplied()

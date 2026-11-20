@@ -53,7 +53,7 @@ struct TestDevice {
         let art = try library.artEntries().map(\.id).sorted { $0.uuidString < $1.uuidString }[0]
         _ = try library.setNote(ArtNote(tags: ["club"]), forArt: art)
         try library.setCreatureArt(.library(art), for: "bestiary.goblin warrior")
-        try library.save(CustomCreatureRecord(id: UUID(), campaignID: nil, sharedVersion: nil,
+        try library.save(CustomCreatureRecord(id: UUID(), name: "Gremlin", campaignID: nil, sharedVersion: nil,
                                               record: Data("Gremlin".utf8)))
         try library.save(CustomArtRecord(id: UUID(), fileName: "gremlin.png", sharedVersion: nil, record: Data()),
                          image: Data([1, 2, 3]))

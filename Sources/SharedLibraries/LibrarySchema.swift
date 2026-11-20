@@ -9,7 +9,8 @@ import ArtExtraction
 /// `compatibility.oldestWriter` to itself, and older apps then only read the library until they are updated.
 enum LibrarySchema {
     /// Each version's statements, applied in order to a database at an older version.
-    static let versions: [String] = [version1, version2, version3, version4, version5, version6]
+    static let versions: [String] = [version1, version2, version3, version4, version5, version6,
+                                         version7]
 
     private static let version1 = """
         CREATE TABLE counter (id INTEGER PRIMARY KEY CHECK (id = 1), value INTEGER NOT NULL);
@@ -96,6 +97,14 @@ enum LibrarySchema {
         ALTER TABLE customCreatures ADD COLUMN modified REAL NOT NULL DEFAULT 0;
         ALTER TABLE customArt ADD COLUMN modified REAL NOT NULL DEFAULT 0;
         ALTER TABLE art ADD COLUMN picturePixels INTEGER NOT NULL DEFAULT 0;
+        """
+
+    /// What every app reads of a custom creature, so custom pawns are custom creatures (R4.4, R4.6, R4.7): its
+    /// name, its game (none until it has a stat block) and its size. Additions only, so older apps carry on.
+    private static let version7 = """
+        ALTER TABLE customCreatures ADD COLUMN name TEXT NOT NULL DEFAULT '';
+        ALTER TABLE customCreatures ADD COLUMN game TEXT;
+        ALTER TABLE customCreatures ADD COLUMN size TEXT;
         """
 
     /// Brings `database` up to this app's version, in one transaction, and tells whether this app may write it:

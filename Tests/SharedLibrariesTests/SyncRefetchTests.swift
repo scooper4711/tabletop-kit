@@ -72,8 +72,8 @@ import Testing
         try first.save(gremlin)
         try devices.exchange()
         try first.removeCustomCreature(id: gremlin.id)
-        try devices.secondLibrary.save(CustomCreatureRecord(id: gremlin.id, campaignID: nil, sharedVersion: nil,
-                                                            record: Data("edited".utf8)))
+        try devices.secondLibrary.save(CustomCreatureRecord(id: gremlin.id, name: "Gremlin", campaignID: nil,
+                                                            sharedVersion: nil, record: Data("edited".utf8)))
         let edited = try devices.secondLibrary.sendEverything(fields: Data([2]))
 
         let report = try first.applyRemote(edited)

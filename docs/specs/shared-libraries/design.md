@@ -268,9 +268,10 @@ Turnkeeper never reads how art sits on a pawn.
   then saves `pawn-shop.json` with only what is Pawn Shop's own. Tested on the copy of the real library (78 custom
   pawns, 17 of them on the Iconics sheet).
 - **Sync.** `CustomCreaturePayload` gains `name`, `game` and `size` as optionals, by the rule for later versions
-  (library sync design), and `format` stays 1: no released app has the store or its sync. A creature synced by a
-  build before this has an empty name until Turnkeeper next saves it; Turnkeeper fills the columns of such rows
-  when it opens the library.
+  (library sync design), and `format` stays 1: no released app has the store or its sync. A record without a name
+  comes from a build before this and leaves the row's name, game and size alone (`upsertKeepingName`); one with a
+  name sets all three, a missing game or size included. A creature made by such a build has an empty name until
+  Turnkeeper next saves it; Turnkeeper fills the columns of such rows when it opens the library.
 
 ## Who does what
 | Issue | Part |

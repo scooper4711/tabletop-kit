@@ -31,7 +31,8 @@ import Testing
 
     @Test func keepsAsideARecordItCantReadAndAppliesTheRest() throws {
         let source = try pawnBoxRecords().unreadable
-        let creature = CustomCreatureRecord(id: UUID(), campaignID: nil, sharedVersion: nil, record: Data([1]))
+        let creature = CustomCreatureRecord(id: UUID(), name: "Gremlin", campaignID: nil, sharedVersion: nil,
+                                            record: Data([1]))
         try first.save(creature)
         let rest = try first.sendEverything()
 
