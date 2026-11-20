@@ -102,6 +102,11 @@ struct CustomCreaturePayload: Codable, Equatable {
     var sharedVersion: Double?
     var record: Data
     var modified: Double
+    /// Added for custom pawns (shared libraries R4.6). Nil only from a build before them, whose record then leaves
+    /// the row's name, game and size alone; from a later build, game and size are as given, nil included.
+    var name: String?
+    var game: GameSystem?
+    var size: CreatureSize?
 }
 
 struct CustomArtPayload: Codable, Equatable {

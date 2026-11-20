@@ -95,7 +95,10 @@ extension SharedLibrary {
     private func customCreaturePayload(_ row: SQLRow) -> CustomCreaturePayload? {
         guard let id = row.uuid("id"), let record = row.blob("record") else { return nil }
         return CustomCreaturePayload(id: id, campaign: row.uuid("campaign"), sharedVersion: row.real("sharedVersion"),
-                                     record: record, modified: row.real("modified") ?? 0)
+                                     record: record, modified: row.real("modified") ?? 0,
+                                     name: row.text("name") ?? "",
+                                     game: row.text("game").flatMap(GameSystem.init(rawValue:)),
+                                     size: row.text("size").flatMap(CreatureSize.init(rawValue:)))
     }
 
     private func customArtPayload(_ row: SQLRow) -> CustomArtPayload? {

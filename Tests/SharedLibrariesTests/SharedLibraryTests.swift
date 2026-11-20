@@ -117,5 +117,5 @@ import Testing
 }
 
 func creature(named name: String, campaign: UUID? = nil) -> CustomCreatureRecord {
-    CustomCreatureRecord(id: UUID(), campaignID: campaign, sharedVersion: nil, record: Data(name.utf8))
+    CustomCreatureRecord(id: UUID(), name: name, campaignID: campaign, sharedVersion: nil, record: Data(name.utf8))
 }

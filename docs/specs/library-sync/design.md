@@ -52,7 +52,7 @@ and custom art's image file. The kinds, in the order fetched records are applied
 | `source` | `source-<sha256>` | `SourceReading`: id, title, game, byte count, reader version, art found, and its groups |
 | `note` | `note-<entry UUID>` | `NotePayload` |
 | `creatureArt` | `creatureArt-<SHA-256 hex of the subject>` (a subject can hold any character) | `CreatureArtPayload` |
-| `customCreature` | `creature-<UUID>` | `CustomCreaturePayload` |
+| `customCreature` | `creature-<UUID>` | `CustomCreaturePayload`; its name, game and size are optionals added for custom pawns (shared libraries design, "Custom pawns are custom creatures"); a record without a name, from a build before them, leaves the row's three alone |
 | `customArt` | `customArt-<UUID>` | `CustomArtPayload` |
 
 A reading's `ReadingGroup` is one piece of art as far as this PDF prints it: its ID on the sender (`entry`), its

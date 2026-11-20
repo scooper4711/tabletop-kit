@@ -99,8 +99,8 @@ import Testing
             try library.write { writer in
                 try writer.upsert(ArtNote(tags: [tag]), for: pawn, modified: date)
                 try writer.upsert(.custom(art), for: "gremlin", modified: date)
-                try writer.upsert(CustomCreatureRecord(id: creature.id, campaignID: nil, sharedVersion: nil,
-                                                       record: Data(tag.utf8)), modified: date)
+                try writer.upsert(CustomCreatureRecord(id: creature.id, name: "Gremlin", campaignID: nil,
+                                                       sharedVersion: nil, record: Data(tag.utf8)), modified: date)
                 try writer.upsert(CustomArtRecord(id: art, fileName: "\(tag).png", sharedVersion: nil,
                                                   record: Data(tag.utf8)), modified: date)
             }
@@ -131,7 +131,7 @@ import Testing
         try first.save(gremlin)
         try devices.exchange()
         try first.removeCustomCreature(id: gremlin.id)
-        try second.save(CustomCreatureRecord(id: gremlin.id, campaignID: nil, sharedVersion: nil,
+        try second.save(CustomCreatureRecord(id: gremlin.id, name: "Gremlin", campaignID: nil, sharedVersion: nil,
                                              record: Data("edited".utf8)))
         try devices.exchange()
 
