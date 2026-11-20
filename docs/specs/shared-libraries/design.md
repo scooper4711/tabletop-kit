@@ -66,7 +66,7 @@ would hide the module's name), opens `Tableside/Library.sqlite` in the group fol
 |---|---|
 | `Sources/<sha256>.pdf` | PDFs the library keeps |
 | `Pictures/<key>.heic` | each entry's picture, named by the key of the print drawn (R3.2); a token's or item's picture drawn at import keeps its format (`<key>.png`), and a token's back with art of its own is `<key>-back.png` (schema version 5), which Pawn Shop prints |
-| `Custom/<uuid>.<ext>` | images the user pasted or dropped, and custom pawns' art |
+| `Custom/<uuid>.<ext>` | images the user pasted, dropped or chose for a creature in any of the apps (R4.2), custom pawns' art among them |
 
 It uses the system's SQLite (`import SQLite3`), so the package keeps no dependencies. The tables:
 
@@ -80,8 +80,8 @@ It uses the system's SQLite (`import SQLite3`), so the package keeps no dependen
 | `aliases` | old ID, app, entry |
 | `notes` | what is learned about art, by entry: user name, tags, tag model, suggested name, whether corrected, when changed (schema version 6) |
 | `creatureArt` | the art chosen for a creature (bestiary key or `custom.<id>`): an entry ID or custom art |
-| `customCreatures` | Turnkeeper's `CustomCreature` as JSON, with id, the campaign it was made in, `sharedVersion` |
-| `customArt` | Turnkeeper's `CustomArt` as JSON, with id, image file, `sharedVersion` |
+| `customCreatures` | Turnkeeper's `CustomCreature` as JSON (empty for a creature without a stat block), with id, the campaign it was made in, `sharedVersion`, and its name, game and pawn size (schema version 7) |
+| `customArt` | Turnkeeper's `CustomArt` as JSON (empty for art added in Pawn Shop), with id, image file, `sharedVersion` |
 | `claims` | a PDF being read: source, app, until when |
 | `counter` | the change counter |
 | `deletions` | each deleted row's table and key, with the counter when it went |
@@ -89,8 +89,8 @@ It uses the system's SQLite (`import SQLite3`), so the package keeps no dependen
 | `cloudRecords`, `parkedRecords`, `syncState`, `fetchedPictures` | what this device knows of its sync (schema version 6, library sync design); never synced, and written outside the change counter |
 
 The toolkit doesn't know Turnkeeper's types, so `CustomCreatureRecord` and `CustomArtRecord` carry them as the app
-encodes them, with the columns the library needs. `notes` comes with Pawn Shop's move (#27, #33), as schema
-version 2 (`PRAGMA user_version`).
+encodes them, with the columns the library and the other apps need ("Custom pawns are custom creatures", below).
+`notes` comes with Pawn Shop's move (#27, #33), as schema version 2 (`PRAGMA user_version`).
 
 `ArtLibrary` keeps its API and becomes a view over the store; `CreatureArtStore` and Pawn Shop's `PawnLibrary` build
 on it. `ArtPrint` gains `back: PawnFace?`, which Pawn Shop's pawns need.
@@ -213,9 +213,64 @@ need names, all from that product; 242 pawns are printed in it). `StoreMerger` n
 
 `isSameArt` and `NamelessProducts` move here from Pawn Shop, which uses the toolkit's.
 
+## Custom pawns are custom creatures (R4.4, R4.6 to R4.10, R6.6)
+A pawn the user makes in Pawn Shop and a creature the user makes in Turnkeeper are one thing, a row of
+`customCreatures`, so each app shows what the other made. Pawn Shop never reads or writes a stat block, and
+Turnkeeper never reads how art sits on a pawn.
+
+- **What every app reads.** Schema version 7 adds three columns to `customCreatures`, on `CustomCreatureRecord` as
+  `name: String`, `game: GameSystem?` and `size: CreatureSize?`. They only add, with defaults (`''`, NULL, NULL), so
+  `oldestWriter` stays. `record` stays Turnkeeper's and is empty for a creature without a stat block
+  (`hasStatBlock`). The columns are the truth for what they hold: an app that reads a stat block (Turnkeeper,
+  Field Guide) puts the row's name and size over the ones in the record (`Creature.applying(name:size:)` in
+  `CreatureArt`, which knows both modules), and Turnkeeper writes both when it saves one.
+- **A pawn made in Pawn Shop** (R4.6) is written in one transaction, `addCustomCreature(_:art:image:)`: the creature
+  (a new UUID, its name and size, no game, an empty record), its art (`customArt` with the same UUID, an empty
+  record, the image written to `Custom/<uuid>.png` first), and the choice (`creatureArt`: `custom.<uuid>` to
+  `.custom(<uuid>)`). The pawn's ID is the creature's.
+- **Pawn Shop's pawns** (R4.4). Each creature with a row in `creatureArt` under `custom.<id>` is a pawn with the
+  creature's ID, its name and its size's pawn (Medium without one): drawn from `Custom/<file>` for custom art, or
+  as the entry's pawn is for art chosen from the library. Pawn Shop reads the columns only, so it doesn't decode `record` and the
+  store doesn't depend on `Bestiary`. It follows changes as it does for art (`customCreatures(changedSince:)`,
+  `customArt(changedSince:)`, `creatureArt()`, and `deletions`).
+- **Turnkeeper's creatures** (R4.6, R4.10). A row with an empty record becomes a `CustomCreature` named by the row,
+  with nothing else filled in, as `CustomCreature.init(campaignID:game:name:)` makes one, and without a campaign.
+  Giving it a stat block saves the record, the campaign and the game.
+- **Size** (R4.4a, R4.4b). `CreatureSize` (in `SharedLibraries`) is Paizo's six sizes, `tiny` to `gargantuan`, with
+  the word a trait line prints (`init?(trait:)`, case ignored, and `trait`: "Tiny") and its pawn (`pawnSize`: Tiny
+  and Small are both `.small`). `PawnSize`, which art read from PDFs keeps, gains nothing: no PDF prints a Tiny
+  pawn, and a sixth pawn size would reach `ArtKey`, every size switch and every synced reading. The column holds
+  the creature's size, so it and the trait say the same thing and neither is rounded: Turnkeeper writes it from
+  `TraitLine.size` whenever it saves a creature with a stat block (NULL for a word that isn't one of the six, which
+  prints as Medium and leaves the trait alone), and Pawn Shop changes it at any time with
+  `setCustomCreatureSize(_:id:)`, which writes the column alone. Turnkeeper saves the record with the new trait
+  the next time it saves the creature; until then every read applies the column, so the stat block already shows
+  it.
+- **Renaming** (R4.7). `renameCustomCreature(id:to:)` writes the name alone, as every write names its columns, so
+  Pawn Shop renames a creature without touching its record.
+- **Pawn Shop's own** (R4.8). The art's placement and scaling, whether the name is printed, and the tags stay in
+  `pawn-shop.json`, by the creature's ID, with defaults for a creature Turnkeeper made (filled, centered, name
+  printed). They sync in Pawn Shop's zone as before, without the image, which now syncs with its `customArt`.
+  Shared framing (tabletop-kit#27) would move the placement and scaling here later.
+- **Removing** (R4.9). Turnkeeper calls `removeCustomCreature(id:)`, which now also takes out the creature's
+  `creatureArt` row and the custom art nothing else is chosen for. Pawn Shop calls it for a creature without a stat
+  block and otherwise records the ID in its `hidden` list.
+- **Moving Pawn Shop's custom pawns in** (R6.6) is a step of its own, not part of `moveIn`: Pawn Shop's move (#27)
+  left them in `pawn-shop.json`, and libraries that moved in before this have that move recorded as finished. While
+  `pawn-shop.json` lists custom pawns, Pawn Shop adds each as above under its own ID (one already there is
+  skipped, which is what a move cut short, or a pawn another device moved and synced, leaves), moves
+  `Custom/<id>.png` from its folder into the store's `Custom` (a rename; a file already there is skipped), and
+  then saves `pawn-shop.json` with only what is Pawn Shop's own. Tested on the copy of the real library (78 custom
+  pawns, 17 of them on the Iconics sheet).
+- **Sync.** `CustomCreaturePayload` gains `name`, `game` and `size` as optionals, by the rule for later versions
+  (library sync design), and `format` stays 1: no released app has the store or its sync. A creature synced by a
+  build before this has an empty name until Turnkeeper next saves it; Turnkeeper fills the columns of such rows
+  when it opens the library.
+
 ## Who does what
 | Issue | Part |
 |---|---|
+| tabletop-kit#65, pawn-shop#63, turnkeeper#18 | custom pawns as custom creatures: the columns, `CreatureSize` and `addCustomCreature` here; Pawn Shop's pawns over custom creatures and its move (R6.6), before its Quick Look previews (pawn-shop#58); Turnkeeper's creatures without a stat block |
 | tabletop-kit#16 | `SharedLibrary`: the store, change notices, claims, creature library, Turnkeeper's and Field Guide's move |
 | tabletop-kit#33 | `ArtKey`, `ArtReference`, merging by key, pictures, `ArtLibrary` over the store, Pawn Shop's move |
 | pawn-shop#46 | pawn IDs from `ArtKey` in Pawn Shop's own library, with aliases; sheets with `ArtReference` |
@@ -238,7 +293,13 @@ Settled for pawn-shop#46's and the suite's open questions:
   creatures, in one product or across products, gives each its own ID (R2.3); size is added only where one product
   prints a picture under one name in two sizes.
 - **A Battle Card's sharper picture** joins the pawn's entry, which keeps the pawn's ID.
-- **A custom creature's pawn size** is `TraitLine.size` mapped to `PawnSize` (case ignored): Tiny becomes `.small`,
-  and an empty or unknown size `.medium`.
-- **Custom creatures without art** are left out of Pawn Shop. **Field Guide** shows custom creatures but doesn't edit
-  them. The **art chosen for a creature** is shared by Turnkeeper and Field Guide.
+- **A custom creature's size** is a `CreatureSize`, shared by its stat block and its pawn, rather than a
+  `PawnSize` worked out from the trait: Tiny is a size of its own that prints as Small, so a size set in Pawn Shop
+  can be written back to the stat block without guessing. An empty or unknown size prints as Medium.
+- **Custom creatures without art** are left out of Pawn Shop, and those **without a stat block** out of Field
+  Guide. **Field Guide** shows custom creatures but doesn't edit them. The **art chosen for a creature** is shared
+  by Turnkeeper and Field Guide.
+- **A custom pawn is a custom creature**, not custom art with a name: one row has the name both apps show, so a
+  rename in either reaches the other, and a sheet's pawn and an encounter's creature are the same ID.
+- **Pasted art on a bestiary creature** (Turnkeeper R3.5c) is not a pawn in Pawn Shop: the store doesn't hold a
+  bestiary creature's name or size. Only custom creatures are.
