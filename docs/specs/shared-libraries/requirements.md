@@ -83,8 +83,10 @@ Pawn Shop #63. What each app shows stays in its own spec.
 - R4.8 How a custom creature's art sits on its pawn (its placement, its scaling, whether the name is printed) and
   the pawn's tags stay Pawn Shop's, and follow the creature to Pawn Shop on the user's other devices.
 - R4.9 Deleting a custom creature in Turnkeeper removes it from all three apps, with its art. Removing its pawn in
-  Pawn Shop deletes a creature that has no stat block, with its art; one with a stat block is only hidden in Pawn
-  Shop, as a pawn read from a PDF is, and stays in Turnkeeper and Field Guide.
+  Pawn Shop deletes a creature that has no stat block, with its art, and Turnkeeper then takes it out of every
+  encounter, as its own Delete Custom Creature does. Pawn Shop asks first, and where Turnkeeper shares the library
+  it says that the creature goes from Turnkeeper and its encounters too. One with a stat block is only hidden in
+  Pawn Shop, as a pawn read from a PDF is, and stays in Turnkeeper and Field Guide.
 - R4.10 A creature without a stat block has no game. Turnkeeper lists it in every campaign, and it takes the
   campaign's game when it is given a stat block.
 

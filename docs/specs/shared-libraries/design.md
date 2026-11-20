@@ -254,7 +254,12 @@ Turnkeeper never reads how art sits on a pawn.
   Shared framing (tabletop-kit#27) would move the placement and scaling here later.
 - **Removing** (R4.9). Turnkeeper calls `removeCustomCreature(id:)`, which now also takes out the creature's
   `creatureArt` row and the custom art nothing else is chosen for. Pawn Shop calls it for a creature without a stat
-  block and otherwise records the ID in its `hidden` list.
+  block, after asking, and otherwise records the ID in its `hidden` list. Pawn Shop can't see Turnkeeper's
+  encounters, so its question names Turnkeeper and its encounters whenever Turnkeeper has moved in on this device
+  (`hasMovedIn(.turnkeeper)`), and is a plain confirmation otherwise. Turnkeeper reads the deletion (`deletions`,
+  here or synced from another device) and removes the creature from every encounter, as its own delete does.
+  Always hiding was the alternative: a hidden pawn doesn't sync, so it would stay on the user's other devices,
+  and someone with Pawn Shop alone could never delete one.
 - **Moving Pawn Shop's custom pawns in** (R6.6) is a step of its own, not part of `moveIn`: Pawn Shop's move (#27)
   left them in `pawn-shop.json`, and libraries that moved in before this have that move recorded as finished. While
   `pawn-shop.json` lists custom pawns, Pawn Shop adds each as above under its own ID (one already there is
