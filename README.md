@@ -5,7 +5,7 @@
 
 Swift libraries shared by three of the [Tableside Toolkit](#the-apps) apps,
 [Pawn Shop](https://github.com/scooper4711/pawn-shop), [Turnkeeper](https://github.com/scooper4711/turnkeeper) and
-[Field Guide](https://github.com/scooper4711/field-guide), for macOS and iPadOS.
+[Field Guide](https://github.com/scooper4711/field-guide), for macOS, iPadOS and iOS.
 
 - **ArtExtraction** finds the creature art in Pathfinder and Starfinder pawn, token and Battle Cards PDFs that you
   bought, and the item art in item decks (Potions & Talismans, Magic Armaments, Alchemy, Guns, Gears, Relics,
@@ -41,8 +41,8 @@ Add the package in Xcode or `Package.swift`:
 
 ## The apps
 
-The Tableside Toolkit is a set of free Mac apps for running Pathfinder and Starfinder games in person; Turnkeeper
-and Field Guide run on the iPad too. Like any good toolkit, each one grants a +1 item bonus to game prep.
+The Tableside Toolkit is a set of free apps for the Mac, iPad and iPhone for running Pathfinder and Starfinder games
+in person. Like any good toolkit, each one grants a +1 item bonus to game prep.
 
 - [Scrollkeeper](https://github.com/scooper4711/scrollkeeper) keeps your Paizo library in order and downloads your
   purchases.
@@ -51,9 +51,9 @@ and Field Guide run on the iPad too. Like any good toolkit, each one grants a +1
   pawn PDFs.
 - [Mapsmith](https://github.com/scooper4711/mapsmith) prints battle maps at true scale on ordinary paper.
 - [Turnkeeper](https://github.com/scooper4711/turnkeeper) builds encounters and runs initiative at the table, with
-  the battle card of whoever's turn it is, on the iPad and the Mac.
+  the battle card of whoever's turn it is.
 - [Field Guide](https://github.com/scooper4711/field-guide) carries the Pathfinder and Starfinder compendium,
-  offline, on the iPad and the Mac.
+  offline.
 
 ## Develop
 `make test`, `make lint`, `make coverage` (80% of lines and regions) and `make build-ios`. Tests that read real
