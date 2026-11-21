@@ -23,8 +23,8 @@ fastlane calls macOS `osx`, which `fastlane_platform` translates.
   platform's text is downloaded into the scratch folder and compared file by file: the files that differ are copied
   to `metadata-<platform>/`, which is emptied first, so it never holds a difference that is gone.
 - `pull-screenshots`: `deliver download_screenshots --screenshots_path <store>/screenshots/<platform>` for each
-  platform. It is for the first import: fastlane names the files after their device and position, so a later pull
-  doesn't match the names the folder was pushed with.
+  platform, and removes the folders left empty when a record has none. It is for the first import: fastlane names the
+  files after their device and position, so a later pull doesn't match the names the folder was pushed with.
 - `push`: for each platform, `deliver --app_version $VERSION --metadata_path … --skip_binary_upload --force`. The
   path is `metadata/`, or for a platform with a `metadata-<platform>/` a copy of `metadata/` in the scratch folder
   with that folder's files over it. With

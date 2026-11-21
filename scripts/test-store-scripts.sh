@@ -50,6 +50,7 @@ export ASC_KEY_ID=KEYID12345 ASC_ISSUER_ID=issuer-1 ASC_KEY_FILE="$DIR/AuthKey.p
 STORE="$DIR/store"
 mkdir -p "$STORE/metadata/en-US" "$STORE/screenshots/ios/en-US"
 echo "A demo." > "$STORE/metadata/en-US/description.txt"
+touch "$STORE/screenshots/ios/en-US/1-home.png"
 echo "Check the sync." > "$DIR/notes.txt"
 touch "$DIR/Demo.ipa" "$DIR/Demo.pkg"
 
@@ -70,6 +71,9 @@ check "iOS gets the metadata folder"       'call 1 "--metadata_path|$STORE/metad
 check "iOS screenshots are replaced"       'call 1 "|$STORE/screenshots/ios|--overwrite_screenshots|"'
 check "the Mac record is osx to fastlane"  'call 2 "--platform|osx|"'
 check "no Mac folder, screenshots kept"    'call 2 "--skip_screenshots|" && ! call 2 "--overwrite_screenshots"'
+mkdir -p "$STORE/screenshots/macos/en-US"
+VERSION=1.2.3 PLATFORMS=macos listing push
+check "an empty folder deletes nothing"    'call 3 "--skip_screenshots|" && ! call 3 "--overwrite_screenshots"'
 check "no build is uploaded"               'call 1 "--skip_binary_upload|" && call 2 "--skip_binary_upload|"'
 check "the text check skips purchases"     'call 1 "--precheck_include_in_app_purchases|false|--"'
 check "review is never asked for"          '! grep -q submit_for_review "$LOG"'
@@ -95,6 +99,7 @@ check "pull reads the first platform"      'call 1 "--platform|osx|" && call 1 "
 listing pull-screenshots
 check "screenshots come per platform"      'call 2 "download_screenshots|" && call 3 "--platform|osx|"'
 check "each into its own folder"           'call 3 "--screenshots_path|$STORE/screenshots/macos|"'
+check "no screenshots, no folder left"     '[[ ! -e "$STORE/screenshots/macos" && -d "$STORE/screenshots/ios/en-US" ]]'
 
 # R1.2: a platform's own text
 OURS="$DIR/ours"

@@ -21,7 +21,7 @@ call from a checkout of tabletop-kit.
   platform. `pull-screenshots` does the same for the screenshots of each platform.
 - R2.2 `scripts/store-listing.sh push <bundle-id> <store-dir>` sends each platform its text (R1.2) and screenshots, to
   the version being prepared, for every platform in `PLATFORMS`, and sets that version's number to `VERSION`.
-  Screenshots on the record are replaced by the folder's; a platform without a screenshots folder keeps its own.
+  Screenshots on the record are replaced by the folder's; a platform with no screenshots in its folder keeps its own.
 - R2.3 A push never uploads a build and never submits the version for review. Submitting stays a person's decision,
   made on the website.
 

@@ -70,6 +70,8 @@ pull_screenshots() {
         mkdir -p "$STORE_DIR/screenshots/$platform"
         deliver "$platform" download_screenshots --screenshots_path "$STORE_DIR/screenshots/$platform" --force
     done
+    # A record without screenshots leaves an empty folder, which is not one to send back.
+    find "$STORE_DIR/screenshots" -depth -type d -empty -delete
 }
 
 push() {
@@ -81,14 +83,15 @@ push() {
     done
 }
 
-# Usage: push_platform <platform>; a platform without a screenshots folder keeps the screenshots it has.
+# Usage: push_platform <platform>; a platform with no screenshots in its folder keeps the ones on its record:
+# replacing them with nothing would only delete them.
 push_platform() {
     local screenshots="$STORE_DIR/screenshots/$1" metadata="$STORE_DIR/metadata"
     [[ ! -d "$STORE_DIR/metadata-$1" ]] || metadata="$(merged_text "$1")"
     # deliver checks the text for what App Review rejects; with an API key that check can't read in-app purchases.
     set -- "$1" --app_version "$VERSION" --metadata_path "$metadata" --skip_binary_upload --force \
         --precheck_include_in_app_purchases false
-    if [[ -d "$screenshots" ]]; then
+    if [[ -n "$(find "$screenshots" -type f 2> /dev/null | head -n 1)" ]]; then
         deliver "$@" --screenshots_path "$screenshots" --overwrite_screenshots
     else
         deliver "$@" --skip_screenshots
