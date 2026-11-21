@@ -37,6 +37,17 @@ running_toolkit_apps() {
     | grep -ixF "$(printf '%s\n' "${TOOLKIT_APPS[@]}")" || true
 }
 
+# The library folders and App Group containers that exist but that macOS won't let this terminal read, one per
+# line. macOS keeps other apps' data from a terminal until it is allowed in, and a folder that can't be listed
+# looks empty to the scripts.
+unreadable_library_folders() {
+  local folder
+  while IFS= read -r folder; do
+    [[ -e "$folder" ]] || continue
+    ls "$folder" > /dev/null 2>&1 || echo "$folder"
+  done < <(app_container_folders; group_containers)
+}
+
 app_container_folders() {
   local bundle
   for bundle in "${TOOLKIT_APPS[@]}"; do
@@ -49,10 +60,18 @@ app_container_folders() {
 # a later version adds. The glob skips dotfiles, which leaves the system's own container metadata alone.
 group_container_items() {
   local group item
-  for group in "$GROUP_CONTAINERS"/*"$GROUP_SUFFIX"; do
-    [[ -d "$group" ]] || continue
+  while IFS= read -r group; do
     for item in "$group"/*; do
       [[ -e "$item" ]] && echo "$item"
     done
+  done < <(group_containers)
+}
+
+# The App Group containers themselves, one per line.
+group_containers() {
+  local group
+  for group in "$GROUP_CONTAINERS"/*"$GROUP_SUFFIX"; do
+    [[ -d "$group" ]] && echo "$group"
   done
+  return 0
 }
