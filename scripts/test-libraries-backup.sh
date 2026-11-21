@@ -38,6 +38,14 @@ write "$GROUP/Tableside/Pictures/one.heic" "picture"
 write "$GROUP/Scrollkeeper/library.json" "scrolls"
 write "$GROUP/$METADATA" "system metadata"
 
+# macOS keeps a terminal out of other apps' data until it is allowed in. A folder that can't be read mustn't be
+# left out of a backup that calls itself complete.
+chmod 000 "$GROUP"
+check "an unreadable folder stops the backup" \
+  '[[ "$(scripts/backup-libraries.sh locked 2>&1 || true)" == *"won'"'"'t let this terminal read"*"$GROUP"* ]]'
+check "a stopped backup leaves no folder" '[[ ! -e "$TABLESIDE_BACKUP_ROOT" ]]'
+chmod 700 "$GROUP"
+
 scripts/backup-libraries.sh before-test > /dev/null
 BACKUP="$(find "$TABLESIDE_BACKUP_ROOT" -mindepth 1 -maxdepth 1 -name '*-before-test')"
 check "shared library is backed up" \

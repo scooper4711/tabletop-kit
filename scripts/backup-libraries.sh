@@ -16,6 +16,7 @@ main() {
   local destination
   destination="$BACKUP_ROOT/$(date +%Y-%m-%d_%H%M%S)${label:+-$label}"
   warn_if_apps_running
+  stop_if_folders_are_unreadable
   mkdir -p "$destination"
   : > "$destination/manifest.tsv"
   back_up_library_folders "$destination"
@@ -34,6 +35,19 @@ warn_if_apps_running() {
     echo "$running" | sed 's/^/  /' >&2
     echo "Quit them first for a clean backup." >&2
   fi
+}
+
+# A folder that can't be read would be left out of a backup that then calls itself complete, so nothing is
+# backed up until all of them can be.
+stop_if_folders_are_unreadable() {
+  local unreadable
+  unreadable="$(unreadable_library_folders)"
+  [[ -z "$unreadable" ]] && return 0
+  echo "Backing up failed: macOS won't let this terminal read:" >&2
+  echo "$unreadable" | sed 's/^/  /' >&2
+  echo "Give your terminal app Full Disk Access (System Settings > Privacy & Security > Full Disk Access)," >&2
+  echo "restart it, and run this again. Nothing was backed up." >&2
+  exit 1
 }
 
 back_up_library_folders() {
