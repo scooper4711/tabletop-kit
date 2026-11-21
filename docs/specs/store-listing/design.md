@@ -11,22 +11,27 @@ Sourced by the other two.
 
 - `require_fastlane` sets `FASTLANE` to the one on `PATH`, or stops.
 - `write_api_key` checks the three `ASC_*` variables and the key file, then writes fastlane's key file
-  (`{"key_id", "issuer_id", "key"}`, the key being the `.p8`'s text with its line ends escaped) into a `mktemp -d`
-  folder and sets `API_KEY_JSON`. An `EXIT` trap removes the folder.
+  (`{"key_id", "issuer_id", "key"}`, the key being the `.p8`'s text with its line ends escaped) into `WORK_DIR`, a
+  `mktemp -d` scratch folder, and sets `API_KEY_JSON`. An `EXIT` trap removes the folder.
 
 ## `store-listing.sh`
 
 `PLATFORMS` (default `ios macos`) names the records to work on; an app with only a macOS record passes `macos`.
 fastlane calls macOS `osx`, which `fastlane_platform` translates.
 
-- `pull`: `deliver download_metadata --metadata_path <store>/metadata --force`, for the first platform. The listing
-  text is per platform on App Store Connect, but R1.2 keeps one copy, so one platform's is enough.
+- `pull`: `deliver download_metadata --metadata_path <store>/metadata --force`, for the first platform. Every other
+  platform's text is downloaded into the scratch folder and compared file by file: the files that differ are copied
+  to `metadata-<platform>/`, which is emptied first, so it never holds a difference that is gone.
 - `pull-screenshots`: `deliver download_screenshots --screenshots_path <store>/screenshots/<platform>` for each
   platform. It is for the first import: fastlane names the files after their device and position, so a later pull
   doesn't match the names the folder was pushed with.
-- `push`: for each platform, `deliver --app_version $VERSION --metadata_path … --skip_binary_upload --force`, with
+- `push`: for each platform, `deliver --app_version $VERSION --metadata_path … --skip_binary_upload --force`. The
+  path is `metadata/`, or for a platform with a `metadata-<platform>/` a copy of `metadata/` in the scratch folder
+  with that folder's files over it. With
   `--screenshots_path … --overwrite_screenshots` when the platform has a folder and `--skip_screenshots` when not.
   `--app_version` renames the version being prepared, which is how the record's number follows the release.
+  deliver then runs *precheck* over the text, which looks for what App Review rejects. It can't read in-app purchases
+  with an API key and stops there, so `--precheck_include_in_app_purchases false` leaves them out.
 
 R2.3: the script never passes `submit_for_review`, whose default is off, and unsets `DELIVER_SUBMIT_FOR_REVIEW`, the
 environment variable that would turn it on. Boolean options are passed bare (`--force`, not `--force true`), the form
@@ -54,6 +59,7 @@ adds the groups and submits it for beta review.
 
 `scripts/test-store-scripts.sh` puts stand-ins for `fastlane` and `xcodebuild` first on `PATH`. Each records its
 arguments, and the fastlane one also copies the key file it was given. The checks: one `deliver` run per platform with
-the version and paths; never `submit_for_review`; screenshots replaced or skipped by folder; the key file valid while
+the version and paths; never `submit_for_review`; screenshots replaced or skipped by folder; a platform's differing
+text kept by a pull and sent back by a push; the key file valid while
 fastlane runs and gone afterward; `pilot` options by file type; the archive and export commands; and that a missing
 key, version, notes file or over-long notes stops before a tool is run. Nothing is sent anywhere.

@@ -7,6 +7,8 @@ SCRIPTS="$PWD/scripts"
 DIR="$(mktemp -d)"; trap 'rm -rf "$DIR"' EXIT
 LOG="$DIR/calls.log"
 export LOG KEY_COPY="$DIR/key-seen.json" KEY_PATH_FILE="$DIR/key-path" ENV_LOG="$DIR/env.log"
+export ASC_TEXT="$DIR/asc" SENT="$DIR/sent"
+mkdir -p "$ASC_TEXT" "$SENT"
 
 # Each stand-in writes one line per run, its arguments joined by "|".
 mkdir -p "$DIR/bin"
@@ -14,10 +16,23 @@ cat > "$DIR/bin/fastlane" <<'TOOL'
 #!/usr/bin/env bash
 { printf 'fastlane|'; printf '%s|' "$@"; echo; } >> "$LOG"
 echo "${DELIVER_SUBMIT_FOR_REVIEW:-unset}" >> "$ENV_LOG"
-while (($#)); do
-    if [[ "$1" == "--api_key_path" ]]; then cp "$2" "$KEY_COPY"; echo "$2" > "$KEY_PATH_FILE"; fi
-    shift
+# A download writes the text App Store Connect would hold for the platform ($ASC_TEXT/<platform>), and an upload
+# keeps the description it was given ($SENT/<platform>.txt).
+for ((i = 1; i <= $#; i++)); do
+    next=$((i + 1))
+    case "${!i}" in
+        --api_key_path) cp "${!next}" "$KEY_COPY"; echo "${!next}" > "$KEY_PATH_FILE" ;;
+        --platform) platform="${!next}" ;;
+        --metadata_path) text="${!next}" ;;
+        download_metadata) download=1 ;;
+    esac
 done
+[[ "${1:-}" == "deliver" && -n "${text:-}" ]] || exit 0
+if [[ -n "${download:-}" ]]; then
+    [[ ! -d "$ASC_TEXT/$platform" ]] || cp -R "$ASC_TEXT/$platform/." "$text"
+elif [[ -f "$text/en-US/description.txt" ]]; then
+    cp "$text/en-US/description.txt" "$SENT/$platform.txt"
+fi
 TOOL
 cat > "$DIR/bin/xcodebuild" <<'TOOL'
 #!/usr/bin/env bash
@@ -56,6 +71,7 @@ check "iOS screenshots are replaced"       'call 1 "|$STORE/screenshots/ios|--ov
 check "the Mac record is osx to fastlane"  'call 2 "--platform|osx|"'
 check "no Mac folder, screenshots kept"    'call 2 "--skip_screenshots|" && ! call 2 "--overwrite_screenshots"'
 check "no build is uploaded"               'call 1 "--skip_binary_upload|" && call 2 "--skip_binary_upload|"'
+check "the text check skips purchases"     'call 1 "--precheck_include_in_app_purchases|false|--"'
 check "review is never asked for"          '! grep -q submit_for_review "$LOG"'
 check "the variable can't ask for it"      '! grep -qv unset "$ENV_LOG"'
 
@@ -79,6 +95,26 @@ check "pull reads the first platform"      'call 1 "--platform|osx|" && call 1 "
 listing pull-screenshots
 check "screenshots come per platform"      'call 2 "download_screenshots|" && call 3 "--platform|osx|"'
 check "each into its own folder"           'call 3 "--screenshots_path|$STORE/screenshots/macos|"'
+
+# R1.2: a platform's own text
+OURS="$DIR/ours"
+for platform in ios osx; do
+    mkdir -p "$ASC_TEXT/$platform/en-US"
+    echo "pawns,maps" > "$ASC_TEXT/$platform/en-US/keywords.txt"
+    echo "For the iPad." > "$ASC_TEXT/$platform/en-US/description.txt"
+done
+echo "For the Mac, with Finder tags." > "$ASC_TEXT/osx/en-US/description.txt"
+"$SCRIPTS/store-listing.sh" pull io.example.demo "$OURS"
+check "the first platform's text is kept"  'grep -q "For the iPad." "$OURS/metadata/en-US/description.txt"'
+check "the Mac's different text is kept"   'grep -q "Finder tags" "$OURS/metadata-macos/en-US/description.txt"'
+check "only the files that differ"         '[[ ! -e "$OURS/metadata-macos/en-US/keywords.txt" ]]'
+VERSION=1.2.3 "$SCRIPTS/store-listing.sh" push io.example.demo "$OURS"
+check "the iPad gets its text back"        '[[ "$(cat "$SENT/ios.txt")" == "For the iPad." ]]'
+check "the Mac gets its own text back"     'grep -q "Finder tags" "$SENT/osx.txt"'
+check "the Mac's text is a merged copy"    'tail -n 1 "$LOG" | grep -q "merged-macos"'
+cp "$ASC_TEXT/ios/en-US/description.txt" "$ASC_TEXT/osx/en-US/description.txt"
+"$SCRIPTS/store-listing.sh" pull io.example.demo "$OURS"
+check "no difference, no Mac folder"       '[[ ! -e "$OURS/metadata-macos" ]]'
 
 # R3.2, R3.3: TestFlight
 rm "$LOG"

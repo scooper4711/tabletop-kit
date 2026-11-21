@@ -3,9 +3,11 @@
 # Specified in docs/specs/store-listing. It never uploads a build and never submits a version for review.
 #
 # Usage: store-listing.sh pull|pull-screenshots|push <bundle-id> <store-dir>
-#   pull              writes the listing text App Store Connect holds into <store-dir>/metadata
+#   pull              writes the listing text App Store Connect holds into <store-dir>/metadata, and the files in
+#                     which another platform's text differs into <store-dir>/metadata-<platform>
 #   pull-screenshots  writes each platform's screenshots into <store-dir>/screenshots/<platform>
-#   push              sends metadata/ and screenshots/<platform>/ to the version being prepared, on each platform
+#   push              sends metadata/ (with metadata-<platform>/ over it) and screenshots/<platform>/ to the version
+#                     being prepared, on each platform
 #
 # PLATFORMS   the records to work on (default "ios macos"); an app with only a Mac record passes "macos"
 # VERSION     the version number the prepared version gets (required for push)
@@ -35,10 +37,31 @@ deliver() {
         --app_identifier "$BUNDLE_ID" --platform "$(fastlane_platform "$platform")"
 }
 
+# Usage: download_text <platform> <folder>
+download_text() {
+    mkdir -p "$2"
+    deliver "$1" download_metadata --metadata_path "$2" --force
+}
+
 pull() {
-    mkdir -p "$STORE_DIR/metadata"
-    # One copy of the text serves every platform, so the first platform's is the one fetched.
-    deliver "${PLATFORMS%% *}" download_metadata --metadata_path "$STORE_DIR/metadata" --force
+    local platform base="${PLATFORMS%% *}"
+    download_text "$base" "$STORE_DIR/metadata"
+    for platform in $PLATFORMS; do
+        [[ "$platform" == "$base" ]] || pull_differences "$platform"
+    done
+}
+
+# Usage: pull_differences <platform>; App Store Connect holds the text per platform. The files in which this
+# platform's differs from metadata/ go to metadata-<platform>/, which is removed when none does.
+pull_differences() {
+    local theirs="$WORK_DIR/$1" own="$STORE_DIR/metadata-$1" file
+    download_text "$1" "$theirs"
+    rm -rf "$own"
+    while IFS= read -r file; do
+        cmp -s "$theirs/$file" "$STORE_DIR/metadata/$file" && continue
+        mkdir -p "$own/$(dirname "$file")"
+        cp "$theirs/$file" "$own/$file"
+    done < <(cd "$theirs" && find . -type f)
 }
 
 pull_screenshots() {
@@ -60,13 +83,24 @@ push() {
 
 # Usage: push_platform <platform>; a platform without a screenshots folder keeps the screenshots it has.
 push_platform() {
-    local screenshots="$STORE_DIR/screenshots/$1"
-    set -- "$1" --app_version "$VERSION" --metadata_path "$STORE_DIR/metadata" --skip_binary_upload --force
+    local screenshots="$STORE_DIR/screenshots/$1" metadata="$STORE_DIR/metadata"
+    [[ ! -d "$STORE_DIR/metadata-$1" ]] || metadata="$(merged_text "$1")"
+    # deliver checks the text for what App Review rejects; with an API key that check can't read in-app purchases.
+    set -- "$1" --app_version "$VERSION" --metadata_path "$metadata" --skip_binary_upload --force \
+        --precheck_include_in_app_purchases false
     if [[ -d "$screenshots" ]]; then
         deliver "$@" --screenshots_path "$screenshots" --overwrite_screenshots
     else
         deliver "$@" --skip_screenshots
     fi
+}
+
+# Usage: merged_text <platform>; prints a folder holding metadata/ with the platform's own files over it.
+merged_text() {
+    local merged="$WORK_DIR/merged-$1"
+    mkdir -p "$merged"
+    cp -R "$STORE_DIR/metadata/." "$STORE_DIR/metadata-$1/." "$merged"
+    echo "$merged"
 }
 
 case "$COMMAND" in
