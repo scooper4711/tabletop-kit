@@ -34,19 +34,19 @@ fastlane documents.
 
 ## `archive-ios.sh`
 
-`xcodebuild archive` for `generic/platform=iOS` with `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` on the command
-line, where they win over an app's `Version.xcconfig`; then `xcodebuild -exportArchive` with an options file written
-on the spot (`method` `app-store-connect`, `destination` `export`, automatic signing). Both get
-`-allowProvisioningUpdates` and, when the `ASC_*` variables are set, the key as `-authenticationKey…`, so signing needs
-no Xcode account. The `.ipa` lands in `<out-dir>/export/`, and its path is the script's last line of output.
+`xcodebuild archive` for `generic/platform=iOS` with `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` on the
+command line, where they win over an app's `Version.xcconfig`; then `xcodebuild -exportArchive` with an options file
+written on the spot (`method` `app-store-connect`, `destination` `export`, automatic signing). Both get
+`-allowProvisioningUpdates` and, when the `ASC_*` variables are set, the key as `-authenticationKey…`, so signing
+needs no Xcode account. The `.ipa` lands in `<out-dir>/export/`, and its path is the script's last line of output.
 
 What an app must do before archiving (generate its data, fetch its artwork) stays in that app's Makefile.
 
 ## `testflight.sh`
 
-`pilot upload --ipa` or `--pkg … --app_platform osx`, by the file's extension, with `--changelog` from the notes file,
-`--groups` and `--distribute_external`. pilot waits for App Store Connect to process the build, sets the notes, adds
-the groups and submits it for beta review.
+`pilot upload --ipa` or `--pkg … --app_platform osx`, by the file's extension, with `--changelog` from the notes
+file, `--groups` and `--distribute_external`. pilot waits for App Store Connect to process the build, sets the notes,
+adds the groups and submits it for beta review.
 
 `package-appstore.sh` keeps `UPLOAD=1` for uploading a Mac package without TestFlight notes.
 
