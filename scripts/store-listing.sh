@@ -32,9 +32,12 @@ fastlane_platform() { if [[ "$1" == "macos" ]]; then echo osx; else echo "$1"; f
 deliver() {
     local platform="$1"
     shift
+    # deliver asks whether to set itself up unless the folder it runs in has a metadata folder, and leaves its
+    # default folders there: it runs in a scratch folder that has one. Paths given to it are absolute.
+    mkdir -p "$WORK_DIR/run/metadata"
     # Submitting stays a person's decision: the option is never passed, and its variable can't turn it on.
-    env -u DELIVER_SUBMIT_FOR_REVIEW "$FASTLANE" deliver "$@" --api_key_path "$API_KEY_JSON" \
-        --app_identifier "$BUNDLE_ID" --platform "$(fastlane_platform "$platform")"
+    (cd "$WORK_DIR/run" && env -u DELIVER_SUBMIT_FOR_REVIEW "$FASTLANE" deliver "$@" \
+        --api_key_path "$API_KEY_JSON" --app_identifier "$BUNDLE_ID" --platform "$(fastlane_platform "$platform")")
 }
 
 # Usage: download_text <platform> <folder>
@@ -112,6 +115,8 @@ case "$COMMAND" in
 esac
 require_fastlane
 write_api_key
+mkdir -p "$STORE_DIR"
+STORE_DIR="$(cd "$STORE_DIR" && pwd)"
 case "$COMMAND" in
     pull) pull ;;
     pull-screenshots) pull_screenshots ;;

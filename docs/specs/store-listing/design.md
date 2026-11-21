@@ -33,6 +33,10 @@ fastlane calls macOS `osx`, which `fastlane_platform` translates.
   deliver then runs *precheck* over the text, which looks for what App Review rejects. It can't read in-app purchases
   with an API key and stops there, so `--precheck_include_in_app_purchases false` leaves them out.
 
+deliver runs in a folder of its own inside the scratch folder, with an empty `metadata` folder in it: without one
+where it runs, deliver stops to ask whether to set itself up, and it leaves its default folders behind. The store
+folder is given to it as a full path.
+
 R2.3: the script never passes `submit_for_review`, whose default is off, and unsets `DELIVER_SUBMIT_FOR_REVIEW`, the
 environment variable that would turn it on. Boolean options are passed bare (`--force`, not `--force true`), the form
 fastlane documents.
