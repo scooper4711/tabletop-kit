@@ -54,6 +54,8 @@ in person. Like any good toolkit, each one grants a +1 item bonus to game prep.
   the battle card of whoever's turn it is.
 - [Field Guide](https://github.com/scooper4711/field-guide) carries the Pathfinder and Starfinder compendium,
   offline.
+- [Chronicle Keeper](https://github.com/scooper4711/chronicle-keeper) keeps a record of your Organized Play
+  characters: their sessions, XP, level, reputation and Fame.
 
 ## Develop
 `make test`, `make lint`, `make coverage` (80% of lines and regions) and `make build-ios`. Tests that read real
