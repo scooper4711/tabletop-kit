@@ -7,7 +7,7 @@ SCRIPTS="$PWD/scripts"
 DIR="$(mktemp -d)"; trap 'rm -rf "$DIR"' EXIT
 LOG="$DIR/calls.log"
 export LOG KEY_COPY="$DIR/key-seen.json" KEY_PATH_FILE="$DIR/key-path" ENV_LOG="$DIR/env.log"
-export ASC_TEXT="$DIR/asc" SENT="$DIR/sent"
+export ASC_TEXT="$DIR/asc" SENT="$DIR/sent" UNREADY="$DIR/unready.log"
 mkdir -p "$ASC_TEXT" "$SENT"
 
 # Each stand-in writes one line per run, its arguments joined by "|".
@@ -16,6 +16,7 @@ cat > "$DIR/bin/fastlane" <<'TOOL'
 #!/usr/bin/env bash
 { printf 'fastlane|'; printf '%s|' "$@"; echo; } >> "$LOG"
 echo "${DELIVER_SUBMIT_FOR_REVIEW:-unset}" >> "$ENV_LOG"
+[[ "${1:-}" != "deliver" || -d metadata ]] || echo "$PWD" >> "$UNREADY"
 # A download writes the text App Store Connect would hold for the platform ($ASC_TEXT/<platform>), and an upload
 # keeps the description it was given ($SENT/<platform>.txt).
 for ((i = 1; i <= $#; i++)); do
@@ -76,6 +77,8 @@ VERSION=1.2.3 PLATFORMS=macos listing push
 check "an empty folder deletes nothing"    'call 3 "--skip_screenshots|" && ! call 3 "--overwrite_screenshots"'
 check "no build is uploaded"               'call 1 "--skip_binary_upload|" && call 2 "--skip_binary_upload|"'
 check "the text check skips purchases"     'call 1 "--precheck_include_in_app_purchases|false|--"'
+check "deliver finds itself set up"        '[[ ! -e "$UNREADY" ]]'
+check "nothing is left where it was run"   '[[ ! -e metadata && ! -e screenshots ]]'
 check "review is never asked for"          '! grep -q submit_for_review "$LOG"'
 check "the variable can't ask for it"      '! grep -qv unset "$ENV_LOG"'
 
