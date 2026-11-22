@@ -42,8 +42,26 @@ while (($#)); do
     if [[ "$1" == "-exportPath" ]]; then mkdir -p "$2"; touch "$2/Demo.ipa"; fi
     shift
 done
+[[ -z "${TEST_RUNNER_SCREENSHOT_DIR:-}" ]] || touch "$TEST_RUNNER_SCREENSHOT_DIR/1-home.png"
+[[ -z "${TEST_RUNNER_SCREENSHOT_DIR:-}" || -z "${FAIL_TESTS:-}" ]] || exit 65
 TOOL
-chmod +x "$DIR/bin/fastlane" "$DIR/bin/xcodebuild"
+cat > "$DIR/bin/xcrun" <<'TOOL'
+#!/usr/bin/env bash
+{ printf 'xcrun|'; printf '%s|' "$@"; echo; } >> "$LOG"
+case "$2" in
+    list) printf '    iPad Pro 13-inch (M5) (16GB) (AAAAAAAA-0000-0000-0000-000000000000) (Shutdown)\n'
+          printf '    iPad Pro 13-inch (M5) (BBBBBBBB-0000-0000-0000-000000000000) (Shutdown)\n'
+          printf '    iPhone 18 Pro (CCCCCCCC-0000-0000-0000-000000000000) (Shutdown)\n' ;;
+    clone) echo "CLONE-$3" ;;
+esac
+TOOL
+cat > "$DIR/bin/sips" <<'TOOL'
+#!/usr/bin/env bash
+case "$3" in */iphone/*) size=(1206 2622) ;; *) size=(2064 2752) ;; esac
+[[ -z "${WRONG_SIZE:-}" ]] || size=(100 100)
+if [[ "$2" == "pixelWidth" ]]; then echo "  pixelWidth: ${size[0]}"; else echo "  pixelHeight: ${size[1]}"; fi
+TOOL
+chmod +x "$DIR/bin/fastlane" "$DIR/bin/xcodebuild" "$DIR/bin/xcrun" "$DIR/bin/sips"
 export PATH="$DIR/bin:$PATH"
 
 printf -- '-----BEGIN PRIVATE KEY-----\nQUJD\n-----END PRIVATE KEY-----\n' > "$DIR/AuthKey.p8"
@@ -157,4 +175,20 @@ check "the export is for the store"        'grep -q app-store-connect "$APP/buil
     > /dev/null 2>&1
 check "the version can be given"           'call 3 "|MARKETING_VERSION=3.1.0|CURRENT_PROJECT_VERSION=9|"'
 check "without a key, Xcode's account"     '! call 3 "-authenticationKeyID"'
+
+# Store screenshots R1.1 to R1.5
+rm "$LOG"
+SHOTS="$DIR/shots"
+shots() { "$SCRIPTS/store-screenshots.sh" ios/Demo.xcodeproj Demo-iPad "$SHOTS" > /dev/null 2>&1; }
+shots
+check "both devices' pictures are kept"    '[[ -f "$SHOTS/iphone-1-home.png" && -f "$SHOTS/ipad-1-home.png" ]]'
+check "the exact iPad model is cloned"     'grep -qF "clone|BBBBBBBB-0000-0000-0000-000000000000|" "$LOG"'
+check "the app's UI tests are run"         'grep -qF -- "-only-testing:DemoUITests/StoreScreenshots|" "$LOG"'
+check "each clone is erased"               '[[ "$(grep -c "|erase|" "$LOG")" == 2 ]]'
+check "each clone is deleted"              '[[ "$(grep -c "|delete|" "$LOG")" == 2 ]]'
+check "the status bar is fixed"            'grep -qF "|status_bar|" "$LOG"'
+echo kept > "$SHOTS/iphone-1-home.png"
+check "a failed test is refused"           '! FAIL_TESTS=1 shots'
+check "a wrong size is refused"            '! WRONG_SIZE=1 shots'
+check "a failure keeps the pictures"       '[[ "$(cat "$SHOTS/iphone-1-home.png")" == kept ]]'
 echo "store scripts: all checks passed"
