@@ -87,13 +87,16 @@ push() {
 }
 
 # Usage: push_platform <platform>; a platform with no screenshots in its folder keeps the ones on its record:
-# replacing them with nothing would only delete them.
+# replacing them with nothing would only delete them. Its review/attachment-<platform>.* goes with it.
 push_platform() {
     local screenshots="$STORE_DIR/screenshots/$1" metadata="$STORE_DIR/metadata"
     [[ ! -d "$STORE_DIR/metadata-$1" ]] || metadata="$(merged_text "$1")"
     # deliver checks the text for what App Review rejects; with an API key that check can't read in-app purchases.
     set -- "$1" --app_version "$VERSION" --metadata_path "$metadata" --skip_binary_upload --force \
         --precheck_include_in_app_purchases false
+    local attachment review="$STORE_DIR/review"
+    attachment="$(find "$review" -maxdepth 1 -type f -name "attachment-$1.*" 2> /dev/null | head -n 1 || true)"
+    [[ -z "$attachment" ]] || set -- "$@" --app_review_attachment_file "$attachment"
     if [[ -n "$(find "$screenshots" -type f 2> /dev/null | head -n 1)" ]]; then
         deliver "$@" --screenshots_path "$screenshots" --overwrite_screenshots
     else
