@@ -191,4 +191,7 @@ echo kept > "$SHOTS/iphone-1-home.png"
 check "a failed test is refused"           '! FAIL_TESTS=1 shots'
 check "a wrong size is refused"            '! WRONG_SIZE=1 shots'
 check "a failure keeps the pictures"       '[[ "$(cat "$SHOTS/iphone-1-home.png")" == kept ]]'
+check "the Mac script wants an app"        '[[ "$("$SCRIPTS/store-screenshots-mac.sh" 2>&1 || true)" == *"usage: "* ]]'
+MAC_ERROR="$("$SCRIPTS/store-screenshots-mac.sh" "$DIR/none" x.png 2>&1 || true)"
+check "the Mac script wants a bundle"      '[[ "$MAC_ERROR" == *"is not an app bundle"* ]]'
 echo "store scripts: all checks passed"
