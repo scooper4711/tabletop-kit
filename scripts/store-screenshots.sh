@@ -42,7 +42,7 @@ shoot() {
     [[ -n "$source" ]] || fail "no simulator named $2 is installed"
     CLONE="$(xcrun simctl clone "$source" "Store screenshots $1 $$")"
     prepare_clone
-    run_tests "$pictures" "$WORK_DIR/$1.log" || { tail -n 20 "$WORK_DIR/$1.log" >&2; fail "the $1 UI tests failed"; }
+    run_tests "$pictures" "$WORK_DIR/$1.log" || { report_failure "$WORK_DIR/$1.log"; fail "the $1 UI tests failed"; }
     xcrun simctl delete "$CLONE"
     CLONE=""
     collect "$1" "$3" "$4"
@@ -67,6 +67,14 @@ run_tests() {
     TEST_RUNNER_SCREENSHOT_DIR="$1" xcodebuild test -project "$PROJECT" -scheme "$SCHEME" \
         -destination "platform=iOS Simulator,id=$CLONE" -only-testing:"$UI_TESTS/StoreScreenshots" \
         -derivedDataPath "$WORK_DIR/build" -skipPackageUpdates > "$2" 2>&1
+}
+
+# Usage: report_failure <log-file>; xcodebuild's log leaves out why a test failed, which the result bundle has.
+report_failure() {
+    local result
+    tail -n 20 "$1" >&2
+    result="$(find "$WORK_DIR/build/Logs/Test" -name '*.xcresult' -maxdepth 1 2> /dev/null | tail -n 1)"
+    [[ -z "$result" ]] || xcrun xcresulttool get test-results summary --path "$result" >&2 || true
 }
 
 # Usage: collect <prefix> <width> <height>
