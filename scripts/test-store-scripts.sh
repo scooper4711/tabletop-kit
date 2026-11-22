@@ -93,6 +93,12 @@ check "no Mac folder, screenshots kept"    'call 2 "--skip_screenshots|" && ! ca
 mkdir -p "$STORE/screenshots/macos/en-US"
 VERSION=1.2.3 PLATFORMS=macos listing push
 check "an empty folder deletes nothing"    'call 3 "--skip_screenshots|" && ! call 3 "--overwrite_screenshots"'
+mkdir -p "$STORE/review"
+echo zip > "$STORE/review/attachment-macos.zip"
+VERSION=1.2.3 listing push
+check "the Mac gets its attachment"        'call 5 "--app_review_attachment_file|$STORE/review/attachment-macos.zip|"'
+check "iOS has none to send"               '! call 4 "--app_review_attachment_file|"'
+rm -r "$STORE/review"
 check "no build is uploaded"               'call 1 "--skip_binary_upload|" && call 2 "--skip_binary_upload|"'
 check "the text check skips purchases"     'call 1 "--precheck_include_in_app_purchases|false|--"'
 check "deliver finds itself set up"        '[[ ! -e "$UNREADY" ]]'
