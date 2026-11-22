@@ -8,7 +8,7 @@ call from a checkout of tabletop-kit.
 ## R1 The files
 - R1.1 An app's store folder holds `metadata/` (the listing text and review information, in the layout fastlane's
   *deliver* reads), `screenshots/ios/` and `screenshots/macos/` (a folder per language in each) and
-  `testflight/what-to-test.txt`.
+  `testflight/what-to-test.txt`, and optionally `review/attachment-<platform>.<ext>` (R2.4).
 - R1.2 App Store Connect holds the text per platform. `metadata/` is the text of the first platform in `PLATFORMS`
   and serves the others too; a file in which another platform's text differs is in `metadata-<platform>/`, at the
   same path, and nothing else is.
@@ -22,6 +22,9 @@ call from a checkout of tabletop-kit.
 - R2.2 `scripts/store-listing.sh push <bundle-id> <store-dir>` sends each platform its text (R1.2) and screenshots, to
   the version being prepared, for every platform in `PLATFORMS`, and sets that version's number to `VERSION`.
   Screenshots on the record are replaced by the folder's; a platform with no screenshots in its folder keeps its own.
+- R2.4 A file named `review/attachment-<platform>.<ext>` in the store folder (a PDF or zip) is sent to that platform's
+  version as its App Review attachment, which App Store Connect holds one of per version. A platform without one
+  keeps the attachment on its record.
 - R2.3 A push never uploads a build and never submits the version for review. Submitting stays a person's decision,
   made on the website.
 
