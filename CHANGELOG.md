@@ -5,6 +5,21 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.14.0] - 2026-11-22
+
+### Added
+- Add store screenshots from the demo libraries
+
+### Fixed
+- Report why a store screenshot test failed
+- Run deliver in a folder of its own
+- Leave a record's screenshots alone when the folder is empty
+
+### Changed
+- Specify store screenshots from the demo libraries
+
+[1.14.0]: https://github.com/scooper4711/tabletop-kit/releases/tag/v1.14.0
+
 ## [1.13.0] - 2026-11-21
 
 ### Added
