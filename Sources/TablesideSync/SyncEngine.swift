@@ -10,13 +10,15 @@ typealias ZoneDeletion = (zoneID: CKRecordZone.ID, reason: CKDatabase.DatabaseCh
 actor SyncEngine {
     private let handlers: [any SyncZoneHandler]
     private let store: any SyncStateStore
+    private let environment: SyncEnvironment
     private var queue: (any SyncChangeQueue)?
     /// The CloudKit engine, kept alive for as long as this one is.
     var engine: CKSyncEngine?
 
-    init(handlers: [any SyncZoneHandler], store: any SyncStateStore) {
+    init(handlers: [any SyncZoneHandler], store: any SyncStateStore, environment: SyncEnvironment = .production) {
         self.handlers = handlers
         self.store = store
+        self.environment = environment
     }
 
     /// Sends changes to `queue` from now on. A start then queues what there is to send: `uploadEverything()` the
@@ -88,6 +90,12 @@ actor SyncEngine {
         }
     }
 
+    /// Tells the handlers whose iCloud this is, in this environment, before the engine loads any state.
+    func accountKnown(_ user: String) async {
+        let account = environment.accountName(of: user)
+        for handler in handlers { await handler.accountChanged(to: account) }
+    }
+
     /// Tells every handler of the deleted zones, and uploads again for those that ask.
     func zonesDeleted(_ deletions: [ZoneDeletion]) async {
         for handler in handlers {
@@ -115,7 +123,7 @@ actor SyncEngine {
     // MARK: Helpers
 
     private func signedIn(as user: CKRecord.ID) async {
-        for handler in handlers { await handler.accountChanged(to: user.recordName) }
+        await accountKnown(user.recordName)
         await uploadEverything()
     }
 

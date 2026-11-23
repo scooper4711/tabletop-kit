@@ -58,3 +58,6 @@ and its settings, stay in its own spec.
 ## R6 Builds
 - R6.1 A build names the container in its `Info.plist` (`TablesideSyncContainer`) only when it has the entitlements.
 - R6.2 Developer ID builds get the entitlements from `scripts/add-icloud-entitlements.sh`.
+- R6.3 A build syncing with CloudKit's Development environment says so in its `Info.plist`
+  (`TablesideSyncEnvironment`). Moving a device's shared library between environments forgets what it knew of the
+  cloud and merges afresh, and never applies one environment's sync state to the other.

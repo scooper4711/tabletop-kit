@@ -36,6 +36,7 @@ check "Production by default"        '[[ "$(entitlement com.apple.developer.iclo
 check "production push"              '[[ "$(entitlement com.apple.developer.aps-environment)" == production ]]'
 check "other entitlements are kept"  '[[ "$(entitlement com.apple.security.app-sandbox)" == true ]]'
 check "Info.plist names the container" '[[ "$(info TablesideSyncContainer)" == "$SUITE" ]]'
+check "Info.plist names Production"  '[[ "$(info TablesideSyncEnvironment)" == Production ]]'
 
 ICLOUD_ENVIRONMENT=Development ICLOUD_CONTAINERS="iCloud.io.example.demo $SUITE" add
 check "Development when asked"       '[[ "$(entitlement com.apple.developer.icloud-container-environment)" == Development ]]'
@@ -44,10 +45,12 @@ check "the app's own container first" '[[ "$(entitlement com.apple.developer.icl
 check "the suite's container second" '[[ "$(entitlement com.apple.developer.icloud-container-identifiers:1)" == "$SUITE" ]]'
 check "one service after a second run" '! entitlement com.apple.developer.icloud-services:1 >/dev/null 2>&1'
 check "still names the container"    '[[ "$(info TablesideSyncContainer)" == "$SUITE" ]]'
+check "Info.plist names Development" '[[ "$(info TablesideSyncEnvironment)" == Development ]]'
 
 ICLOUD_CONTAINERS="iCloud.io.example.demo" add
 check "only the app's container"     '! entitlement com.apple.developer.icloud-container-identifiers:1 >/dev/null 2>&1'
 check "no container named without the suite's" '[[ -z "$(info TablesideSyncContainer)" ]]'
+check "no environment named without the suite's" '[[ -z "$(info TablesideSyncEnvironment)" ]]'
 check "unknown environment refused"  '! ICLOUD_ENVIRONMENT=Staging add 2>/dev/null'
 check "missing arguments refused"    '! scripts/add-icloud-entitlements.sh "$APP" "$ENTITLEMENTS" 2>/dev/null'
 plutil -lint "$ENTITLEMENTS" "$INFO" >/dev/null

@@ -348,7 +348,13 @@ profile>`, which apps reach at `.build/checkouts/tabletop-kit/scripts/`, as they
   stays in a container of its own, names both.
 - `ICLOUD_ENVIRONMENT` is `Production` (the default) or `Development`. An iPad build installed from Xcode uses
   Development, so a Mac build that is to sync with one does too.
-- `TablesideSyncContainer` is written when the suite's container is among them, and removed otherwise.
+- `TablesideSyncContainer` and `TablesideSyncEnvironment` are written when the suite's container is among them, and
+  removed otherwise.
+
+The shared library keeps one set of sync state, and CloudKit's two environments hold separate data. An Xcode build
+names Development in `TablesideSyncEnvironment` too. Sync records its account as `Development:<user>` there and as the
+plain user in Production, so a move either way is an ordinary account change (R5.1, R6.3). Released apps that predate
+the key read it the same way.
 
 `scripts/test-add-icloud-entitlements.sh` checks this on a generated app, from `make test-scripts`.
 
