@@ -28,3 +28,4 @@ test-scripts:
 	scripts/test-add-icloud-entitlements.sh
 	scripts/test-libraries-backup.sh
 	scripts/test-store-scripts.sh
+	ruby scripts/test-testflight-internal.rb
