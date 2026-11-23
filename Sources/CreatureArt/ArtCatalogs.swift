@@ -14,6 +14,7 @@ extension CreatureArtStore {
         let sources = library.sources.map { source in
             ArtSourceSummary(id: source.id, title: source.title, place: place(of: source.location),
                              isMissing: library.status(of: source) == .missing,
+                             hasLostArt: library.entries(from: source).contains { !library.isAvailable($0) },
                              artCount: library.entries(from: source).count)
         }
         return ArtCatalog(art: art, sources: sorted(sources), watchedFolders: library.watchedFolders.map(\.path))
@@ -25,17 +26,23 @@ extension CreatureArtStore {
         let titles = Dictionary(uniqueKeysWithValues: sharedSources.map { ($0.id, $0.title) })
         let available = Set(sharedSources.filter { library.status(of: $0) == .available }.map(\.id))
         let art = entries.map { entry in
-            let hasPicture = entry.picture.map { FileManager.default.fileExists(atPath: library.pictureFile($0).path) }
-            let isAvailable = hasPicture == true || entry.prints.contains { available.contains($0.print.sourceID) }
+            // A named picture is here or in iCloud, where showing the art fetches it (library sync R4.2).
+            let isAvailable = entry.picture != nil || entry.prints.contains { available.contains($0.print.sourceID) }
             return libraryArt(entry.artEntry, titles: titles, isAvailable: isAvailable)
         }
         var artCounts: [String: Int] = [:]
+        var sourcesWithLostArt: Set<String> = []
         for entry in entries {
-            for source in Set(entry.prints.map(\.print.sourceID)) { artCounts[source, default: 0] += 1 }
+            let entrySources = Set(entry.prints.map(\.print.sourceID))
+            for source in entrySources { artCounts[source, default: 0] += 1 }
+            let canShow = entry.picture != nil || !entrySources.isDisjoint(with: available)
+            if !canShow { sourcesWithLostArt.formUnion(entrySources) }
         }
         let sources = sharedSources.map { source in
             ArtSourceSummary(id: source.id, title: source.title, place: place(of: source, for: library.app),
-                             isMissing: !available.contains(source.id), artCount: artCounts[source.id] ?? 0)
+                             isMissing: !available.contains(source.id),
+                             hasLostArt: sourcesWithLostArt.contains(source.id),
+                             artCount: artCounts[source.id] ?? 0)
         }
         let watched = ((try? library.watchedFolders()) ?? []).map(\.path)
         return ArtCatalog(art: art, sources: sorted(sources), watchedFolders: watched)
