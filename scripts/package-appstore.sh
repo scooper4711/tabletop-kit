@@ -153,8 +153,18 @@ send_to_app_store() {
         xcrun altool "$1" -f "$2" -t macos --apiKey "$ASC_KEY_ID" --apiIssuer "$ASC_ISSUER_ID"
 }
 
+# SwiftPM's resource bundles name an executable they don't have, which App Store Connect rejects (ITMS-90261).
+remove_resource_bundle_executables() {
+    local info
+    for info in "$RESOURCES"/*.bundle/Contents/Info.plist "$RESOURCES"/*.bundle/Info.plist; do
+        [[ -f "$info" ]] || continue
+        /usr/libexec/PlistBuddy -c "Delete :CFBundleExecutable" "$info" 2>/dev/null || true
+    done
+}
+
 compile_icon
 set_plist_keys
+remove_resource_bundle_executables
 PKG="$(sign_and_package "$(write_entitlements)")"
 echo "Packaged $PKG (build $BUILD_NUMBER)"
 if [[ "$TRIAL" != "1" ]]; then
