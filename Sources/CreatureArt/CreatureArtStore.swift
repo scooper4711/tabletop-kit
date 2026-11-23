@@ -11,6 +11,8 @@ public struct ArtSourceSummary: Identifiable, Equatable, Sendable {
     /// Where it is: "Kept in the app", or the file's path.
     public let place: String
     public let isMissing: Bool
+    /// True when art this PDF prints can't be shown: it has no picture, here or in iCloud, and no PDF is reachable.
+    public let hasLostArt: Bool
     /// How many pieces of art the library has from it.
     public let artCount: Int
 }
@@ -29,6 +31,9 @@ public struct ArtCatalog: Sendable {
     }
 
     public var missingSources: [ArtSourceSummary] { sources.filter(\.isMissing) }
+    /// The PDFs that need the user's attention, because art depends on them. A PDF on another device whose pictures
+    /// are in iCloud isn't one.
+    public var sourcesWithLostArt: [ArtSourceSummary] { sources.filter(\.hasLostArt) }
 }
 
 /// What adding PDFs did, for a status message.
