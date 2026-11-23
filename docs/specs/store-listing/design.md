@@ -57,6 +57,11 @@ What an app must do before archiving (generate its data, fetch its artwork) stay
 file, `--groups` and `--distribute_external`. pilot waits for App Store Connect to process the build, sets the notes,
 adds the groups and submits it for beta review.
 
+`archive-ios.sh` and `package-appstore.sh` call `record-build-source.sh`, which writes `<artifact>.source` with the
+version, build number and commit. Reading the commit from there, rather than from `HEAD` at upload time, keeps the tag
+right if something was committed between the build and the upload. Tags are signed, as release tags are, and iPad and
+Mac builds of one commit share a tag.
+
 `package-appstore.sh` keeps `UPLOAD=1` for uploading a Mac package without TestFlight notes.
 
 ## Tests
