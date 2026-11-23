@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.15.0] - 2026-11-23
+
+### Added
+- Tag the commit each TestFlight build came from
+- Send a platform's review attachment with its push
+- Add a script for Mac store screenshots
+
+### Fixed
+- Keep sync state apart per CloudKit environment
+
+### Changed
+- Specify tagging TestFlight builds
+- Specify the review attachment
+- Specify the Mac store screenshots
+
+[1.15.0]: https://github.com/scooper4711/tabletop-kit/releases/tag/v1.15.0
+
 ## [1.14.0] - 2026-11-22
 
 ### Added
