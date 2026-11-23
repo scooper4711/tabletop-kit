@@ -35,6 +35,9 @@ call from a checkout of tabletop-kit.
 - R3.2 `scripts/testflight.sh <bundle-id> <ipa-or-pkg> <notes-file>` uploads the build, gives it the notes as "What
   to Test", adds it to the groups in `TESTFLIGHT_GROUPS` (default `Public beta`) and sends it to beta review.
 - R3.3 Without notes, or with notes over TestFlight's 4000 characters, nothing is uploaded.
+- R3.4 After an upload, the commit the build came from is tagged `testflight/<version>-<build>` and the tag is pushed.
+  The tag starts no release and doesn't change the marketing version. A build with uncommitted changes isn't tagged,
+  an existing tag on another commit is left alone, and a tagging problem warns without failing the finished upload.
 
 ## R4 The key
 - R4.1 Every script takes the App Store Connect API key from `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_FILE`, as
