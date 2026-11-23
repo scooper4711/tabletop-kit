@@ -59,7 +59,9 @@ done
 # The app syncs the shared library only when it may use the suite's container.
 if [ "$SYNCS_LIBRARY" -eq 1 ]; then
     plutil -replace TablesideSyncContainer -string "$SUITE_CONTAINER" "$INFO"
+    plutil -replace TablesideSyncEnvironment -string "$ENVIRONMENT" "$INFO"
 else
     plutil -remove TablesideSyncContainer "$INFO" >/dev/null 2>&1 || true
+    plutil -remove TablesideSyncEnvironment "$INFO" >/dev/null 2>&1 || true
 fi
 echo "Added iCloud ($ENVIRONMENT) for $CONTAINERS"
