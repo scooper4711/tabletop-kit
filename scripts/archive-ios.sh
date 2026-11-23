@@ -60,5 +60,6 @@ archive
 export_ipa
 IPA="$(find "$EXPORT" -maxdepth 1 -name '*.ipa' | head -n 1)"
 [[ -n "$IPA" ]] || fail "exporting $ARCHIVE gave no .ipa"
+"$(dirname "$0")/record-build-source.sh" "$IPA" "$VERSION" "$BUILD_NUMBER"
 echo "Archived $SCHEME $VERSION, build $BUILD_NUMBER" >&2
 echo "$IPA"

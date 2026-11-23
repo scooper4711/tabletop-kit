@@ -157,5 +157,10 @@ compile_icon
 set_plist_keys
 PKG="$(sign_and_package "$(write_entitlements)")"
 echo "Packaged $PKG (build $BUILD_NUMBER)"
+if [[ "$TRIAL" != "1" ]]; then
+    MARKETING_VERSION="$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' "$APP/Contents/Info.plist" \
+        2>/dev/null || true)"
+    "$(dirname "$0")/record-build-source.sh" "$PKG" "$MARKETING_VERSION" "$BUILD_NUMBER"
+fi
 [[ "$VALIDATE" != "1" ]] || send_to_app_store --validate-app "$PKG"
 [[ "$UPLOAD" != "1" ]] || send_to_app_store --upload-package "$PKG"

@@ -165,6 +165,45 @@ check "over-long notes refused"            'refused testflight "$DIR/Demo.ipa" "
 check "missing build refused"              'refused testflight "$DIR/None.ipa" "$DIR/notes.txt"'
 check "another file type refused"          'refused testflight "$DIR/notes.txt" "$DIR/notes.txt"'
 
+# R3.4: the tag, with a stand-in git. EXISTING_COMMIT is what the tag already marks; FAIL_TAG makes tagging fail.
+mkdir -p "$DIR/gitbin"
+cat > "$DIR/gitbin/git" <<'TOOL'
+#!/usr/bin/env bash
+{ printf 'git|'; printf '%s|' "$@"; echo; } >> "$LOG"
+case "$1" in
+    fetch) exit 1 ;;
+    rev-parse) [[ -n "${EXISTING_COMMIT:-}" ]] || exit 1; echo "$EXISTING_COMMIT" ;;
+    tag) [[ -z "${FAIL_TAG:-}" ]] ;;
+esac
+TOOL
+chmod +x "$DIR/gitbin/git"
+tagged() { rm -f "$LOG"; PATH="$DIR/gitbin:$PATH" testflight "$DIR/Demo.ipa" "$DIR/notes.txt" 2>/dev/null; }
+echo "2.0.1 251 abc123" > "$DIR/Demo.ipa.source"
+tagged
+check "the built commit is tagged"         'grep -qF "git|tag|-s|testflight/2.0.1-251|abc123|" "$LOG"'
+check "the tag is pushed"                  'grep -qF "git|push|--quiet|origin|refs/tags/testflight/2.0.1-251|" "$LOG"'
+EXISTING_COMMIT=abc123 tagged
+check "a shared tag isn't made again"      '! grep -qF "git|tag|" "$LOG" && grep -qF "git|push|" "$LOG"'
+EXISTING_COMMIT=other tagged
+check "another commit's tag is left alone" '! grep -qF "git|tag|" "$LOG" && ! grep -qF "git|push|" "$LOG"'
+check "a failed tag doesn't fail upload"   'FAIL_TAG=1 tagged && ! grep -qF "git|push|" "$LOG"'
+rm "$DIR/Demo.ipa.source"
+tagged
+check "no recorded commit, no tag"         '! grep -qF "git|" "$LOG" && grep -qF "pilot" "$LOG"'
+
+REPO="$DIR/repo"
+git init --quiet "$REPO"
+echo one > "$REPO/file"
+git -C "$REPO" add file
+git -C "$REPO" -c user.name=Test -c user.email=test@example.invalid -c commit.gpgsign=false commit --quiet -m one
+record() { (cd "$REPO" && "$SCRIPTS/record-build-source.sh" Demo.ipa 2.0.1 7); }
+record
+check "a clean build records its commit" \
+    '[[ "$(cat "$REPO/Demo.ipa.source")" == "2.0.1 7 $(git -C "$REPO" rev-parse HEAD)" ]]'
+echo two > "$REPO/file"
+record
+check "uncommitted changes record nothing" '[[ ! -e "$REPO/Demo.ipa.source" ]]'
+
 # R3.1: the archive, from a made-up app's folder
 rm "$LOG"
 APP="$DIR/app"
