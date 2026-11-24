@@ -8,6 +8,13 @@
 #
 # Usage: scripts/backup-libraries.sh [label]
 #   Backups go to $TABLESIDE_BACKUP_ROOT (default ~/TablesideBackups), one folder per run.
+#
+# TABLESIDE_BACKUP_SKIP_PDFS=1  leaves out every PDF (Scrollkeeper's downloads, the art library's source PDFs),
+#                               which can be downloaded again; a restore then lacks them.
+# TABLESIDE_BACKUP_REMOTE       an rsync destination, "host:/path" or a folder. The finished backup is sent there,
+#                               its files hard-linked to the previous backup's where unchanged, and the local copy is
+#                               removed. Restore by copying a backup back (rsync -a host:/path/<backup> ~/...).
+# TABLESIDE_BACKUP_KEEP         how many backups to keep at the remote destination (default 14).
 set -euo pipefail
 source "$(dirname "$0")/libraries-common.sh"
 
@@ -20,11 +27,53 @@ main() {
   mkdir -p "$destination"
   : > "$destination/manifest.tsv"
   back_up_library_folders "$destination"
+  [[ "${TABLESIDE_BACKUP_SKIP_PDFS:-0}" == 1 ]] && leave_out_pdfs "$destination"
   : > "$destination/$COMPLETE_MARKER"
   echo
-  echo "Backed up $(wc -l < "$destination/manifest.tsv" | tr -d ' ') folders to:"
-  echo "  $destination"
-  echo "Restore with: scripts/restore-libraries.sh \"$destination\""
+  echo "Backed up $(wc -l < "$destination/manifest.tsv" | tr -d ' ') folders."
+  if [[ -n "${TABLESIDE_BACKUP_REMOTE:-}" ]]; then
+    send_to_remote "$destination" "$TABLESIDE_BACKUP_REMOTE"
+  else
+    echo "  $destination"
+    echo "Restore with: scripts/restore-libraries.sh \"$destination\""
+  fi
+}
+
+# Deletes the PDFs from the backup's clones; the originals are untouched.
+leave_out_pdfs() {
+  local count
+  count="$(find "$1" -type f -iname '*.pdf' | wc -l | tr -d ' ')"
+  find "$1" -type f -iname '*.pdf' -delete
+  : > "$1/pdfs-left-out"
+  echo "Left out $count PDFs."
+}
+
+# Runs a command where the remote backups are: over ssh for "host:/path", here for a plain folder.
+on_remote() {
+  local host="$1"; shift
+  if [[ -n "$host" ]]; then ssh -o BatchMode=yes "$host" "$@"; else bash -c "$*"; fi
+}
+
+# Sends a finished backup to the remote destination, hard-linking unchanged files to the newest complete backup
+# there, keeps the newest $TABLESIDE_BACKUP_KEEP, and removes the local copy. A backup only gets its final name
+# once it has fully arrived, so an interrupted send never looks like a backup.
+send_to_remote() {
+  local local_backup="$1" remote="$2" host="" folder name previous target
+  if [[ "$remote" == *:* ]]; then host="${remote%%:*}"; folder="${remote#*:}"; else folder="$remote"; fi
+  name="$(basename "$local_backup")"
+  target="${host:+$host:}$folder"
+  on_remote "$host" "mkdir -p '$folder' && rm -rf '$folder'/*.partial"
+  previous="$(on_remote "$host" "cd '$folder' && for b in */; do [ -f \"\${b}$COMPLETE_MARKER\" ] && echo \"\${b%/}\"; done | sort | tail -1")"
+  rsync -a ${previous:+--link-dest="../$previous"} "$local_backup/" "$target/$name.partial/"
+  on_remote "$host" "mv '$folder/$name.partial' '$folder/$name'"
+  prune_remote "$host" "$folder"
+  rm -rf "$local_backup"
+  echo "Sent to $target/$name${previous:+ (unchanged files linked to $previous)}."
+}
+
+prune_remote() {
+  local host="$1" folder="$2" keep="${TABLESIDE_BACKUP_KEEP:-14}"
+  on_remote "$host" "cd '$folder' && ls -1d */ | sed 's#/\$##' | sort | awk -v keep=$keep '{ all[NR] = \$0 } END { for (i = 1; i <= NR - keep; i++) print all[i] }' | while read -r old; do rm -rf \"\$old\"; done"
 }
 
 warn_if_apps_running() {

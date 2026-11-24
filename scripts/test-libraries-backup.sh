@@ -79,4 +79,28 @@ sleep 1 # So this restore's `replaced-<time>` folder isn't the last one's.
 scripts/restore-libraries.sh "$BACKUP" --yes > /dev/null
 check "an incomplete backup still restores"       '[[ "$(cat "$GROUP/Tableside/Library.sqlite")" == "shared library" ]]'
 check "an incomplete backup leaves later folders" '[[ -f "$GROUP/Later/file.txt" ]]'
+# Nightly backups to another place: PDFs left out, unchanged files hard-linked to the last backup, old ones pruned.
+REMOTE="$DIR/remote"
+write "$GROUP/Scrollkeeper/Files/book.pdf" "a downloaded PDF"
+write "$GROUP/Tableside/Sources/source.PDF" "a source PDF"
+remote_backup() { TABLESIDE_BACKUP_SKIP_PDFS=1 TABLESIDE_BACKUP_REMOTE="$REMOTE" TABLESIDE_BACKUP_KEEP=2 \
+  scripts/backup-libraries.sh "$1" > /dev/null; }
+remote_backup night-1
+FIRST="$(find "$REMOTE" -mindepth 1 -maxdepth 1 -name '*-night-1')"
+check "the backup arrives"             '[[ -f "$FIRST/complete" && -f "$FIRST/manifest.tsv" ]]'
+check "PDFs are left out"              '[[ -z "$(find "$FIRST" -iname "*.pdf")" && -f "$FIRST/pdfs-left-out" ]]'
+check "the PDFs themselves stay"       '[[ -f "$GROUP/Scrollkeeper/Files/book.pdf" ]]'
+check "the local copy is removed"      '[[ -z "$(find "$TABLESIDE_BACKUP_ROOT" -maxdepth 1 -name "*-night-1")" ]]'
+write "$GROUP/Scrollkeeper/library.json" "changed overnight"
+remote_backup night-2
+SECOND="$(find "$REMOTE" -mindepth 1 -maxdepth 1 -name '*-night-2')"
+LIBRARY="Group Containers/$(basename "$GROUP")/Tableside/Library.sqlite"
+SCROLLS="Group Containers/$(basename "$GROUP")/Scrollkeeper/library.json"
+check "unchanged files are hard links" '[[ "$(stat -f %i "$FIRST/$LIBRARY")" == "$(stat -f %i "$SECOND/$LIBRARY")" ]]'
+check "changed files are new copies"   '[[ "$(cat "$SECOND/$SCROLLS")" == "changed overnight" ]]'
+check "the older copy keeps its file"  '[[ "$(cat "$FIRST/$SCROLLS")" == "scrolls" ]]'
+remote_backup night-3
+check "only the newest are kept"       '[[ "$(find "$REMOTE" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d " ")" == 2 ]]'
+check "the oldest is the one removed"  '[[ ! -e "$FIRST" ]]'
+check "no partial backup is left"      '[[ -z "$(find "$REMOTE" -maxdepth 1 -name "*.partial")" ]]'
 echo "libraries-backup: all checks passed"
