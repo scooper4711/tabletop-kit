@@ -137,7 +137,8 @@ embed_profile() {
         # profile the disk image build embedded would not match it either.
         rm -f "$APP/Contents/embedded.provisionprofile"
     else
-        cp "$PROVISIONING_PROFILE" "$APP/Contents/embedded.provisionprofile"
+        # Readable by all whatever the source's mode: installed, the bundle belongs to root (ITMS-90255).
+        install -m 644 "$PROVISIONING_PROFILE" "$APP/Contents/embedded.provisionprofile"
     fi
 }
 

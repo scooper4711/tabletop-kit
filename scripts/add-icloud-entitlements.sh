@@ -38,7 +38,8 @@ set_entitlement() {
 }
 
 BUNDLE_ID="$(/usr/libexec/PlistBuddy -c "Print :CFBundleIdentifier" "$INFO")"
-cp "$PROFILE" "$APP/Contents/embedded.provisionprofile"
+# Readable by all whatever the source's mode: installed, the bundle belongs to root.
+install -m 644 "$PROFILE" "$APP/Contents/embedded.provisionprofile"
 set_entitlement com.apple.application-identifier "string $TEAM_ID.$BUNDLE_ID"
 set_entitlement com.apple.developer.team-identifier "string $TEAM_ID"
 set_entitlement com.apple.developer.icloud-services array

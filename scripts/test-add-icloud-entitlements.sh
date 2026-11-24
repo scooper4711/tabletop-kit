@@ -20,6 +20,8 @@ cat > "$ENTITLEMENTS" <<P
 <key>com.apple.application-identifier</key><string>STALE.io.example.demo</string></dict></plist>
 P
 echo "profile" > "$DIR/demo.provisionprofile"
+# Kept private, as a signing folder may keep it; the copy in the app must still be readable by all.
+chmod 600 "$DIR/demo.provisionprofile"
 
 check() { if ! eval "$2"; then echo "FAIL: $1" >&2; exit 1; fi; }
 entitlement() { /usr/libexec/PlistBuddy -c "Print :$1" "$ENTITLEMENTS"; }
@@ -28,6 +30,7 @@ add() { scripts/add-icloud-entitlements.sh "$APP" "$ENTITLEMENTS" ABCDE12345 "$D
 
 add
 check "profile is embedded"          '[[ "$(cat "$APP/Contents/embedded.provisionprofile")" == profile ]]'
+check "embedded profile readable by all" '[[ "$(stat -f %Lp "$APP/Contents/embedded.provisionprofile")" == 644 ]]'
 check "stale identifier replaced"    '[[ "$(entitlement com.apple.application-identifier)" == ABCDE12345.io.example.demo ]]'
 check "team is named"                '[[ "$(entitlement com.apple.developer.team-identifier)" == ABCDE12345 ]]'
 check "the suite's container"        '[[ "$(entitlement com.apple.developer.icloud-container-identifiers:0)" == "$SUITE" ]]'
