@@ -48,24 +48,66 @@ module DistributionKeychain
   end
 end
 
+# Xcode's folder of installed profiles. Installing one removes the others of its name: a machine that keeps its files,
+# unlike a hosted runner, would otherwise keep a replaced profile that Xcode could still pick by name.
+class ProfileFolder
+  def initialize(path, name_of: ->(file) { ProfileFolder.installed_name(file) })
+    @path = path
+    @name_of = name_of
+  end
+
+  def install(attributes)
+    FileUtils.mkdir_p(@path)
+    remove_others(attributes.fetch('name'), attributes.fetch('uuid'))
+    File.binwrite(file_of(attributes.fetch('uuid')), Base64.decode64(attributes.fetch('profileContent')))
+  end
+
+  # The profile's Name, or an empty string for a file that isn't a readable profile.
+  def self.installed_name(file)
+    plist, decoded = Open3.capture2('security', 'cms', '-D', '-i', file, err: File::NULL)
+    return '' unless decoded.success?
+
+    name, extracted = Open3.capture2('plutil', '-extract', 'Name', 'raw', '-o', '-', '-', stdin_data: plist)
+    extracted.success? ? name.strip : ''
+  end
+
+  private
+
+  def remove_others(name, uuid)
+    Dir.glob(File.join(@path, '*.mobileprovision')).each do |file|
+      File.delete(file) if file != file_of(uuid) && @name_of.call(file) == name
+    end
+  end
+
+  def file_of(uuid)
+    File.join(@path, "#{uuid}.mobileprovision")
+  end
+end
+
+# What StoreProfiles works with besides the API: the keychain's certificate serial numbers, the folder to install
+# into, and where to report what it does.
+ProfileSettings = Struct.new(:serial_numbers, :folder, :log, keyword_init: true)
+
 # Finds or makes the App Store profile of each bundle identifier.
 class StoreProfiles
   TYPE = 'IOS_APP_STORE'
   MINIMUM_DAYS_LEFT = 7
 
-  def initialize(client, serial_numbers:, profiles_dir:, log: ->(line) { warn line })
+  def initialize(client, settings)
     @client = client
-    @serial_numbers = serial_numbers.map { |serial| normalize(serial) }
-    @profiles_dir = profiles_dir
-    @log = log
+    @serial_numbers = settings.serial_numbers.map { |serial| normalize(serial) }
+    @folder = settings.folder
+    @log = settings.log
   end
 
   def install(prefix, bundle_ids)
     certificate = distribution_certificate
     bundle_ids.each do |bundle_id|
-      profile = usable_profile("#{prefix}#{bundle_id}", certificate) ||
-                create_profile("#{prefix}#{bundle_id}", bundle_id, certificate)
-      write(profile)
+      name = "#{prefix}#{bundle_id}"
+      usable = usable_profiles(name, certificate)
+      profile = usable.empty? ? create_profile(name, bundle_id, certificate) : usable.first
+      @folder.install(profile.fetch('attributes'))
+      @log.call("Installed #{name}")
     end
   end
 
@@ -77,8 +119,8 @@ class StoreProfiles
     certificate&.fetch('id') || raise(ProfileError, 'no keychain distribution certificate is in App Store Connect')
   end
 
-  # Deletes this name's profiles that are invalid, about to expire or for another certificate. Returns one that's left.
-  def usable_profile(name, certificate)
+  # Deletes this name's profiles that are invalid, about to expire or for another certificate, and returns the rest.
+  def usable_profiles(name, certificate)
     profiles = @client.get('/v1/profiles', 'filter[name]' => name, 'filter[profileType]' => TYPE, 'limit' => 200)
     usable, stale = profiles.select { |profile| profile.dig('attributes', 'name') == name }
                             .partition { |profile| usable?(profile, certificate) }
@@ -86,16 +128,22 @@ class StoreProfiles
       @log.call("Deleting the stale profile #{name} (#{profile.dig('attributes', 'uuid')})")
       @client.delete("/v1/profiles/#{profile.fetch('id')}")
     end
-    usable.first
+    usable
   end
 
   def usable?(profile, certificate)
     attributes = profile.fetch('attributes')
     return false unless attributes['profileState'] == 'ACTIVE'
-    return false if Time.parse(attributes.fetch('expirationDate')) < Time.now + (MINIMUM_DAYS_LEFT * 86_400)
+    return false if expiry(attributes) < Time.now + (MINIMUM_DAYS_LEFT * 86_400)
 
     @client.get("/v1/profiles/#{profile.fetch('id')}/certificates", 'limit' => 200)
            .any? { |item| item.fetch('id') == certificate }
+  end
+
+  def expiry(attributes)
+    Time.parse(attributes.fetch('expirationDate'))
+  rescue ArgumentError
+    raise ProfileError, "the profile #{attributes['name']} has an unreadable expiration date"
   end
 
   def create_profile(name, bundle_id, certificate)
@@ -114,16 +162,10 @@ class StoreProfiles
   def bundle_id_resource(bundle_id)
     matches = @client.get('/v1/bundleIds', 'filter[identifier]' => bundle_id, 'limit' => 200)
                      .select { |item| item.dig('attributes', 'identifier') == bundle_id }
-    match = matches.find { |item| item.dig('attributes', 'platform') != 'MAC_OS' } || matches.first
-    match&.fetch('id') || raise(ProfileError, "App Store Connect has no bundle identifier #{bundle_id}")
-  end
+    raise ProfileError, "App Store Connect has no bundle identifier #{bundle_id}" if matches.empty?
 
-  def write(profile)
-    attributes = profile.fetch('attributes')
-    FileUtils.mkdir_p(@profiles_dir)
-    path = File.join(@profiles_dir, "#{attributes.fetch('uuid')}.mobileprovision")
-    File.binwrite(path, Base64.decode64(attributes.fetch('profileContent')))
-    @log.call("Installed #{attributes.fetch('name')}")
+    match = matches.find { |item| item.dig('attributes', 'platform') != 'MAC_OS' }
+    match&.fetch('id') || raise(ProfileError, "#{bundle_id} is registered for macOS only, not for iOS")
   end
 
   def known_serial?(serial)
@@ -141,9 +183,11 @@ def install_store_profiles(arguments)
 
   client = AppStoreConnectClient.new(key_id: ENV.fetch('ASC_KEY_ID'), issuer_id: ENV.fetch('ASC_ISSUER_ID'),
                                      key_file: ENV.fetch('ASC_KEY_FILE'))
-  profiles_dir = ENV.fetch('PROFILES_DIR', File.expand_path('~/Library/Developer/Xcode/UserData/Provisioning Profiles'))
-  StoreProfiles.new(client, serial_numbers: DistributionKeychain.serial_numbers, profiles_dir: profiles_dir)
-               .install(prefix, bundle_ids)
+  folder = ProfileFolder.new(ENV.fetch('PROFILES_DIR',
+                                       File.expand_path('~/Library/Developer/Xcode/UserData/Provisioning Profiles')))
+  settings = ProfileSettings.new(serial_numbers: DistributionKeychain.serial_numbers, folder: folder,
+                                 log: ->(line) { warn line })
+  StoreProfiles.new(client, settings).install(prefix, bundle_ids)
 end
 
 if $PROGRAM_NAME == __FILE__

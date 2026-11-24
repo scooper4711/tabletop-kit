@@ -18,7 +18,7 @@ class AppStoreConnectClient
   def initialize(key_id:, issuer_id:, key_file:)
     @key_id = key_id
     @issuer_id = issuer_id
-    @key = OpenSSL::PKey.read(File.read(key_file))
+    @key = read_key(key_file)
   end
 
   def get(path, params = {})
@@ -42,6 +42,12 @@ class AppStoreConnectClient
 
   private
 
+  def read_key(key_file)
+    OpenSSL::PKey.read(File.read(key_file))
+  rescue OpenSSL::PKey::PKeyError
+    raise AppStoreConnectError, "#{key_file} isn't a readable App Store Connect key"
+  end
+
   def send_json(request_class, path, body)
     uri = URI("#{BASE}#{path}")
     request = request_class.new(uri)
@@ -55,6 +61,8 @@ class AppStoreConnectClient
     response = Net::HTTP.start(uri.host, uri.port, use_ssl: true) { |http| http.request(request) }
     raise_unless_success(request, uri, response)
     response.body.to_s.empty? ? {} : JSON.parse(response.body)
+  rescue JSON::ParserError
+    raise AppStoreConnectError, "#{request.method} #{uri.path} gave a response that isn't JSON"
   end
 
   def raise_unless_success(request, uri, response)

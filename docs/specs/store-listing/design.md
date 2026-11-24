@@ -53,11 +53,17 @@ Signing depends on the `ASC_*` variables:
 - **Set (R3.5):** manual signing, so nothing new is made. Automatic signing archives with an Apple Development
   identity, and on a hosted runner, which has none, Xcode made a certificate through the API on every run. Its private
   key died with the runner, and about ten runs filled the account's certificate limit.
-  - The bundle identifiers come from `xcodebuild -showBuildSettings -alltargets -sdk iphoneos`: every application and
-    app extension target. A scheme's settings leave out the extensions it embeds.
+  - The bundle identifiers are the scheme's app, from `xcodebuild -showBuildSettings -scheme`, and the project's
+    app extensions whose identifiers start with the app's, from `-alltargets -sdk iphoneos`. A scheme's settings
+    leave out the extensions it embeds, and Apple requires an embedded extension's identifier to start with its
+    app's. Settings that can't be read stop the script with a message that says so.
   - `ios-store-profiles.rb` finds the keychain's valid Apple Distribution certificates by serial number in App
     Store Connect, then reuses or makes an `IOS_APP_STORE` profile per bundle identifier and installs it in
-    `~/Library/Developer/Xcode/UserData/Provisioning Profiles`. It deletes only profiles of its own name.
+    `~/Library/Developer/Xcode/UserData/Provisioning Profiles`. It deletes only profiles of its own name, in App Store
+    Connect and in that folder, so a machine that keeps its files can't pick a replaced profile by name. An
+    identifier registered for macOS only stops it with a message that says so.
+  - CI exports `PROVISIONING_PROFILE`, the Mac App Store profile, and xcodebuild reads the environment as build
+    settings. The script unsets it and the xcconfig empties it, so no target gets the Mac profile.
   - The archive gets `-xcconfig <out-dir>/Signing.xcconfig`: `CODE_SIGN_STYLE = Manual`, `CODE_SIGN_IDENTITY = Apple
     Distribution`, and `PROVISIONING_PROFILE_SPECIFIER = $(STORE_PROFILE_$(WRAPPER_EXTENSION))`, which names the
     profile for `app` and `appex` targets and is empty for Swift package targets, which take none.
@@ -91,4 +97,5 @@ key, version, notes file or over-long notes stops before a tool is run. Nothing 
 
 `scripts/test-ios-store-profiles.rb` runs the profile logic against a stand-in for App Store Connect: a missing profile
 made for the right certificate and iOS bundle identifier, a working one reused, an invalid, expiring or
-other-certificate one replaced, others' profiles left alone, and no write without a matching certificate.
+other-certificate one replaced, others' profiles left alone, a replaced profile's file removed, and no write without
+a matching certificate or an iOS registration.

@@ -31,28 +31,45 @@ SCRIPTS="$(dirname "$0")"
 PROFILE_PREFIX="Tableside App Store "
 DISTRIBUTION="Apple Distribution"
 
-# The bundle identifiers of the project's iOS apps and app extensions, which are what gets signed.
+# The bundle identifiers to sign, one per line: the scheme's app, then the project's app extensions whose identifiers
+# start with the app's, as Apple requires of the extensions an app embeds. A scheme's own settings leave those out.
 bundle_ids() {
+    local app
+    app="$(settings_json -scheme "$SCHEME" -destination 'generic/platform=iOS' | product_ids application)" || return 1
+    [[ -n "$app" ]] || return 1
+    echo "$app"
+    settings_json -alltargets -sdk iphoneos | product_ids app-extension "$app." || return 1
+}
+
+settings_json() {
+    xcodebuild -showBuildSettings -json -project "$PROJECT" -configuration Release "$@"
+}
+
+# Usage: product_ids <product-type> [<prefix>]; the bundle identifiers of that type in the JSON settings on stdin.
+product_ids() {
     # shellcheck disable=SC2016  # The Ruby program is meant to be literal.
-    xcodebuild -showBuildSettings -json -project "$PROJECT" -alltargets -configuration Release -sdk iphoneos \
-        2>/dev/null | ruby -rjson -e '
-            signed = %w[com.apple.product-type.application com.apple.product-type.app-extension]
-            settings = JSON.parse($stdin.read).map { |target| target["buildSettings"] }
-            puts settings.select { |s| signed.include?(s["PRODUCT_TYPE"]) }
-                         .map { |s| s["PRODUCT_BUNDLE_IDENTIFIER"] }.uniq'
+    ruby -rjson -e '
+        type, prefix = "com.apple.product-type.#{ARGV[0]}", ARGV[1].to_s
+        ids = JSON.parse($stdin.read).map { |target| target["buildSettings"] }
+                  .select { |s| s["PRODUCT_TYPE"] == type }.map { |s| s["PRODUCT_BUNDLE_IDENTIFIER"] }
+        puts ids.select { |id| id.start_with?(prefix) }.uniq' "$@"
 }
 
 # Manual signing creates nothing: no certificate, and no profile beyond the named ones. The profile is chosen per
 # target from its wrapper, so Swift package targets, which take no profile, are left without one.
 manual_signing() {
-    local ids=()
+    local ids=() listed
     [[ -f "$ASC_KEY_FILE" ]] || fail "there is no key file at $ASC_KEY_FILE"
-    read -r -a ids <<< "$(bundle_ids | tr '\n' ' ')"
-    [[ ${#ids[@]} -gt 0 ]] || fail "$PROJECT has no iOS app to sign"
+    listed="$(bundle_ids)" || fail "couldn't read the bundle identifiers of $SCHEME in $PROJECT"
+    read -r -a ids <<< "$(tr '\n' ' ' <<< "$listed")"
+    # CI exports PROVISIONING_PROFILE, the Mac App Store profile, and xcodebuild reads the environment as build
+    # settings. Manual signing would apply it to every target.
+    unset PROVISIONING_PROFILE
     "${STORE_PROFILES:-$SCRIPTS/ios-store-profiles.rb}" "$PROFILE_PREFIX" "${ids[@]}" >&2
     cat > "$OUT/Signing.xcconfig" <<XCCONFIG
 CODE_SIGN_STYLE = Manual
 CODE_SIGN_IDENTITY = $DISTRIBUTION
+PROVISIONING_PROFILE =
 STORE_PROFILE_app = $PROFILE_PREFIX\$(PRODUCT_BUNDLE_IDENTIFIER)
 STORE_PROFILE_appex = \$(STORE_PROFILE_app)
 PROVISIONING_PROFILE_SPECIFIER = \$(STORE_PROFILE_\$(WRAPPER_EXTENSION))

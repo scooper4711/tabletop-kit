@@ -67,7 +67,7 @@ class FakeProfileService
     { 'id' => id, 'attributes' => {
       'name' => name, 'profileState' => state, 'uuid' => "uuid-#{id}",
       'expirationDate' => (Time.now + (days_left * 86_400)).utc.iso8601,
-      'profileContent' => Base64.strict_encode64("profile #{id}")
+      'profileContent' => Base64.strict_encode64(name)
     } }
   end
 end
@@ -97,7 +97,21 @@ class StoreProfilesTest < Minitest::Test
 
   def test_a_made_profile_is_installed_under_its_uuid
     install('io.example.App')
-    assert_equal 'profile new1', File.binread(File.join(@dir, 'uuid-new1.mobileprovision'))
+    assert_equal 'CI io.example.App', File.binread(File.join(@dir, 'uuid-new1.mobileprovision'))
+  end
+
+  def test_installing_removes_other_files_of_the_same_name
+    File.write(File.join(@dir, 'replaced.mobileprovision'), 'CI io.example.App')
+    File.write(File.join(@dir, 'unrelated.mobileprovision'), 'Someone else')
+    install('io.example.App')
+    assert_equal %w[unrelated.mobileprovision uuid-new1.mobileprovision], Dir.children(@dir).sort
+  end
+
+  def test_an_unreadable_expiration_date_stops
+    @service.add_profile('odd', name: 'CI io.example.App')
+    @service.profiles.last['attributes']['expirationDate'] = 'someday'
+    error = assert_raises(ProfileError) { install('io.example.App') }
+    assert_match(/expiration date/, error.message)
   end
 
   def test_each_bundle_id_gets_its_own_profile
@@ -157,10 +171,11 @@ class StoreProfilesTest < Minitest::Test
     assert_match(/no bundle identifier io.example.App/, error.message)
   end
 
-  def test_a_mac_only_bundle_id_is_used_when_it_is_the_only_one
+  def test_a_mac_only_bundle_id_stops_before_any_write
     @service.bundle_ids = @service.bundle_ids.take(1)
-    install('io.example.App')
-    assert_equal 'mac', @service.posts.first.last.dig(:data, :relationships, :bundleId, :data, :id)
+    error = assert_raises(ProfileError) { install('io.example.App') }
+    assert_match(/macOS only/, error.message)
+    assert_empty @service.posts
   end
 
   def test_run_wants_a_bundle_id
@@ -170,7 +185,25 @@ class StoreProfilesTest < Minitest::Test
   private
 
   def install(*bundle_ids, serial_numbers: ['A1B2C'])
-    StoreProfiles.new(@service, serial_numbers: serial_numbers, profiles_dir: @dir, log: ->(line) { @logged << line })
-                 .install(PREFIX, bundle_ids)
+    folder = ProfileFolder.new(@dir, name_of: ->(file) { File.read(file) })
+    settings = ProfileSettings.new(serial_numbers: serial_numbers, folder: folder, log: ->(line) { @logged << line })
+    StoreProfiles.new(@service, settings).install(PREFIX, bundle_ids)
+  end
+end
+
+# Checks how an installed profile file is read.
+class ProfileFolderTest < Minitest::Test
+  def setup
+    @dir = Dir.mktmpdir
+  end
+
+  def teardown
+    FileUtils.rm_rf(@dir)
+  end
+
+  def test_a_file_that_is_not_a_profile_has_no_name
+    path = File.join(@dir, 'broken.mobileprovision')
+    File.write(path, 'not a profile')
+    assert_equal '', ProfileFolder.installed_name(path)
   end
 end
