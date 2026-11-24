@@ -45,9 +45,30 @@ fastlane documents.
 
 `xcodebuild archive` for `generic/platform=iOS` with `MARKETING_VERSION` and `CURRENT_PROJECT_VERSION` on the
 command line, where they win over an app's `Version.xcconfig`; then `xcodebuild -exportArchive` with an options file
-written on the spot (`method` `app-store-connect`, `destination` `export`, automatic signing). Both get
-`-allowProvisioningUpdates` and, when the `ASC_*` variables are set, the key as `-authenticationKey…`, so signing
-needs no Xcode account. The `.ipa` lands in `<out-dir>/export/`, and its path is the script's last line of output.
+written on the spot (`method` `app-store-connect`, `destination` `export`). The `.ipa` lands in
+`<out-dir>/export/`, and its path is the script's last line of output.
+
+Signing depends on the `ASC_*` variables:
+
+- **Set (R3.5):** manual signing, so nothing new is made. Automatic signing archives with an Apple Development
+  identity, and on a hosted runner, which has none, Xcode made a certificate through the API on every run. Its private
+  key died with the runner, and about ten runs filled the account's certificate limit.
+  - The bundle identifiers are the scheme's app, from `xcodebuild -showBuildSettings -scheme`, and the project's
+    app extensions whose identifiers start with the app's, from `-alltargets -sdk iphoneos`. A scheme's settings
+    leave out the extensions it embeds, and Apple requires an embedded extension's identifier to start with its
+    app's. Settings that can't be read stop the script with a message that says so.
+  - `ios-store-profiles.rb` finds the keychain's valid Apple Distribution certificates by serial number in App
+    Store Connect, then reuses or makes an `IOS_APP_STORE` profile per bundle identifier and installs it in
+    `~/Library/Developer/Xcode/UserData/Provisioning Profiles`. It deletes only profiles of its own name, in App Store
+    Connect and in that folder, so a machine that keeps its files can't pick a replaced profile by name. An
+    identifier registered for macOS only stops it with a message that says so.
+  - CI exports `PROVISIONING_PROFILE`, the Mac App Store profile, and xcodebuild reads the environment as build
+    settings. The script unsets it and the xcconfig empties it, so no target gets the Mac profile.
+  - The archive gets `-xcconfig <out-dir>/Signing.xcconfig`: `CODE_SIGN_STYLE = Manual`, `CODE_SIGN_IDENTITY = Apple
+    Distribution`, and `PROVISIONING_PROFILE_SPECIFIER = $(STORE_PROFILE_$(WRAPPER_EXTENSION))`, which names the
+    profile for `app` and `appex` targets and is empty for Swift package targets, which take none.
+  - The export options say `signingStyle` `manual`, the `signingCertificate` and the profile of each bundle identifier.
+- **Not set:** automatic signing with `-allowProvisioningUpdates` and the account Xcode is signed in to, as before.
 
 What an app must do before archiving (generate its data, fetch its artwork) stays in that app's Makefile.
 
@@ -70,5 +91,11 @@ Mac builds of one commit share a tag.
 arguments, and the fastlane one also copies the key file it was given. The checks: one `deliver` run per platform with
 the version and paths; never `submit_for_review`; screenshots replaced or skipped by folder; a platform's differing
 text kept by a pull and sent back by a push; the key file valid while
-fastlane runs and gone afterward; `pilot` options by file type; the archive and export commands; and that a missing
+fastlane runs and gone afterward; `pilot` options by file type; the archive and export commands, with manual signing
+and one profile per app or extension when there is a key and automatic signing without one; and that a missing
 key, version, notes file or over-long notes stops before a tool is run. Nothing is sent anywhere.
+
+`scripts/test-ios-store-profiles.rb` runs the profile logic against a stand-in for App Store Connect: a missing profile
+made for the right certificate and iOS bundle identifier, a working one reused, an invalid, expiring or
+other-certificate one replaced, others' profiles left alone, a replaced profile's file removed, and no write without
+a matching certificate or an iOS registration.

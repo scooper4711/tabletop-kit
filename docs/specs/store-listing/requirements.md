@@ -38,6 +38,11 @@ call from a checkout of tabletop-kit.
 - R3.4 After an upload, the commit the build came from is tagged `testflight/<version>-<build>` and the tag is pushed.
   The tag starts no release and doesn't change the marketing version. A build with uncommitted changes isn't tagged,
   an existing tag on another commit is left alone, and a tagging problem warns without failing the finished upload.
+- R3.5 With an App Store Connect API key, `archive-ios.sh` signs the app and its extensions with the keychain's Apple
+  Distribution identity and never creates a certificate. Each bundle identifier gets an App Store profile named
+  `Tableside App Store <bundle-id>`, which is reused while it works for that certificate, and made again when it is
+  invalid, has under a week left or is for another certificate. A hosted runner that archives every release then
+  leaves nothing behind in the account (issue #89).
 
 ## R4 The key
 - R4.1 Every script takes the App Store Connect API key from `ASC_KEY_ID`, `ASC_ISSUER_ID` and `ASC_KEY_FILE`, as

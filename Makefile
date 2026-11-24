@@ -29,3 +29,4 @@ test-scripts:
 	scripts/test-libraries-backup.sh
 	scripts/test-store-scripts.sh
 	ruby scripts/test-testflight-internal.rb
+	ruby scripts/test-ios-store-profiles.rb
