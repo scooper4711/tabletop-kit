@@ -73,7 +73,8 @@ send_to_remote() {
 
 prune_remote() {
   local host="$1" folder="$2" keep="${TABLESIDE_BACKUP_KEEP:-14}"
-  on_remote "$host" "cd '$folder' && ls -1d */ | sed 's#/\$##' | sort | awk -v keep=$keep '{ all[NR] = \$0 } END { for (i = 1; i <= NR - keep; i++) print all[i] }' | while read -r old; do rm -rf \"\$old\"; done"
+  # Only dated folders are backups; a NAS may add its own beside them (Synology's @eaDir, say).
+  on_remote "$host" "cd '$folder' && ls -1d [0-9]*/ | sed 's#/\$##' | sort | awk -v keep=$keep '{ all[NR] = \$0 } END { for (i = 1; i <= NR - keep; i++) print all[i] }' | while read -r old; do rm -rf \"\$old\"; done"
 }
 
 warn_if_apps_running() {

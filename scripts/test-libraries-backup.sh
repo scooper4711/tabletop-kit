@@ -99,8 +99,10 @@ SCROLLS="Group Containers/$(basename "$GROUP")/Scrollkeeper/library.json"
 check "unchanged files are hard links" '[[ "$(stat -f %i "$FIRST/$LIBRARY")" == "$(stat -f %i "$SECOND/$LIBRARY")" ]]'
 check "changed files are new copies"   '[[ "$(cat "$SECOND/$SCROLLS")" == "changed overnight" ]]'
 check "the older copy keeps its file"  '[[ "$(cat "$FIRST/$SCROLLS")" == "scrolls" ]]'
+mkdir -p "$REMOTE/@eaDir"
 remote_backup night-3
-check "only the newest are kept"       '[[ "$(find "$REMOTE" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d " ")" == 2 ]]'
+check "only the newest are kept"       '[[ "$(find "$REMOTE" -mindepth 1 -maxdepth 1 -type d -name "2*" | wc -l | tr -d " ")" == 2 ]]'
+check "folders that aren't backups stay" '[[ -d "$REMOTE/@eaDir" ]]'
 check "the oldest is the one removed"  '[[ ! -e "$FIRST" ]]'
 check "no partial backup is left"      '[[ -z "$(find "$REMOTE" -maxdepth 1 -name "*.partial")" ]]'
 echo "libraries-backup: all checks passed"
