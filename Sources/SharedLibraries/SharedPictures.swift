@@ -5,8 +5,9 @@ import ImageIO
 
 /// The art's pictures (R3.2): drawn once from a PDF and saved, so the art shows without its PDF.
 extension SharedLibrary {
-    /// The longest side, in pixels, a picture is saved at.
-    public static let pictureMaxPixels = 1024
+    /// The longest side, in pixels, a picture is saved at: enough for a battle card's art (field-guide#40). Most
+    /// art is embedded smaller and is saved at that size.
+    public static let pictureMaxPixels = 2048
 
     /// The art's picture, upright on a transparent background, at most `maxPixels` on its long side: the saved
     /// picture, or else one drawn from a PDF this app can reach. Nil when neither is there.

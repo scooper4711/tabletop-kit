@@ -113,8 +113,10 @@ on it. `ArtPrint` gains `back: PawnFace?`, which Pawn Shop's pawns need.
   transaction stays open, and the app calls `close()` when it goes to the background, wrapping any write still
   running in a background task (UIKit's, which the apps own); the store opens its connection again when needed.
 - **Pictures** (R3.2). When a PDF is read, each new entry's picture is drawn as `ArtLibrary.picture(of:)` does and
-  saved as HEIC with alpha, at the size the PDF embeds it, at most 1,024 pixels on its long side. A sharper print
-  replaces it. Field Guide #40 measures the size on the real library before the cap is settled. Entries moved in
+  saved as HEIC with alpha, at the size the PDF embeds it, at most 2,048 pixels on its long side. A sharper print
+  replaces it. Field Guide #40 measured a full library at 1,024: 10,650 pictures, 401 MB, 690 of them at the cap
+  (mostly Battle Card art, which the card draws at up to 1,600 px); 2,048 adds at most about 207 MB, on those
+  alone. Pictures saved under the old cap aren't drawn again. Entries moved in
   (R6) have no picture yet: the first app that can open their PDF draws them in the background.
 - **Reach** (R3.6). An app shows art from its picture; it needs the PDF only to draw a missing picture or read the
   PDF again for a newer reader. `sources` records which app reads it (`sourceAccess`), and the others name that app.
@@ -171,7 +173,7 @@ keeping its API so Turnkeeper and Field Guide change only how they create it. Pa
   Shop merged Battle Cards: "Imp" and "Devil, Imp", but not "Giant, Wood" and "Golem, Wood"), found by
   `art.nameKey`, the folded part after the name's last comma (schema version 5).
 - **Pictures** (R3.2). Each new entry's picture is drawn from the print that made it and saved as
-  `Pictures/<key>.heic`, at most 1,024 pixels on its long side; a token's or item's picture drawn at import is
+  `Pictures/<key>.heic`, at most 2,048 pixels on its long side; a token's or item's picture drawn at import is
   kept as `<key>.png`. A figure added later (a Battle Card) draws the picture again, and the art takes it when it is
   the sharper one (library sync design, "Pictures"). `picture(of:)` reads
   the file, else draws it from a PDF this app can reach and saves it, so moved-in entries get theirs on first use.
