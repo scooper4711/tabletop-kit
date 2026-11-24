@@ -11,6 +11,7 @@ readonly GROUP_SUFFIX="io.github.scooper4711.tableside"
 readonly COMPLETE_MARKER="complete"
 # The Tableside Toolkit apps' bundle IDs (macOS matches them without regard to case).
 readonly TOOLKIT_APPS=(
+  io.github.scooper4711.ChronicleKeeper
   io.github.scooper4711.FieldGuide
   io.github.scooper4711.Mapsmith
   io.github.scooper4711.PawnShop
