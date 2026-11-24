@@ -63,3 +63,5 @@ and its settings, stay in its own spec.
   cloud and merges afresh, and never applies one environment's sync state to the other.
 - R6.4 A build syncs with Development unless it is made for the App Store (`CHANNEL=appstore`) or asks for
   Production (`ICLOUD_ENVIRONMENT=Production`), so a local test build never changes the library real devices sync.
+- R6.5 A build whose provisioning profile doesn't allow its environment stops, saying which profile to use, rather
+  than producing an app macOS won't launch. A Developer ID profile allows only Production.

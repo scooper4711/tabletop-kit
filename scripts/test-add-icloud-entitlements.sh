@@ -58,5 +58,15 @@ check "no container named without the suite's" '[[ -z "$(info TablesideSyncConta
 check "no environment named without the suite's" '[[ -z "$(info TablesideSyncEnvironment)" ]]'
 check "unknown environment refused"  '! ICLOUD_ENVIRONMENT=Staging add 2>/dev/null'
 check "missing arguments refused"    '! scripts/add-icloud-entitlements.sh "$APP" "$ENTITLEMENTS" 2>/dev/null'
+# Stand-ins for a Developer ID profile (no environment named: Production only) and a development profile (both).
+profile() { printf '<?xml version="1.0" encoding="UTF-8"?>\n<plist version="1.0"><dict><key>Entitlements</key><dict>%s</dict></dict></plist>\n' "$2" > "$DIR/$1"; }
+profile developer-id.provisionprofile ''
+profile development.provisionprofile '<key>com.apple.developer.icloud-container-environment</key><array><string>Development</string><string>Production</string></array>'
+add_with() { scripts/add-icloud-entitlements.sh "$APP" "$ENTITLEMENTS" ABCDE12345 "$DIR/$1" >/dev/null 2>&1; }
+check "Developer ID profile refused for Development" '! add_with developer-id.provisionprofile'
+check "Developer ID profile accepted for Production" 'ICLOUD_ENVIRONMENT=Production add_with developer-id.provisionprofile'
+check "Developer ID profile accepted for the App Store" 'CHANNEL=appstore add_with developer-id.provisionprofile'
+check "development profile accepted for Development" 'add_with development.provisionprofile'
+check "development profile accepted for Production" 'ICLOUD_ENVIRONMENT=Production add_with development.provisionprofile'
 plutil -lint "$ENTITLEMENTS" "$INFO" >/dev/null
 echo "add-icloud-entitlements: all checks passed"
