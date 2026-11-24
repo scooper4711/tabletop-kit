@@ -38,6 +38,14 @@ TOOL
 cat > "$DIR/bin/xcodebuild" <<'TOOL'
 #!/usr/bin/env bash
 { printf 'xcodebuild|'; printf '%s|' "$@"; echo; } >> "$LOG"
+if [[ "${1:-}" == "-showBuildSettings" ]]; then
+    for target in application:io.example.Demo app-extension:io.example.Demo.Widget \
+        bundle.ui-testing:io.example.DemoUITests application:io.example.Demo; do
+        printf '{"buildSettings":{"PRODUCT_TYPE":"com.apple.product-type.%s","PRODUCT_BUNDLE_IDENTIFIER":"%s"}}\n' \
+            "${target%%:*}" "${target#*:}"
+    done | paste -sd, - | sed 's/.*/[&]/'
+    exit 0
+fi
 while (($#)); do
     if [[ "$1" == "-exportPath" ]]; then mkdir -p "$2"; touch "$2/Demo.ipa"; fi
     shift
@@ -61,7 +69,11 @@ case "$3" in */iphone/*) size=(1206 2622) ;; *) size=(2064 2752) ;; esac
 [[ -z "${WRONG_SIZE:-}" ]] || size=(100 100)
 if [[ "$2" == "pixelWidth" ]]; then echo "  pixelWidth: ${size[0]}"; else echo "  pixelHeight: ${size[1]}"; fi
 TOOL
-chmod +x "$DIR/bin/fastlane" "$DIR/bin/xcodebuild" "$DIR/bin/xcrun" "$DIR/bin/sips"
+cat > "$DIR/bin/store-profiles" <<'TOOL'
+#!/usr/bin/env bash
+{ printf 'profiles|'; printf '%s|' "$@"; echo; } >> "$LOG"
+TOOL
+chmod +x "$DIR/bin/store-profiles" "$DIR/bin/fastlane" "$DIR/bin/xcodebuild" "$DIR/bin/xcrun" "$DIR/bin/sips"
 export PATH="$DIR/bin:$PATH"
 
 printf -- '-----BEGIN PRIVATE KEY-----\nQUJD\n-----END PRIVATE KEY-----\n' > "$DIR/AuthKey.p8"
@@ -204,22 +216,43 @@ echo two > "$REPO/file"
 record
 check "uncommitted changes record nothing" '[[ ! -e "$REPO/Demo.ipa.source" ]]'
 
-# R3.1: the archive, from a made-up app's folder
+# R3.1, R3.5: the archive, from a made-up app's folder
 rm "$LOG"
 APP="$DIR/app"
 mkdir -p "$APP/scripts"
 printf '#!/bin/sh\ncase "$1" in marketing) echo 2.0.0 ;; build) echo 77 ;; esac\n' > "$APP/scripts/version.sh"
 chmod +x "$APP/scripts/version.sh"
-IPA="$(cd "$APP" && "$SCRIPTS/archive-ios.sh" ios/Demo.xcodeproj Demo-iPad build/ios 2>/dev/null | tail -n 1)"
+IPA="$(cd "$APP" && STORE_PROFILES="$DIR/bin/store-profiles" \
+    "$SCRIPTS/archive-ios.sh" ios/Demo.xcodeproj Demo-iPad build/ios 2>/dev/null | tail -n 1)"
+# Usage: run_of <text>; the recorded run that has the text.
+run_of() { grep -F -- "$1" "$LOG" | tail -n 1; }
+OPTIONS="$APP/build/ios/ExportOptions.plist"
 check "the .ipa's path is printed"         '[[ "$IPA" == "build/ios/export/Demo.ipa" ]]'
-check "the archive has git's version"      'call 1 "|MARKETING_VERSION=2.0.0|CURRENT_PROJECT_VERSION=77|archive|"'
-check "the archive is signed with the key" 'call 1 "-authenticationKeyID|KEYID12345|"'
-check "the export follows the archive"     'call 2 "|-exportArchive|-archivePath|build/ios/Demo-iPad.xcarchive|"'
-check "the export is for the store"        'grep -q app-store-connect "$APP/build/ios/ExportOptions.plist"'
+check "the archive has git's version" \
+    'run_of "|archive|" | grep -qF "|MARKETING_VERSION=2.0.0|CURRENT_PROJECT_VERSION=77|"'
+check "profiles for apps and extensions" \
+    'call 2 "profiles|Tableside App Store |io.example.Demo|io.example.Demo.Widget|"'
+check "each bundle gets one profile"       '[[ "$(run_of "profiles|" | grep -o "io.example.Demo|" | wc -l)" -eq 1 ]]'
+check "no profile for the UI tests"        '! grep -qF DemoUITests "$LOG"'
+check "the archive is signed by hand"      'run_of "|archive|" | grep -qF "|-xcconfig|build/ios/Signing.xcconfig|"'
+check "with the distribution identity" \
+    'grep -qx "CODE_SIGN_IDENTITY = Apple Distribution" "$APP/build/ios/Signing.xcconfig"'
+check "and no automatic signing"           'grep -qx "CODE_SIGN_STYLE = Manual" "$APP/build/ios/Signing.xcconfig"'
+check "packages take no profile" \
+    'grep -qF "= \$(STORE_PROFILE_\$(WRAPPER_EXTENSION))" "$APP/build/ios/Signing.xcconfig"'
+check "Xcode may make nothing"             '! grep -qF -- "-allowProvisioningUpdates" "$LOG"'
+check "the export follows the archive"     'call 4 "|-exportArchive|-archivePath|build/ios/Demo-iPad.xcarchive|"'
+check "the export is for the store"        'grep -q app-store-connect "$OPTIONS"'
+check "the export is signed by hand"       '[[ "$(plutil -extract signingStyle raw -o - "$OPTIONS")" == manual ]]'
+check "the export names each profile"      \
+    'grep -qF "<key>io.example.Demo.Widget</key><string>Tableside App Store io.example.Demo.Widget</string>" "$OPTIONS"'
+rm "$LOG"
 (cd "$APP" && ASC_KEY_ID= VERSION=3.1.0 BUILD_NUMBER=9 "$SCRIPTS/archive-ios.sh" ios/Demo.xcodeproj Demo-iPad out) \
     > /dev/null 2>&1
-check "the version can be given"           'call 3 "|MARKETING_VERSION=3.1.0|CURRENT_PROJECT_VERSION=9|"'
-check "without a key, Xcode's account"     '! call 3 "-authenticationKeyID"'
+check "the version can be given"           'call 1 "|MARKETING_VERSION=3.1.0|CURRENT_PROJECT_VERSION=9|"'
+check "without a key, Xcode's account"     'call 1 "|-allowProvisioningUpdates|" && ! grep -qF "profiles|" "$LOG"'
+check "which signs automatically" \
+    '[[ "$(plutil -extract signingStyle raw -o - "$APP/out/ExportOptions.plist")" == automatic ]]'
 
 # Store screenshots R1.1 to R1.5
 rm "$LOG"
