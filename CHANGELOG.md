@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.19.0] - 2026-11-24
+
+### Added
+- Save art pictures at up to 2,048 pixels
+
+[1.19.0]: https://github.com/scooper4711/tabletop-kit/releases/tag/v1.19.0
+
 ## [1.18.0] - 2026-11-24
 
 ### Added
