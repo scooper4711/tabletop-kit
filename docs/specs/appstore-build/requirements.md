@@ -23,6 +23,8 @@ live here once, as scripts the apps call from their SwiftPM checkout of tabletop
   ad hoc signed, unsigned-installer package that checks everything else, and can't be uploaded.
 - R2.5 No file in the package carries the quarantine attribute (ITMS-91109), which a profile or resource downloaded
   with a browser brings along.
+- R2.6 An app whose entitlements or `TablesideSyncEnvironment` name CloudKit's Development environment is refused,
+  since an App Store build must sync with Production.
 
 ## R3 Upload
 - R3.1 `VALIDATE=1` only validates the package with App Store Connect. `UPLOAD=1` validates the package and uploads it to App Store Connect with `xcrun altool`, using an App Store

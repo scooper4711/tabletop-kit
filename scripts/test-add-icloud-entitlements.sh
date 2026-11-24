@@ -32,14 +32,19 @@ check "stale identifier replaced"    '[[ "$(entitlement com.apple.application-id
 check "team is named"                '[[ "$(entitlement com.apple.developer.team-identifier)" == ABCDE12345 ]]'
 check "the suite's container"        '[[ "$(entitlement com.apple.developer.icloud-container-identifiers:0)" == "$SUITE" ]]'
 check "CloudKit is the service"      '[[ "$(entitlement com.apple.developer.icloud-services:0)" == CloudKit ]]'
-check "Production by default"        '[[ "$(entitlement com.apple.developer.icloud-container-environment)" == Production ]]'
-check "production push"              '[[ "$(entitlement com.apple.developer.aps-environment)" == production ]]'
+check "Development by default"       '[[ "$(entitlement com.apple.developer.icloud-container-environment)" == Development ]]'
+check "development push by default"  '[[ "$(entitlement com.apple.developer.aps-environment)" == development ]]'
 check "other entitlements are kept"  '[[ "$(entitlement com.apple.security.app-sandbox)" == true ]]'
 check "Info.plist names the container" '[[ "$(info TablesideSyncContainer)" == "$SUITE" ]]'
+check "Info.plist names Development by default" '[[ "$(info TablesideSyncEnvironment)" == Development ]]'
+
+CHANNEL=appstore add
+check "Production for the App Store" '[[ "$(entitlement com.apple.developer.icloud-container-environment)" == Production ]]'
+check "production push for the App Store" '[[ "$(entitlement com.apple.developer.aps-environment)" == production ]]'
 check "Info.plist names Production"  '[[ "$(info TablesideSyncEnvironment)" == Production ]]'
 
-ICLOUD_ENVIRONMENT=Development ICLOUD_CONTAINERS="iCloud.io.example.demo $SUITE" add
-check "Development when asked"       '[[ "$(entitlement com.apple.developer.icloud-container-environment)" == Development ]]'
+CHANNEL=appstore ICLOUD_ENVIRONMENT=Development ICLOUD_CONTAINERS="iCloud.io.example.demo $SUITE" add
+check "Development when asked, even for the App Store"       '[[ "$(entitlement com.apple.developer.icloud-container-environment)" == Development ]]'
 check "development push"             '[[ "$(entitlement com.apple.developer.aps-environment)" == development ]]'
 check "the app's own container first" '[[ "$(entitlement com.apple.developer.icloud-container-identifiers:0)" == iCloud.io.example.demo ]]'
 check "the suite's container second" '[[ "$(entitlement com.apple.developer.icloud-container-identifiers:1)" == "$SUITE" ]]'

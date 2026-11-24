@@ -50,4 +50,13 @@ check "upload of a trial refused"   '! TRIAL=1 UPLOAD=1 BUILD_NUMBER=1 TEAM_ID=X
 /usr/libexec/PlistBuddy -c "Delete :LSMinimumSystemVersion" "$APP/Contents/Info.plist"
 check "validating a trial refused" '! TRIAL=1 VALIDATE=1 BUILD_NUMBER=1 TEAM_ID=X scripts/package-appstore.sh "$APP" "$DIR/app.entitlements" a.b 2>/dev/null'
 check "missing system version refused" '! TRIAL=1 BUILD_NUMBER=1 TEAM_ID=X scripts/package-appstore.sh "$APP" "$DIR/app.entitlements" a.b 2>/dev/null'
+/usr/libexec/PlistBuddy -c "Add :LSMinimumSystemVersion string 14.0" "$APP/Contents/Info.plist"
+/usr/libexec/PlistBuddy -c "Add :com.apple.developer.icloud-container-environment string Production" \
+    "$DIR/app.entitlements"
+check "Production iCloud accepted" 'TRIAL=1 BUILD_NUMBER=1 TEAM_ID=X scripts/package-appstore.sh "$APP" "$DIR/app.entitlements" a.b >/dev/null'
+/usr/libexec/PlistBuddy -c "Set :com.apple.developer.icloud-container-environment Development" "$DIR/app.entitlements"
+check "Development iCloud refused" '! TRIAL=1 BUILD_NUMBER=1 TEAM_ID=X scripts/package-appstore.sh "$APP" "$DIR/app.entitlements" a.b 2>/dev/null'
+/usr/libexec/PlistBuddy -c "Delete :com.apple.developer.icloud-container-environment" "$DIR/app.entitlements"
+/usr/libexec/PlistBuddy -c "Add :TablesideSyncEnvironment string Development" "$APP/Contents/Info.plist"
+check "Development sync in Info.plist refused" '! TRIAL=1 BUILD_NUMBER=1 TEAM_ID=X scripts/package-appstore.sh "$APP" "$DIR/app.entitlements" a.b 2>/dev/null'
 echo "package-appstore: all checks passed"

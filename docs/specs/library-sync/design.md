@@ -346,8 +346,9 @@ profile>`, which apps reach at `.build/checkouts/tabletop-kit/scripts/`, as they
   are replaced, so it can run again on the same files.
 - `ICLOUD_CONTAINERS` lists the containers, separated by spaces; the default is the suite's. Field Guide, whose lore
   stays in a container of its own, names both.
-- `ICLOUD_ENVIRONMENT` is `Production` (the default) or `Development`. An iPad build installed from Xcode uses
-  Development, so a Mac build that is to sync with one does too.
+- `ICLOUD_ENVIRONMENT` is `Production` or `Development`. Without it, an App Store build (`CHANNEL=appstore`) gets
+  Production and every other build Development (R6.4), the same split the iOS projects make between Release and
+  Debug. `package-appstore.sh` refuses an app whose entitlements or `TablesideSyncEnvironment` name Development.
 - `TablesideSyncContainer` and `TablesideSyncEnvironment` are written when the suite's container is among them, and
   removed otherwise.
 
