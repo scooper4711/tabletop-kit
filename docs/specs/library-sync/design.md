@@ -349,6 +349,8 @@ profile>`, which apps reach at `.build/checkouts/tabletop-kit/scripts/`, as they
 - `ICLOUD_ENVIRONMENT` is `Production` or `Development`. Without it, an App Store build (`CHANNEL=appstore`) gets
   Production and every other build Development (R6.4), the same split the iOS projects make between Release and
   Debug. `package-appstore.sh` refuses an app whose entitlements or `TablesideSyncEnvironment` name Development.
+- The script reads the profile's `com.apple.developer.icloud-container-environment` and stops when it doesn't list the
+  build's environment (R6.5). A profile that lists none, as Developer ID profiles do, allows only Production.
 - `TablesideSyncContainer` and `TablesideSyncEnvironment` are written when the suite's container is among them, and
   removed otherwise.
 

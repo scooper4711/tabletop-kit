@@ -32,6 +32,24 @@ case "$ENVIRONMENT" in
     Development) PUSH=development ;;
     *) echo "Adding iCloud failed: ICLOUD_ENVIRONMENT must be Production or Development." >&2; exit 1 ;;
 esac
+# The profile must allow the environment, or macOS refuses to launch the signed app. A Developer ID profile names no
+# environment and allows only Production; a development profile names both. A signed profile is decoded with
+# security; a plain property list (as the tests use) is read as it is; a file without Entitlements can't be checked.
+PROFILE_PLIST="$(mktemp)"
+trap 'rm -f "$PROFILE_PLIST"' EXIT
+security cms -D -i "$PROFILE" > "$PROFILE_PLIST" 2>/dev/null || cp "$PROFILE" "$PROFILE_PLIST"
+if /usr/libexec/PlistBuddy -c "Print :Entitlements" "$PROFILE_PLIST" >/dev/null 2>&1; then
+    ALLOWED="$(/usr/libexec/PlistBuddy -c "Print :Entitlements:com.apple.developer.icloud-container-environment" \
+        "$PROFILE_PLIST" 2>/dev/null | grep -oE 'Production|Development' || true)"
+    ALLOWED="${ALLOWED:-Production}"
+    if ! echo "$ALLOWED" | grep -qx "$ENVIRONMENT"; then
+        echo "Adding iCloud failed: the profile allows only $(echo "$ALLOWED" | tr '\n' ' ')but this build is" \
+            "$ENVIRONMENT. Use a development profile, or ICLOUD_ENVIRONMENT=Production." >&2
+        exit 1
+    fi
+else
+    echo "Adding iCloud: $PROFILE isn't a profile this script can read, so its environments aren't checked." >&2
+fi
 
 # Sets a key of the entitlements, in place of the value it had.
 set_entitlement() {
