@@ -300,6 +300,10 @@ share), and the store makes every decision: this only hands records between the 
 - **Status** (R2.5). `status` and `statusUpdates()` give `syncing` while a fetch, a send or a run of pictures is
   under way and `upToDate` otherwise, unless something is wrong: `paused`, `storageFull`, `unavailable` or
   `failed`. An app that isn't syncing shows `unsupported` or `unavailable`.
+- **Settings** (R2.6). `TablesideSyncUI.SyncSettingsSection` is the section an app puts in a settings `Form`. It
+  follows `statusUpdates()` itself and talks to `LibrarySync` for the policy and the cache; the app passes a counter
+  that removing pictures bumps, so its own views draw again. `SyncSettingsText` and `PictureKeeping` hold its words
+  and choices, and are tested.
 
 ### Pictures in iCloud
 
