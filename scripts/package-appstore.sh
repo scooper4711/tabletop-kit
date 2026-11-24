@@ -99,6 +99,19 @@ write_icon_catalog() {
     echo "{\"images\":[${images%,}],\"info\":{\"version\":1,\"author\":\"xcode\"}}" > "$iconset/Contents.json"
 }
 
+# An App Store build must sync with Production CloudKit; local builds default to Development, so a build made
+# without CHANNEL=appstore would otherwise ship pointing at the development database.
+require_production_icloud() {
+    local entitlement info
+    entitlement="$(/usr/libexec/PlistBuddy -c "Print :com.apple.developer.icloud-container-environment" \
+        "$ENTITLEMENTS_SOURCE" 2>/dev/null || true)"
+    info="$(/usr/libexec/PlistBuddy -c "Print :TablesideSyncEnvironment" "$INFO_PLIST" 2>/dev/null || true)"
+    [[ -z "$entitlement" || "$entitlement" == Production ]] \
+        || fail "the entitlements use the $entitlement iCloud environment; App Store builds need Production"
+    [[ -z "$info" || "$info" == Production ]] \
+        || fail "the Info.plist names the $info sync environment; App Store builds need Production"
+}
+
 set_plist_keys() {
     set_plist_key CFBundleVersion string "$BUILD_NUMBER"
     set_plist_key ITSAppUsesNonExemptEncryption bool false
@@ -162,6 +175,7 @@ remove_resource_bundle_executables() {
     done
 }
 
+require_production_icloud
 compile_icon
 set_plist_keys
 remove_resource_bundle_executables

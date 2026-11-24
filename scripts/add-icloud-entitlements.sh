@@ -7,8 +7,9 @@
 # Usage: scripts/add-icloud-entitlements.sh <app> <entitlements> <team ID> <provisioning profile>
 # ICLOUD_CONTAINERS   The app's CloudKit containers, separated by spaces. Default: the suite's, which the shared
 #                     library syncs through. An app with a container of its own names both.
-# ICLOUD_ENVIRONMENT  CloudKit environment, Production (default) or Development. An iPad build installed from
-#                     Xcode uses Development, so to sync with one, build the Mac app for Development too.
+# ICLOUD_ENVIRONMENT  CloudKit environment, Production or Development. Default: Production for the App Store
+#                     (CHANNEL=appstore), Development for every other build, so a local build never touches the
+#                     library real devices sync. An iPad build installed from Xcode uses Development too.
 set -eu
 
 SUITE_CONTAINER="iCloud.io.github.scooper4711.tableside"
@@ -22,7 +23,8 @@ ENTITLEMENTS="$2"
 TEAM_ID="$3"
 PROFILE="$4"
 CONTAINERS="${ICLOUD_CONTAINERS:-$SUITE_CONTAINER}"
-ENVIRONMENT="${ICLOUD_ENVIRONMENT:-Production}"
+if [ "${CHANNEL:-}" = "appstore" ]; then DEFAULT_ENVIRONMENT=Production; else DEFAULT_ENVIRONMENT=Development; fi
+ENVIRONMENT="${ICLOUD_ENVIRONMENT:-$DEFAULT_ENVIRONMENT}"
 INFO="$APP/Contents/Info.plist"
 
 case "$ENVIRONMENT" in

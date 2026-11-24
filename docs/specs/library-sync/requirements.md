@@ -61,3 +61,5 @@ and its settings, stay in its own spec.
 - R6.3 A build syncing with CloudKit's Development environment says so in its `Info.plist`
   (`TablesideSyncEnvironment`). Moving a device's shared library between environments forgets what it knew of the
   cloud and merges afresh, and never applies one environment's sync state to the other.
+- R6.4 A build syncs with Development unless it is made for the App Store (`CHANNEL=appstore`) or asks for
+  Production (`ICLOUD_ENVIRONMENT=Production`), so a local test build never changes the library real devices sync.
