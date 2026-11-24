@@ -20,6 +20,8 @@ and its settings, stay in its own spec.
 - R2.4 Without iCloud (signed out, off for the app, a build without the entitlement) each app works locally and
   doesn't crash.
 - R2.5 An app can say whether the library syncs (`SyncStatus`).
+- R2.6 The apps share one settings section for syncing: the status, turning syncing back on (R5.3), how many
+  pictures the device keeps (R4.7, R4.9), and the downloaded pictures' size with a way to remove them (R4.3).
 
 ## R3 Merging
 - R3.1 A first sync merges the library on the device with the one in iCloud; neither replaces the other.
