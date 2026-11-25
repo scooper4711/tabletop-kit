@@ -1,4 +1,4 @@
-.PHONY: build build-ios test test-scripts lint coverage clean
+.PHONY: build build-ios test test-scripts lint coverage clean attribution-gaps
 
 build:
 	swift build
@@ -35,3 +35,8 @@ test-scripts:
 	ruby scripts/test-train-store.rb
 	ruby scripts/test-public-beta.rb
 	ruby scripts/test-release-train.rb
+
+# Writes docs/source-attribution-gaps.md, the attribution facts still to fill in by hand, from the source catalog and
+# the apps' source lists in docs/source-usage.
+attribution-gaps:
+	swift run -q SourceAttributionTool gaps docs/source-usage docs/source-attribution-gaps.md
