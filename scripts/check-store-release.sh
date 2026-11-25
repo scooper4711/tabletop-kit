@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Guards an App Store build. Specified in docs/specs/app-store-pipeline. Run it from the app's repository.
 #
-# Usage: check-store-release.sh source             before building: the commit is on main, clean, and matches any tag
+# Usage: check-store-release.sh source             before building: clean, an open version, on the branch that builds
 #        check-store-release.sh package <bundle-id>  after building: universal, signed, this build number
 #
 # REQUIRE_ICLOUD=1   the signed app must also carry the iCloud entitlements for the Production environment
@@ -11,12 +11,25 @@ OUT=build/appstore
 
 fail() { echo "check-store-release: $*" >&2; exit 1; }
 
+# Whether HEAD is on the given branch of origin. A branch that doesn't exist counts as no.
+head_is_on() { git merge-base --is-ancestor HEAD "$1" 2>/dev/null; }
+
+# R2: main builds a version until it goes to App Review. From then on only its release branch does, since a build
+# number is the commit count and a fix on the branch counts lower than main.
 check_source() {
-    git merge-base --is-ancestor HEAD origin/main || fail "$(git rev-parse --short HEAD) is not on origin/main"
+    local version head in_review
     [[ -z "$(git status --porcelain)" ]] || fail "the working tree has changes"
-    if [[ "${GITHUB_REF_TYPE:-}" == tag ]]; then
-        [[ "${GITHUB_REF_NAME:-}" == "v$(scripts/version.sh marketing)" ]] \
-            || fail "tag ${GITHUB_REF_NAME:-} doesn't match version $(scripts/version.sh marketing)"
+    version="$(scripts/version.sh marketing)"
+    head="$(git rev-parse --short HEAD)"
+    if git rev-parse --quiet --verify "refs/tags/v$version" > /dev/null; then
+        fail "version $version is closed: v$version marks the build Apple accepted, so raise VERSION first"
+    fi
+    in_review="$(git for-each-ref --format='%(refname:short)' refs/remotes/origin/release | paste -sd' ' -)"
+    if [[ -z "$in_review" ]]; then
+        head_is_on origin/main || fail "$head is not on origin/main"
+    else
+        head_is_on "origin/release/$version" \
+            || fail "$head is not on origin/release/$version, and nothing else may build while $in_review exists"
     fi
 }
 
