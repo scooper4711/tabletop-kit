@@ -23,6 +23,10 @@ Swift libraries shared by three of the [Tableside Toolkit](#the-apps) apps,
 - **TablesideSync** keeps those libraries the same on your devices, through your private iCloud database.
 - **AppNotices** is the About screen each app shows, with the notices Paizo's Community Use Policy and
   Compatibility License require.
+- **SourceAttribution** writes the ORC and OGL notices for the game text an app imports, naming every source book
+  it comes from, and stops the import when a book can't be attributed. Its catalog of books is
+  `Sources/SourceAttribution/Resources/source-catalog.json`; what's still missing from it is in
+  [docs/source-attribution-gaps.md](docs/source-attribution-gaps.md) (`make attribution-gaps` regenerates it).
 
 It contains no Paizo art or text, and works only with PDFs you supply. Pathfinder and Starfinder are trademarks
 of Paizo Inc.
