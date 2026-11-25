@@ -418,7 +418,12 @@
   {
     "title": "Pathfinder #216: The Acropolis Pyre",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Pathfinder Adventure Path #216: The Acropolis Pyre © 2025, Paizo Inc.; Authors: John Compton and Kendra Leigh Speedling, with Adam Daigle.",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "PZO15216E.pdf",
+    "verified": true
   },
   {
     "title": "Pathfinder #217: Death Sails a Wine-Dark Sea",
@@ -438,7 +443,12 @@
   {
     "title": "Pathfinder #220: Crypt of Runes",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Pathfinder Adventure Path #220: Crypt of Runes © 2025, Paizo Inc. Authors: Bill Fischer, with Laura Lynn Horst and Greg A. Vaughan.",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "PZO15220E.pdf",
+    "verified": true
   },
   {
     "title": "Pathfinder #221: Into the Apocalypse Archive",
@@ -1389,7 +1399,12 @@
   {
     "title": "Pathfinder Battlecry!",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Pathfinder Battlecry! © 2025 Paizo Inc., Authors: Logan Bonner, Jason Keeley, and Michael Sayre, with Saif Ansari, Kate Baker, Rigby Bendele, Tineke Bolleman, Jessica Catalan, Jeremy Corff, Rue Dickey, John Godek III, Alastor Guzman, Luis Loza, Dennis Muldoon, Ianara Natividad, Collette Quach, Stephen RadneyMacFarland, Mikhail Rekun, Mark Seifter, Shay Snow, Kendra Leigh Speedling, Andrew White, and Linda Zayas-Palmer.",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Pathfinder Battlecry! PDF - Single File.pdf",
+    "verified": true
   },
   {
     "title": "Pathfinder Beginner Box",
@@ -1738,7 +1753,12 @@
   {
     "title": "Pathfinder Impossible Magic",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Pathfinder Impossible Magic © 2026 Paizo Inc., Authors: Kate Baker, Minty Belmont, Rigby Bendele, Joshua Birdsong, Chris Bissette, Logan Bonner, James Case, Jessica Catalan, Katina Davis, Jesse Decker, Caryn DiMarco, Chris Eng, Ivis K. Flanagan, Leo Glass, Sen H.H.S., Joan Hong, Joshua Kim, Daniel Kwan, Luis Loza, Ron Lundeen, Derry Luttrell, Jonathan “Ryomasa” Mendoza, Jacob W. Michaels, Jaime Reyes Mondragon, Ianara Natividad, Kenneth Olson, Chesley Oxendine, Collette Quach, Stephen Radney-MacFarland, Mikhail Rekun, David N. Ross, Simone D. Sallé, Mark Seifter, Shay Snow, Kendra Leigh Speedling, Shu Qing Tan, Tan Shao Han, Mari Tokuda, Ruvaid Virk, Grady Wang, Andrew White, Landon Winkler, and Isis Wozniakowska",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "PZO12014E Pathfinder Impossible Magic - Single File.pdf",
+    "verified": true
   },
   {
     "title": "Pathfinder Kingmaker Adventure Path",
@@ -1889,7 +1909,12 @@
   {
     "title": "Pathfinder Lost Omens Draconic Codex",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Pathfinder Lost Omens Draconic Codex © 2025, Authors: Joshua Birdsong, Chris Bissette, Jeremy Blum, Alyx Bui, Hiromi Cota, Katina Davis, Caryn DiMarco, Dana Ebert, Sen H.H.S., Kent Hamilton, Laura Lynn Horst, Michelle Y. Kim, Letterio Mammoliti, Jonathan “Ryomasa” Mendoza, Matt Morris, Collette Quach, Mikhail Rekun, Erin Roberts, Simone D. Sallé, Rodney Sloan, Kendra Leigh Speedling, Isabelle Thorne, Ruvaid Virk, Jacob W. Michaels, Andrew White, Shan Wolf, and Brian Yaksha.",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Pathfinder Lost Omens Draconic Codex PDF - Single File.pdf",
+    "verified": true
   },
   {
     "title": "Pathfinder Lost Omens Firebrands",
@@ -1972,12 +1997,22 @@
   {
     "title": "Pathfinder Lost Omens Hellfire Dispatches",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Pathfinder Lost Omens Hellfire Dispatches © 2026, Authors: Rigby Bendele, Caryn DiMarco, Jason Keeley, Stephanie Lundeen, Liane Merciel, Matt Morris, Erin Roberts, Kendra Leigh Speedling, Tan Shao Han, Andrew White, and Landon Winkler",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "PZO13008E Pathfinder Lost Omens Hellfire Dispatches Single-File PDF.pdf",
+    "verified": true
   },
   {
     "title": "Pathfinder Lost Omens High Seas",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Pathfinder Lost Omens High Seas © 2026, Authors: Logan Bonner, Luis Castro, Carlos Cisco, Amber M. Davies, Alice Grizzle, Laura Lynn Horst, Jason Keeley, Aaron Lascano, Monte Lin, Stephanie Lundeen, Derry Luttrell, Jacob W. Michaels, Jaime Reyes Mondragon, Zac Moran, Daniel “Drakoniques” Oleh, Jessica Redekop, and Erin Tierney",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "PZO13009E.pdf",
+    "verified": true
   },
   {
     "title": "Pathfinder Lost Omens Highhelm",
@@ -2119,7 +2154,12 @@
   {
     "title": "Pathfinder Lost Omens Shining Kingdoms",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Pathfinder Lost Omens Shining Kingdoms © 2025, Authors: Dan Cascone, Caryn DiMarco, Sen H.H.S., Laura Lynn Horst, Michelle Y. Kim, Stephanie Lundeen, Derry Luttrell, Matt Morris, Collette Quach, Gina Susanna, Esther Wallace, and Andrew White.",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "PZO13005E.pdf",
+    "verified": true
   },
   {
     "title": "Pathfinder Lost Omens The Mwangi Expanse",
@@ -4244,12 +4284,22 @@
   {
     "title": "Pathfinder Treasure Vault (Remastered)",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Pathfinder Treasure Vault (Remastered) © 2025, Paizo Inc.; Authors: Michael Sayre, Mark Seifter, and Kendra Leigh Speedling, with Logan Bonner, Dan Cascone, Jessica Catalan, Kim Frandsen, Andrew Geels, Sen H.H.S., Steven Hammond, Joshua Kim, Dustin Knight, Luis Loza, Jacob W. Michaels, Matt Morris, Dave Nelson, Stephen Radney-McFarland, Jessica Redekop, Andrew Stoeckle, Mari Tokuda, and Andrew White.",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Pathfinder Treasure Vault (Remastered) PDF - Single File.pdf",
+    "verified": true
   },
   {
     "title": "Pathfinder War of Immortals",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Pathfinder War of Immortals © 2024 Paizo Inc., Authors: James Case, Liane Merciel, and Michael Sayre. Additional writing by Jessica Catalan, Matt Chapmond, Steven Hammond, Steven T. Helt, Brent Holtsberry, Jason Keeley, Michelle Y. Kim, Luis Loza, Erik Mona, AJ Neuro, Joaquin Kyle “Makapatag” Saavedra, Tony Saunders, Andrew Stoeckle, Greg A. Vaughan, and Ruvaid Virk.",
+    "year": 2024,
+    "publisher": "Paizo Inc.",
+    "reference": "Pathfinder War of Immortals PDF - Single File.pdf",
+    "verified": true
   },
   {
     "title": "Pathfinder: Wake the Dead #1",
@@ -4383,7 +4433,12 @@
   {
     "title": "Starfinder Player Core",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Player Core © 2025 Paizo Inc., Authors: Jessica Catalan, Thurston Hillman, Jenny Jarzabski, Mike Kimmel, and Dustin Knight",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Accidental duplicate package - disregard.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Secrets of the Swarm Adventure Path",
@@ -4393,162 +4448,346 @@
   {
     "title": "Starfinder Society Scenario #1-00: Collision's Wake",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-00: Collision’s Wake © 2025, Paizo Inc.; John Godek III",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-00- Collision's Wake.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-01: Invasion's Edge",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-01: Invasion’s Edge © 2025, Paizo Inc., Author: Michael Bramnik",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-01- Invasion's Edge.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-02: Mystery of the Frozen Moon",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-02: Mystery of the Frozen Moon © 2025, Paizo Inc., Author: Solomon St. John",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-02- Mystery of the Frozen Moon.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-03: Disaster at Dreamlink Labs",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-03: Disaster at Dreamlink Labs © 2025, Paizo Inc.; Caryn DiMarco",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-03- Disaster at Dreamlink Labs.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-04: The Great Absalom Relay",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-04: The Great Absalom Relay © 2025, Paizo Inc.; Author: Alex Speidel",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-04- The Great Absalom Relay.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-05: Sloughscar Summit",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "publisher": "Paizo Inc.",
+    "credits": [
+      {
+        "role": "Author",
+        "names": [
+          "Lysle Kapp"
+        ]
+      }
+    ],
+    "reference": "https://paizo.com/starfinder-society-scenario-1-05-sloughscar-summit/",
+    "verified": false,
+    "note": "From Scrollkeeper's metadata, year from the neighboring scenarios; check against the book's notice.",
+    "year": 2025
   },
   {
     "title": "Starfinder Society Scenario #1-06: Magic in the Mist",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "publisher": "Paizo Inc.",
+    "credits": [
+      {
+        "role": "Author",
+        "names": [
+          "Scott D. Young"
+        ]
+      }
+    ],
+    "reference": "https://paizo.com/starfinder-society-scenario-1-06-magic-in-the-mist/",
+    "verified": false,
+    "note": "From Scrollkeeper's metadata, year from the neighboring scenarios; check against the book's notice.",
+    "year": 2025
   },
   {
     "title": "Starfinder Society Scenario #1-07: Seize and Destroy",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-07: Seize and Destroy © 2025, Paizo Inc.; Author: Shan Wolf",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-07- Seize and Destroy.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-08: Compliance Protocol",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-08: Compliance Protocol © 2025, Paizo Inc.; Author: Elizabeth V Nold",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-08- Compliance Protocol.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-09: Abduction",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-09: Abduction © 2025, Paizo Inc. Author: Brent Bowser",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-09- Abduction (2334450).pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-10: Rites of Rekindling",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-10: Rites of Rekindling © 2025, Paizo Inc.; Author: Hilary Moon Murphy",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-10- Rites of Rekindling (2334453).pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-11: Friends of the Forest",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-11: Friends of the Forest © 2025, Paizo Inc.; Author: Sara Jeffers",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-11- Friends of the Forest.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-12: Take the Bait",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-12: Take the Bait © 2025, Paizo Inc.; Author: Jeremy Corff",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-12- Take the Bait.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-13: Foul Humors",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-13: Foul Humors © 2026, Paizo Inc.; Author: Rue Dickey",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-13- Foul Humors.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-14: The Beasts of Bo: Part One",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-14: The Beasts of Bo: Part One © 2026, Paizo Inc.; Author: Joseph Blomquist",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-14- The Beasts of Bo- Part One.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-15: Ruins of the World Soul",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "publisher": "Paizo Inc.",
+    "credits": [
+      {
+        "role": "Author",
+        "names": [
+          "David N. Ross"
+        ]
+      }
+    ],
+    "reference": "https://paizo.com/starfinder-society-scenario-1-15-ruins-of-the-world-soul/",
+    "verified": false,
+    "note": "From Scrollkeeper's metadata, year from the neighboring scenarios; check against the book's notice.",
+    "year": 2026
   },
   {
     "title": "Starfinder Society Scenario #1-16: The Beasts of Bo: Part Two",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-16: The Beasts of Bo: Part Two © 2026, Paizo Inc.; Author: Victoria Sullivan",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-16- The Beasts of Bo- Part Two.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-17: Corpse Fleet Conflict",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-17: Corpse Fleet Conflict © 2026, Paizo Inc.; Letterio Mammoliti",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-17- Corpse Fleet Conflict.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-18: Midnights in Maro",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-18: Midnights in Maro © 2026, Paizo Inc.; Rigby Bendele",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-18- Midnights in Maro.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-20: Magic Unleashed",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-20: Magic Unleashed © 2026, Paizo Inc.; Author: Jacob W. Michaels",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-20- Magic Unleashed.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-21: Breaching the Wreck",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-21: Breaching the Wreck © 2026, Paizo Inc.; Author: Kyle T. Raes",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-21- Breaching the Wreck.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-22: Rescue in the Wreck",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-22: Rescue in the Wreck © 2026 Paizo Inc.; Author: Matt Morris",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-22- Rescue in the Wreck.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-23: Psychic Echoes",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-23: Psychic Echoes © 2026, Paizo Inc.; Author: Thomas Pugh",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-23- Psychic Echoes.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-24: Final Gambit: Part One",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-24: Final Gambit: Part One © 2026, Paizo Inc.; Author: Kate Baker",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-24- Final Gambit- Part One.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-25: The Hollowed Shell",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-25: The Hollowed Shell © 2026, Paizo Inc.; Author: Alex White",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-25- The Hollowed Shell.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #1-26: Final Gambit: Part Two",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #1-26: Final Gambit: Part Two © 2026, Paizo Inc.; Author: Dennis Muldoon",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #1-26- Final Gambit- Part Two.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #2-02: Solar Shake Up",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #2-02: Solar Shake Up © 2026, Paizo Inc.; Author: Sam W Tennyson",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #2-02- Solar Shake Up.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #2-03: Bittersweet",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #2-03: Bittersweet © 2026, Paizo Inc. Author: Brent Bowser",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #2-03- Bittersweet.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #2-04: A Watery Grave",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #2-04: A Watery Grave © 2026, Paizo Inc. Author: Jenny Jarzabski",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #2-04- A Watery Grave.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #2-05: File Corrupted",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #2-05: File Corrupted © 2026, Paizo Inc. Author: Derry Luttrell",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #2-05- File Corrupted.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Society Scenario #2-06: An Inside Job",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Society Scenario #2-06: An Inside Job © 2026, Paizo Inc.; Author: Tineke Bolleman",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "Starfinder Society Scenario #2-06- An Inside Job.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Tech Core",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Tech Core © 2026 Paizo Inc. Authors: James Abendroth, Alexander Augunas, Kate Baker, James Beck, Vishesh Bhartiya, Harry Bigle, Joseph Blomquist, Tineke Bolleman, Jessica Catalan, Brite Cheney, John Curtin, Alison Cybe, Kim Frandsen, Sasha Laranoa Harving, Dustin Knight, Derry Luttrell, Mahpiya, Randal Meyer, Solomon St. John, Tony Saunders, Abbey Schnell, Sam W Tennyson, Aras Yazgan",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "reference": "PZO22006E.pdf",
+    "verified": true
   },
   {
     "title": "Stolen Fate Player's Guide",
