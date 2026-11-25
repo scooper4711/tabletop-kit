@@ -172,6 +172,25 @@ import Testing
         #expect(try library.sources().first?.readerVersion == PawnExtractor.version)
     }
 
+    @Test func dropsTheOldKeyOfArtANewerReaderNoLongerFindsInAPDF() throws {
+        let library = try library()
+        let pdf = try pawnBox()
+        try library.add(pdf, keeping: true)
+        let ogreEntry = try #require(try library.artEntries().first { $0.name == "Ogre" })
+        var elsewhere = ogreEntry.prints[0].print.face
+        elsewhere.pageIndex = 5
+        let oldKey = UUID()
+        try library.connection().run("UPDATE prints SET key = ?, front = ? WHERE key = ?",
+                                     [.text(oldKey.uuidString), .blob(try JSONEncoder().encode(elsewhere)),
+                                      .text(ogreEntry.id.uuidString)])
+        try library.connection().run("UPDATE sources SET readerVersion = 0")
+
+        try library.add(pdf, keeping: true)
+        // Only an image deck pairs an old print by name: here no new print is in its place, so its key goes.
+        #expect(try library.artEntry(id: oldKey) == nil)
+        #expect(try library.artEntry(id: ogreEntry.id)?.name == "Ogre")
+    }
+
     @Test func removesAPDFWithTheArtOnlyItPrints() throws {
         let library = try library()
         try library.add(try pawnBox(), keeping: true)

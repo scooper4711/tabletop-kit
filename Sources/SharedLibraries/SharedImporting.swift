@@ -35,12 +35,13 @@ extension SharedLibrary {
         let source = ArtSource(id: prepared.digest, title: prepared.title, game: GameSystem(title: prepared.title),
                                location: location, byteCount: prepared.byteCount, readerVersion: readerVersion,
                                artFound: prepared.extraction.pawns.count)
+        let isImageDeck = ImageDeck.containing(prepared.file) != nil
         let pictures = try write { writer in
             let older = try writer.takeOutPrints(of: source.id)
             try writer.add(source, for: app)
             var merger = StoreMerger(writer: writer, library: self, source: source, file: prepared.file)
             try merger.merge(prepared.extraction.pawns, into: &report)
-            try writer.retire(older, app: app)
+            if isImageDeck { try writer.retireImageDeck(older, app: app) } else { try writer.retire(older, app: app) }
             return merger.pictures
         }
         if let failure = try drawPictures(pictures, from: prepared.file).failure { throw failure }
