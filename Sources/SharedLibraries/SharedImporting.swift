@@ -8,7 +8,7 @@ extension SharedLibrary {
     public func add(_ url: URL, keeping: Bool) throws -> ArtImportReport {
         let file = ArtLibrary.libraryFile(for: url)
         if let known = try knownSource(digest: ArtLibrary.digest(of: file)),
-           known.readerVersion >= PawnExtractor.version {
+           known.readerVersion >= PawnExtractor.version(of: file) {
             return try recordAccess(to: known, file: file, keeping: keeping)
         }
         let prepared = try ArtLibrary.prepare(url)
@@ -22,7 +22,8 @@ extension SharedLibrary {
     public func commit(_ prepared: PreparedArt, location: SourceLocation) throws -> ArtImportReport {
         var report = ArtImportReport(sourceTitle: prepared.title, unreadablePages: prepared.extraction.unreadablePages)
         let known = try knownSource(digest: prepared.digest)
-        if let known, known.readerVersion >= PawnExtractor.version {
+        let readerVersion = PawnExtractor.version(of: prepared.file)
+        if let known, known.readerVersion >= readerVersion {
             return try recordAccess(to: known, file: prepared.file, keeping: location == .kept)
         }
         guard try claim(sourceID: prepared.digest) else {
@@ -32,7 +33,7 @@ extension SharedLibrary {
         defer { try? releaseClaim(sourceID: prepared.digest) }
         if location == .kept { try keep(prepared.file, digest: prepared.digest) }
         let source = ArtSource(id: prepared.digest, title: prepared.title, game: GameSystem(title: prepared.title),
-                               location: location, byteCount: prepared.byteCount, readerVersion: PawnExtractor.version,
+                               location: location, byteCount: prepared.byteCount, readerVersion: readerVersion,
                                artFound: prepared.extraction.pawns.count)
         let pictures = try write { writer in
             let older = try writer.takeOutPrints(of: source.id)

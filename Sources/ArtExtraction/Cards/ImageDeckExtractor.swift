@@ -5,7 +5,8 @@ import UniformTypeIdentifiers
 
 /// Finds the items in a deck of JPG card faces. The backs paint each item on the same background and frame, so
 /// the background is the per-pixel median of all backs, and an item is what differs from it. Its name is read
-/// off the front (`CardNameReader`).
+/// off the front (`CardNameReader`). Its digest is the back file's SHA-256, never the decoded pixels': decoding
+/// and text recognition differ between devices, and the key must not (pawn-shop#61).
 enum ImageDeckExtractor {
     /// Backs are compared at most this many pixels on their long side, to keep the median's memory small.
     static let longSide = 520
@@ -23,10 +24,10 @@ enum ImageDeckExtractor {
         var result = ExtractionResult()
         for (card, back) in zip(deck.cards, backs) {
             guard let back, let item = back.cutOut(from: background, transparent: transparent, opaque: opaque),
-                  let png = item.image.pngData() else { continue }
+                  let png = item.image.pngData(), let file = try? Data(contentsOf: card.back) else { continue }
             let name = card.front.map(CardNameReader.name(onFront:)) ?? ""
             let face = PawnFace(pageIndex: card.number, rect: item.bounds, rotation: 0)
-            let digest = ContentDigest.hex(of: png)
+            let digest = ContentDigest.hex(of: file)
             PawnExtractor.add(ExtractedPawn(name: name, size: .medium, front: face, back: face.mirroredCopy(),
                                             fingerprint: ArtFingerprint(imageDigests: [digest]), copies: 1,
                                             shape: .drawnItem(png)), to: &result)

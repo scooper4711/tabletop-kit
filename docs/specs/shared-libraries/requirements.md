@@ -22,6 +22,9 @@ Pawn Shop #63. What each app shows stays in its own spec.
 - R2.2 The ID comes from the picture Paizo embedded, not from where or how an app found it on the page: a better
   detector or a different crop doesn't change it, and art reprinted in another product under the same name gets
   the same ID.
+- R2.2a Art from a deck sold as image files gets an ID from the files as stored, not from decoding them or reading
+  their text, both of which differ between devices. A library holding such art under older IDs keeps them as
+  aliases when the deck is read again.
 - R2.3 One picture printed under different names is different art, each with an ID of its own, in one product or
   across products: a named enemy in an adventure's pawns that shares its picture with a common creature, numbered
   tokens ("Drone 1" to "Drone 6"), "Mantis, Deadly" and "Mantis, Giant". Names that differ only in case, accents,

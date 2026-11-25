@@ -36,6 +36,29 @@ import ArtExtractionTestSupport
         #expect(pixel(of: picture, x: 30, y: 42)[3] == 255)
     }
 
+    @Test func digestsEachBackFileAsStored() throws {
+        try writeImageDeck(fiveItems, in: deckFolder)
+        let deck = try #require(ImageDeck.containing(deckFolder))
+        let result = ImageDeckExtractor.extract(from: deck)
+        let files = try deck.cards.map { ContentDigest.hex(of: try Data(contentsOf: $0.back)) }
+        #expect(result.pawns.map(\.fingerprint.imageDigests) == files.map { [$0] })
+    }
+
+    @Test func readsImageDecksWithTheirOwnVersion() throws {
+        try writeImageDeck(fiveItems, in: deckFolder)
+        #expect(PawnExtractor.version(of: deckFolder) == PawnExtractor.imageDeckVersion)
+        #expect(PawnExtractor.version(of: deckFolder.appendingPathComponent("Deck Backs1.jpg")) == 7)
+        #expect(PawnExtractor.version(of: folder.appendingPathComponent("Pawn Box.pdf")) == PawnExtractor.version)
+        #expect(PawnExtractor.imageDeckVersion >= PawnExtractor.version)
+        let library = try ArtLibrary(folder: folder.appendingPathComponent("Library"))
+        try library.add(deckFolder, keeping: false)
+        #expect(library.sources.map(\.readerVersion) == [PawnExtractor.imageDeckVersion])
+        #expect(try library.add(deckFolder, keeping: false).wasImported)
+        library.sources[0].readerVersion = PawnExtractor.version
+        #expect(try !library.add(deckFolder, keeping: false).wasImported)
+        #expect(library.entries.count == 5 && library.sources.map(\.readerVersion) == [7])
+    }
+
     @Test func keepsTheItemsInTheLibraryAndKnowsTheFolderAgain() throws {
         try writeImageDeck(fiveItems, in: deckFolder)
         let library = try ArtLibrary(folder: folder.appendingPathComponent("Library"))
