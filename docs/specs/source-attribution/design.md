@@ -23,6 +23,9 @@
 - `--items`: an app's records; each new source becomes a gap.
 - Adventure Path volumes the data titles "Pathfinder #N: …" become aliases of "Pathfinder Adventure Path #N: …".
 - `--alias "DATA=>NOTICE"`: other titles, linked by hand.
+- `--books`: Scrollkeeper's download folder. An ORC book prints the notice it wants to be credited with ("please
+  credit us in your product as follows: …"); a gap whose book is there gets that notice, quoted and verified. A
+  notice cut short by a column or page break is left for hand filling.
 - `--scrollkeeper`: Scrollkeeper's scraped `metadata.json` (account data, kept in `tmp/`) fills the year and authors
-  of gaps, unverified, and the ORC license for sf2e and for books from 2024 on (Paizo's books are ORC from the
-  Remaster).
+  of the gaps left, unverified, and the ORC license for sf2e and for books from 2024 on (Paizo's books are ORC from
+  the Remaster).
