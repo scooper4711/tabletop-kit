@@ -23,27 +23,22 @@ extension LibraryWriter {
     }
 
     /// After a PDF is read again: each old print the new reader found in the same place answers, with its old
-    /// entry, to the new print's art (R2.7). An old print no new print shares a place with pairs with the new print
-    /// whose art has the same folded name: a card moved in from an app's own library has no place (page 0). An old
-    /// entry left without prints hands its note, aliases and creatures to that art; art left without prints goes.
-    /// Returns the pictures to delete.
+    /// entry, to the new print's art (R2.7). An old entry left without prints hands its note, aliases and creatures
+    /// to that art; art left without prints goes. Returns the pictures to delete.
     @discardableResult
     func retire(_ older: [RemovedPrint], app: TablesideApp) throws -> [String] {
-        let newer = try older.first.map { try prints(of: $0.sourceID) } ?? []
-        let newerKeys = Set(newer.map(\.key))
-        var newerByName: [String: RemovedPrint]?
-        for old in older where !newerKeys.contains(old.key) {
-            let placed = newer.first { Self.isSamePlace($0.face, old.face) }
-            guard let match = try placed ?? namedLike(old, among: newer, byName: &newerByName) else { continue }
-            if old.entryID != match.entryID, try isLeftWithoutPrints(old.entryID) {
-                try addAlias(old.entryID, app: app, entry: match.entryID)
-                try repoint(old.entryID, to: match.entryID)
-            }
-            if try ArtRows.entryID(answeringTo: old.key, in: database) == nil {
-                try addAlias(old.key, app: app, entry: match.entryID)
-            }
+        try retire(older, app: app) { old, newer in newer.first { Self.isSamePlace($0.face, old.face) } }
+    }
+
+    /// After an image deck is read again: as `retire`, but an old print no new print shares a place with pairs
+    /// with the new print whose art has the same folded name, since a card moved in from Pawn Shop's own library
+    /// has no place (page 0). Only image decks: each card is one item, so a name there is one piece of art.
+    @discardableResult
+    func retireImageDeck(_ older: [RemovedPrint], app: TablesideApp) throws -> [String] {
+        var byName: [String: RemovedPrint]?
+        return try retire(older, app: app) { old, newer in
+            try newer.first { Self.isSamePlace($0.face, old.face) } ?? namedLike(old, among: newer, byName: &byName)
         }
-        return try dropArtWithoutPrints()
     }
 
     /// Takes a PDF out: its prints, how apps reach it, and the art no other PDF prints. Returns the pictures to
@@ -56,6 +51,24 @@ extension LibraryWriter {
     }
 
     // MARK: Helpers
+
+    /// Points each old print `pairing` finds a new print for at that print's art.
+    private func retire(_ older: [RemovedPrint], app: TablesideApp,
+                        pairing: (RemovedPrint, [RemovedPrint]) throws -> RemovedPrint?) throws -> [String] {
+        let newer = try older.first.map { try prints(of: $0.sourceID) } ?? []
+        let newerKeys = Set(newer.map(\.key))
+        for old in older where !newerKeys.contains(old.key) {
+            guard let match = try pairing(old, newer) else { continue }
+            if old.entryID != match.entryID, try isLeftWithoutPrints(old.entryID) {
+                try addAlias(old.entryID, app: app, entry: match.entryID)
+                try repoint(old.entryID, to: match.entryID)
+            }
+            if try ArtRows.entryID(answeringTo: old.key, in: database) == nil {
+                try addAlias(old.key, app: app, entry: match.entryID)
+            }
+        }
+        return try dropArtWithoutPrints()
+    }
 
     /// True when art `id` is gone, or still there with no prints.
     private func isLeftWithoutPrints(_ id: UUID) throws -> Bool {
