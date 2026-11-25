@@ -37,6 +37,13 @@ listed here exactly.
   adds `|` and the size (`PawnSize.rawValue`). None of the real libraries needs it today.
 - **A new reader.** A PDF read again by a newer reader can read a name differently, which changes the key. A new
   print in the same source, with the same picture and face as an old one, records the old key as an alias.
+- **Image decks** (R2.2a). An item cut from a deck sold as JPGs (`ImageDeck`, the *Weapons & Armor Deck*) has
+  one digest: SHA-256 of its back file as stored, never of the pixels decoded from it, which differ between Mac and
+  iPad. Its key is the picture alone, `image:<digest>|`, as for nameless art: each back file is one card, and the
+  name, read off the front by text recognition, differs between devices too ("Flail" and "Plail"). The entry keeps
+  the name read for display. Image decks are read by `PawnExtractor.imageDeckVersion` (7), PDFs by
+  `PawnExtractor.version` (6); `PawnExtractor.version(of:)` picks, so raising one doesn't read the other again
+  (pawn-shop#61).
 - **Fallback** (R2.4). Art without digests: `place:`, the PDF's SHA-256 (`ArtSource.id`), `|`, the zero-based page,
   `|`, and the center of the front face in page space on a 30-point grid (about 1/20 of a Letter page; no page
   size is needed, so a library moves in without opening its PDFs), written `x,y` as whole cells rounded to the
@@ -163,7 +170,9 @@ keeping its API so Turnkeeper and Field Guide change only how they create it. Pa
   for this app, and each piece of art found; a PDF read by the current reader is skipped, one read by an older
   reader is read afresh, its old prints replaced and their keys kept as aliases of the entries they joined. Art an
   old print leaves without prints hands its note, aliases and creatures to the art printed in its place, so a
-  pawn whose ID is that print's key keeps its tags.
+  pawn whose ID is that print's key keeps its tags. An old print no new print shares a place with (same page,
+  centers within 15 points) pairs instead with the new print in the source whose art has the same folded name:
+  a card moved in from Pawn Shop's own library was stored without its place (page 0).
 - **Merging** (`ArtMerger`'s rules over the store). A print whose key the library has joins that entry.
   Otherwise, among the entries with the same folded name, game and kind of art (item or creature): one whose
   fingerprint matches, or, when either is a figure, whose colors match (`Figure.palette`, measured once and kept);

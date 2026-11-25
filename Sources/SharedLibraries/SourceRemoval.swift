@@ -23,14 +23,18 @@ extension LibraryWriter {
     }
 
     /// After a PDF is read again: each old print the new reader found in the same place answers, with its old
-    /// entry, to the new print's art (R2.7). An old entry left without prints hands its note, aliases and creatures
-    /// to that art; art left without prints goes. Returns the pictures to delete.
+    /// entry, to the new print's art (R2.7). An old print no new print shares a place with pairs with the new print
+    /// whose art has the same folded name: a card moved in from an app's own library has no place (page 0). An old
+    /// entry left without prints hands its note, aliases and creatures to that art; art left without prints goes.
+    /// Returns the pictures to delete.
     @discardableResult
     func retire(_ older: [RemovedPrint], app: TablesideApp) throws -> [String] {
         let newer = try older.first.map { try prints(of: $0.sourceID) } ?? []
         let newerKeys = Set(newer.map(\.key))
+        var newerByName: [String: RemovedPrint]?
         for old in older where !newerKeys.contains(old.key) {
-            guard let match = newer.first(where: { Self.isSamePlace($0.face, old.face) }) else { continue }
+            let placed = newer.first { Self.isSamePlace($0.face, old.face) }
+            guard let match = try placed ?? namedLike(old, among: newer, byName: &newerByName) else { continue }
             if old.entryID != match.entryID, try isLeftWithoutPrints(old.entryID) {
                 try addAlias(old.entryID, app: app, entry: match.entryID)
                 try repoint(old.entryID, to: match.entryID)
@@ -58,6 +62,27 @@ extension LibraryWriter {
         guard try ArtRows.entryID(answeringTo: id, in: database) != nil else { return true }
         return try database.rows("SELECT 1 FROM prints WHERE entry = ? LIMIT 1", [.text(id.uuidString)]).isEmpty
             && !(try database.rows("SELECT 1 FROM art WHERE id = ?", [.text(id.uuidString)]).isEmpty)
+    }
+
+    /// The new print whose art has the folded name of `old`'s art; `byName` holds the new prints by that name,
+    /// read the first time it's needed.
+    private func namedLike(_ old: RemovedPrint, among newer: [RemovedPrint],
+                           byName: inout [String: RemovedPrint]?) throws -> RemovedPrint? {
+        guard let name = try foldedName(ofArt: old.entryID), !name.isEmpty else { return nil }
+        if byName == nil {
+            var named: [String: RemovedPrint] = [:]
+            for print in newer {
+                if let printName = try foldedName(ofArt: print.entryID), named[printName] == nil {
+                    named[printName] = print
+                }
+            }
+            byName = named
+        }
+        return byName?[name]
+    }
+
+    private func foldedName(ofArt id: UUID) throws -> String? {
+        try database.rows("SELECT foldedName FROM art WHERE id = ?", [.text(id.uuidString)]).first?.text("foldedName")
     }
 
     private func prints(of sourceID: String) throws -> [RemovedPrint] {

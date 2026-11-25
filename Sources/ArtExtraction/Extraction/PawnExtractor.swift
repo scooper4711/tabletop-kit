@@ -74,6 +74,15 @@ public enum PawnExtractor {
     /// of pawn PDFs up to 2017 are read, a cover showing its pawns under its title gives none, and item cards'
     /// names are found wherever PDFKit puts them in the page's text.
     public static let version = 6
+    /// The version for image decks (`ImageDeck`), raised on its own so that PDFs aren't read again. 7: an image
+    /// deck's items are keyed by their back files' bytes alone, the same on every device. Keep it at or above
+    /// `version`.
+    public static let imageDeckVersion = 7
+
+    /// The version that reads `url`: `imageDeckVersion` for a folder of card images, else `version`.
+    public static func version(of url: URL) -> Int {
+        ImageDeck.containing(url) == nil ? version : imageDeckVersion
+    }
 
     /// The pawns in a pawn or token PDF, the creatures in a deck of Battle Cards, or the items in an item deck.
     public static func extract(from url: URL) throws -> ExtractionResult {

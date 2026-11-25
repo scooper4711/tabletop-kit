@@ -39,8 +39,8 @@ struct StoreMerger {
         let kept = found.filter { !$0.name.isEmpty || !Self.isItem($0) }
         report.unnamed += found.count - kept.count
         let keys = ArtKey.keys(for: kept.map { pawn in
-            ArtKeyInput(sourceID: source.id, name: pawn.name, size: pawn.size, fingerprint: pawn.fingerprint,
-                        face: pawn.front)
+            ArtKeyInput(sourceID: source.id, name: Self.keyName(of: pawn), size: pawn.size,
+                        fingerprint: pawn.fingerprint, face: pawn.front)
         })
         for (pawn, key) in zip(kept, keys) { try merge(pawn, key: key, into: &report) }
     }
@@ -72,6 +72,13 @@ struct StoreMerger {
         }
         report.added += 1
         return newEntry(found, print: print)
+    }
+
+    /// The name in a print's key: none for an item cut from an image deck, whose back file alone tells it apart
+    /// and whose name, read by text recognition, can differ between devices.
+    static func keyName(of found: ExtractedPawn) -> String {
+        if case .drawnItem = found.shape { return "" }
+        return found.name
     }
 
     private static func isItem(_ found: ExtractedPawn) -> Bool {

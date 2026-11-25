@@ -36,8 +36,9 @@ extension ArtLibrary {
     public func commit(_ prepared: PreparedArt, location: SourceLocation) throws -> ArtImportReport {
         var report = ArtImportReport(sourceTitle: prepared.title,
                                      unreadablePages: prepared.extraction.unreadablePages)
+        let readerVersion = PawnExtractor.version(of: prepared.file)
         if let known = source(id: prepared.digest) {
-            guard known.readerVersion < PawnExtractor.version else {
+            guard known.readerVersion < readerVersion else {
                 report.wasImported = true
                 return report
             }
@@ -46,7 +47,7 @@ extension ArtLibrary {
         if case .kept = location { try keep(prepared) }
         let source = ArtSource(id: prepared.digest, title: prepared.title, game: GameSystem(title: prepared.title),
                                location: location, byteCount: prepared.byteCount,
-                               readerVersion: PawnExtractor.version, artFound: prepared.extraction.pawns.count)
+                               readerVersion: readerVersion, artFound: prepared.extraction.pawns.count)
         sources.append(source)
         var merger = ArtMerger(library: self, prepared: prepared, source: source)
         for found in prepared.extraction.pawns {
