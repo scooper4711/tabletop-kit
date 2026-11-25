@@ -21,8 +21,8 @@ clean:
 	rm -rf .build coverage
 
 # Checks the Mac App Store packaging script on a generated trial app, the iCloud entitlements script on a generated
-# app, the library backup scripts on a made-up home folder, and the store listing and TestFlight scripts against
-# stand-ins for fastlane and xcodebuild.
+# app, the library backup scripts on a made-up home folder, the store listing and TestFlight scripts against
+# stand-ins for fastlane and xcodebuild, and the release train in a made-up repository.
 test-scripts:
 	scripts/test-package-appstore.sh
 	scripts/test-add-icloud-entitlements.sh
@@ -30,3 +30,8 @@ test-scripts:
 	scripts/test-store-scripts.sh
 	ruby scripts/test-testflight-internal.rb
 	ruby scripts/test-ios-store-profiles.rb
+	ruby scripts/test-changelog.rb
+	ruby scripts/test-train-repository.rb
+	ruby scripts/test-train-store.rb
+	ruby scripts/test-public-beta.rb
+	ruby scripts/test-release-train.rb

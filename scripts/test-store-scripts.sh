@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Runs store-listing.sh, testflight.sh and archive-ios.sh against stand-ins for fastlane and xcodebuild that record
-# their arguments, and checks what docs/specs/store-listing promises. Nothing is sent anywhere.
+# their arguments, and checks what docs/specs/store-listing promises. It also runs check-store-release.sh's source
+# guard (docs/specs/app-store-pipeline R2) in a made-up repository. Nothing is sent anywhere.
 set -euo pipefail
 cd "$(dirname "$0")/.."
 SCRIPTS="$PWD/scripts"
@@ -220,6 +221,52 @@ check "a clean build records its commit" \
 echo two > "$REPO/file"
 record
 check "uncommitted changes record nothing" '[[ ! -e "$REPO/Demo.ipa.source" ]]'
+
+# App Store pipeline R2: the source guard, in a made-up app with an origin
+ORIGIN="$DIR/origin.git"
+TRAIN="$DIR/train"
+git init --quiet --bare "$ORIGIN"
+git init --quiet --initial-branch main "$TRAIN"
+train_git() {
+    git -C "$TRAIN" -c user.name=Test -c user.email=test@example.invalid -c commit.gpgsign=false \
+        -c tag.gpgsign=false "$@"
+}
+# Usage: train_commit <file> <text>; commits the text as the file.
+train_commit() { echo "$2" > "$TRAIN/$1"; train_git add "$1"; train_git commit --quiet -m "$1 $2"; }
+mkdir "$TRAIN/scripts"
+printf '#!/bin/sh\ncat VERSION\n' > "$TRAIN/scripts/version.sh"
+chmod +x "$TRAIN/scripts/version.sh"
+train_git add scripts
+train_commit VERSION 1.2.0
+train_git remote add origin "$ORIGIN"
+train_git push --quiet origin main
+guard() { (cd "$TRAIN" && "$SCRIPTS/check-store-release.sh" source) 2>/dev/null; }
+check "main builds the open version"       'guard'
+touch "$TRAIN/stray"
+check "a changed tree is refused"          '! guard'
+rm "$TRAIN/stray"
+train_commit file two
+check "an unpushed commit is refused"      '! guard'
+train_git push --quiet origin main
+train_git push --quiet origin main:refs/heads/release/1.2.0
+train_commit file three
+train_git push --quiet origin main
+check "main waits while a version is in review" '! guard'
+train_git checkout --quiet --detach origin/release/1.2.0
+check "the release branch builds"          'guard'
+train_commit file fix
+train_git push --quiet origin HEAD:refs/heads/release/1.2.0
+check "and so does a fix on it"            'guard'
+train_git tag v1.2.0
+check "an accepted version is closed"      '! guard'
+train_git checkout --quiet main
+train_git push --quiet origin --delete release/1.2.0
+check "and stays closed on main"           '! guard'
+train_commit VERSION 1.2.1
+train_git push --quiet origin main
+check "a raised version opens main again"  'guard'
+train_git push --quiet origin main:refs/heads/release/9.9.9
+check "another version's branch blocks it" '! guard'
 
 # R3.1, R3.5: the archive, from a made-up app's folder
 rm "$LOG"
