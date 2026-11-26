@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.23.0] - 2026-11-26
+
+### Added
+- Add the pawn sheet request
+- Show what the notices print for each entry to check
+
+### Fixed
+- Give package resource bundles the app's team
+- Mark Dark Archive (Remastered) verified
+- Name the product in Starfinder Player Core's reference
+- Quote the two player's guides' own notices
+
+### Changed
+- Specify the pawn sheet request
+
+[1.23.0]: https://github.com/scooper4711/tabletop-kit/releases/tag/v1.23.0
+
 ## [1.22.0] - 2026-11-26
 
 ### Added
