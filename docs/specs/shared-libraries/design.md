@@ -287,6 +287,18 @@ Turnkeeper never reads how art sits on a pawn.
   name sets all three, a missing game or size included. A creature made by such a build has an empty name until
   Turnkeeper next saves it; Turnkeeper fills the columns of such rows when it opens the library.
 
+## Pasted art of other creatures (R4.11 to R4.13)
+
+- **The label.** A custom art row's `record` is the JSON the app that pasted the art encodes, Turnkeeper's
+  `CustomArt`, and syncs as it is. `ArtSubjectLabel` names two keys in it, `subjectName` and `subjectSize` (a
+  `CreatureSize`'s raw value). `ArtSubjectLabel(record:)` reads them leniently: nil for an empty record, one that
+  isn't JSON or one without a name, and no size for a word that isn't one of the six. No column and no sync field
+  is added, so builds before this carry the label without knowing it; one that encodes the art again from its own
+  model drops it, and Turnkeeper puts it back when it next reads the library.
+- **The pawn's ID.** `SharedLibrary.pawnID(forSubject:)`: the ID in a `custom.<id>` key, else
+  `ArtKey.nameBasedUUID("creature:" + subject)`, a version 5 UUID in the art keys' namespace. It comes from the
+  creature's key and not from the art, because pasting again makes new art under a new ID.
+
 ## Who does what
 | Issue | Part |
 |---|---|
