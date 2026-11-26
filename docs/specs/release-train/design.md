@@ -25,8 +25,10 @@ A tag that exists on the same commit is only pushed again; one on another commit
 ## Upload
 
 `gh workflow run` prints the run it started; an older gh doesn't, and then the newest `workflow_dispatch` run of the
-workflow is polled until one newer than before appears. After `gh run watch --exit-status`, the tag goes on the run's
-`headSha`, not on what `origin` was before: `main` may have moved between the fetch and the dispatch.
+workflow is polled until one newer than before appears. GitHub answers "not found" for a run in its first
+moments, and `gh run watch` gives up on that, so the run is asked for until it shows before it is followed. After
+`gh run watch --exit-status`, the tag goes on the run's `headSha`, not on what `origin` was before: `main` may have
+moved between the fetch and the dispatch.
 
 ## Submitting (R5.1 to R5.3)
 
