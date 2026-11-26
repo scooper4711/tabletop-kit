@@ -40,11 +40,28 @@ struct GapReportTests {
             """))
     }
 
-    @Test func listsUncheckedEntriesWithWhereTheirFactsCameFrom() throws {
+    @Test func listsUncheckedEntriesWithWhatWePrintAndWhereItCameFrom() throws {
         #expect(try report().contains("""
             ## To check against the book's notice (1)
 
-            - [ ] Player Core (sf2e) — Scrollkeeper metadata, SKU PZO1 — used by turnkeeper
+            - [ ] Player Core (sf2e) — used by turnkeeper
+              - We print: Player Core © 2024, Paizo Inc.; Author: Someone.
+              - From: Scrollkeeper metadata, SKU PZO1
+            """))
+    }
+
+    @Test func anUncheckedCollectionListsItsPartsAndItsNote() throws {
+        var guide = CatalogEntry(title: "Player's Guide")
+        guide.license = .orc
+        guide.includes = ["Adventure © 2025, Paizo Inc.; Author: A."]
+        guide.verified = false
+        guide.note = "Credited by its adventure."
+        let report = GapReport.markdown(catalog: try SourceCatalog(entries: [guide]), usage: [:])
+        #expect(report.contains("""
+            - [ ] Player's Guide () — not used by any app yet
+              - We print: Adventure © 2025, Paizo Inc.; Author: A.
+              - From: no reference
+              - Note: Credited by its adventure.
             """))
     }
 

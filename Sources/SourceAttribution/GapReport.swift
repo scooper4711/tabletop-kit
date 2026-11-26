@@ -19,9 +19,7 @@ public enum GapReport {
             section("Missing facts", incomplete.map {
                 "\($0.title) (\($0.game)) — lacks \($0.missingFacts.joined(separator: ", ")) — \(used($0.title))"
             }),
-            section("To check against the book's notice", unchecked.map {
-                "\($0.title) (\($0.game)) — \($0.reference ?? "no reference") — \(used($0.title))"
-            })
+            section("To check against the book's notice", unchecked.map { checkItem($0, used: used($0.title)) })
         ].joined(separator: "\n")
     }
 
@@ -33,11 +31,21 @@ public enum GapReport {
         `docs/source-usage`. Don't edit this file: fill in the catalog, then generate it again.
 
         To fill a gap, take the title, copyright year, publisher and credits from the book's own copyright \
-        notice, or its Paizo product page, and set `reference` to where you read them. Set `verified` to true \
-        once the facts have been checked against the book's notice.
+        notice, or its Paizo product page, and set `reference` to where you read them. Under "To check", \
+        compare each "We print" line with the book's own notice; fix the catalog where they differ, then set \
+        `verified` to true.
 
 
         """
+
+    /// An unverified entry with what the notices will print for it, where that came from, and any note: what to
+    /// compare with the book's own notice.
+    private static func checkItem(_ entry: CatalogEntry, used: String) -> String {
+        let printed = entry.isCollection ? entry.includes : [entry.noticeLine]
+        var details = printed.map { "We print: \($0)" } + ["From: \(entry.reference ?? "no reference")"]
+        if let note = entry.note, !note.isEmpty { details.append("Note: \(note)") }
+        return "\(entry.title) (\(entry.game)) — \(used)" + details.map { "\n  - \($0)" }.joined()
+    }
 
     private static func section(_ title: String, _ lines: [String]) -> String {
         let items = lines.isEmpty ? "None.\n" : lines.map { "- [ ] \($0)\n" }.joined()
