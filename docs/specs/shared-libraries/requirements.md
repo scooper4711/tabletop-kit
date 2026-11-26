@@ -92,6 +92,16 @@ Pawn Shop #63. What each app shows stays in its own spec.
   Pawn Shop, as a pawn read from a PDF is, and stays in Turnkeeper and Field Guide.
 - R4.10 A creature without a stat block has no game. Turnkeeper lists it in every campaign, and it takes the
   campaign's game when it is given a stat block.
+- R4.11 Art pasted onto a creature that isn't a custom creature, such as one from the bestiary, carries the
+  creature's name and size, saved with it by an app that knows the creature (Turnkeeper, Field Guide). Pawn Shop
+  has no bestiary: it lists such art as a pawn it can print, under that name and size, and leaves out art that
+  carries no name. The name and size sync with the art (library sync), and an app that doesn't know them keeps
+  them when it saves the art again.
+- R4.12 A creature's pawn has one ID, the same in every app and on every device, so one app can tell another
+  which pawn it means: a custom creature's own ID, and for any other creature an ID made from its key, which stays
+  the same when its art is replaced.
+- R4.13 How such art sits on its pawn and its tags are Pawn Shop's own (R4.8). Its name is the creature's: Pawn
+  Shop doesn't rename it, and removing its pawn hides it in Pawn Shop only (R4.9).
 
 ## R5 Two apps at once
 - R5.1 Two or three apps can read and write the libraries at the same time without losing a change.
