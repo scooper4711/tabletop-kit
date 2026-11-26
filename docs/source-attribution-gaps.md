@@ -12,7 +12,7 @@ None.
 
 None.
 
-## To check against the book's notice (14)
+## To check against the book's notice (13)
 
 - [ ] Pathfinder Abomination Vaults Hardcover Compilation (pf2e) — used by chronicle-keeper
   - We print: Pathfinder Adventure Path #163: Ruins of Gauntlight © 2021, Paizo Inc.; Authors: James Jacobs
@@ -38,10 +38,6 @@ None.
   - We print: Pathfinder Beginner Box: Secrets of the Unlit Star © 2026, Paizo Inc.; Authors: Logan Bonner, Jason Bulmahn, Lyz Liddell, Luis Loza, Mark Seifter, James Case, Adam Daigle, Ivis K. Flanagan, Jason Keeley, Stephen Radney-MacFarland, and Landon Winkler.
   - From: PZO12013E GM Guide.pdf, credits page
   - Note: Authors and additional writing from the GM Guide's credits page (it prints no notice); year from Scrollkeeper's metadata.
-- [ ] Pathfinder Dark Archive (Remastered) (pf2e) — used by chronicle-keeper
-  - We print: Pathfinder Dark Archive (Remastered) © 2026, Paizo Inc.; Authors: James Case, Mikhail Rekun, and Mark Seifter.
-  - From: https://store.paizo.com/pathfinder-dark-archive-remastered-pdf/
-  - Note: Authors from the cover, year from DriveThruRPG's catalog date; check against the book's notice.
 - [ ] Pathfinder Feybound (pf2e) — used by chronicle-keeper
   - We print: Pathfinder Feybound © 2026, Paizo Inc.; Authors: Alexander Augunas, Rigby Bendele, Logan Bonner, Matt Byrd, Felix Dritz, Eleanor Ferron, Ivis K. Flanagan, Josh Foster, Stephen Glicker, Steven Hammond, Logan Harper, BJ Hensley, Vanessa Hoskins, Patrick Hurley, James Jacobs, Michelle Jones, Virginia Jordan, Jason Keeley, Priscilla N. Lagares, Luis Loza, Ron Lundeen, Jacob W. Michaels, Ianara Natividad, K. Tessa Newton, Randy Price, Danita Rambo, Jessica Redekop, Mikhail Rekun, Alistair Rigg, Alex Riggs, David N. Ross, Solomon St. John, Simone D. Sallé, David Schwartz, Mark Seifter, Shay Snow, Kendra Leigh Speedling, Tan Shao Han, Jason Tondro, Andrew White, Costin Wilken-Schelling, Scott D. Young, and Linda Zayas-Palmer.
   - From: https://www.drivethrurpg.com/en/product/592607/pathfinder-feybound
