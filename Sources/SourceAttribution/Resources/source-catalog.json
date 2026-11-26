@@ -137,7 +137,13 @@
   {
     "title": "Invasion's Edge Player's Guide",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "includes": [
+      "Starfinder Society Scenario #1-01: Invasion’s Edge © 2025, Paizo Inc., Author: Michael Bramnik"
+    ],
+    "reference": "The season's first scenario's notice",
+    "verified": false,
+    "note": "A free player's guide for Society season 1, credited by scenario #1-01's notice; check against the guide's own notice."
   },
   {
     "title": "Kineticist Playtest Analysis",
@@ -1526,7 +1532,30 @@
   {
     "title": "Pathfinder Beginner Box: Secrets of the Unlit Star",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "credits": [
+      {
+        "role": "Authors",
+        "names": [
+          "Logan Bonner",
+          "Jason Bulmahn",
+          "Lyz Liddell",
+          "Luis Loza",
+          "Mark Seifter",
+          "James Case",
+          "Adam Daigle",
+          "Ivis K. Flanagan",
+          "Jason Keeley",
+          "Stephen Radney-MacFarland",
+          "Landon Winkler"
+        ]
+      }
+    ],
+    "reference": "PZO12013E GM Guide.pdf, credits page",
+    "verified": false,
+    "note": "Authors and additional writing from the GM Guide's credits page (it prints no notice); year from Scrollkeeper's metadata."
   },
   {
     "title": "Pathfinder Bestiary 2 (Second Edition)",
@@ -1722,7 +1751,22 @@
   {
     "title": "Pathfinder Dark Archive (Remastered)",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "credits": [
+      {
+        "role": "Authors",
+        "names": [
+          "James Case",
+          "Mikhail Rekun",
+          "Mark Seifter"
+        ]
+      }
+    ],
+    "reference": "https://store.paizo.com/pathfinder-dark-archive-remastered-pdf/",
+    "verified": false,
+    "note": "Authors from the cover, year from DriveThruRPG's catalog date; check against the book's notice."
   },
   {
     "title": "Pathfinder Dark Archive Web Supplement: In Darkness",
@@ -4697,12 +4741,23 @@
   {
     "title": "Starfinder Guilt of the Grave World Player's Guide",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "includes": [
+      "Starfinder Guilt of the Grave World Adventure Path © 2025 Paizo Inc., Author: Michael Bramnik."
+    ],
+    "reference": "The adventure's notice",
+    "verified": false,
+    "note": "A free player's guide, credited by its adventure's notice; check against the guide's own notice."
   },
   {
     "title": "Starfinder Murder in Metal City Deluxe Adventure",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "notice": "Starfinder Murder in Metal City Deluxe Adventure © 2025 Paizo Inc., Author: Jenny Jarzabski.",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "PZO24005E.pdf (Starfinder Game Night: Murder in Metal City)",
+    "verified": true
   },
   {
     "title": "Starfinder Player Core",
