@@ -1764,8 +1764,7 @@
       }
     ],
     "reference": "https://store.paizo.com/pathfinder-dark-archive-remastered-pdf/",
-    "verified": false,
-    "note": "Authors from the cover, year from DriveThruRPG's catalog date; check against the book's notice."
+    "verified": true
   },
   {
     "title": "Pathfinder Dark Archive Web Supplement: In Darkness",
