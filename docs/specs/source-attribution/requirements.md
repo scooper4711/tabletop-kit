@@ -16,6 +16,7 @@ Issue: tabletop-kit#94. The apps adopt it in chronicle-keeper#31, pawn-shop#93, 
   removed.
 - R1.4 An OGL source's own Section 15 entries for earlier works (such as Tome of Horrors creatures) are repeated,
   once each.
+- R1.7 A source made of many works, such as the Pathfinder Blog, is credited work by work, as pf2e credits it.
 - R1.5 Neither file starts with pf2e's stray `/static/licenses/…` line.
 - R1.6 The Community Use notice stays with AppNotices.
 

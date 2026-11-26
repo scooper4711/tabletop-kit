@@ -3,7 +3,8 @@
 ## Module `SourceAttribution` (Foundation only)
 - `CatalogEntry`: one book. `notice` quotes the book's notice; otherwise `noticeLine` builds
   `Title © Year, Publisher; Role: A, B, and C.` from `year`, `publisher` and `credits`. `missingFacts` names what a
-  gap lacks. `includes` holds earlier works' notices for the OGL (R1.4). `verified` is false for unchecked facts.
+  gap lacks. `includes` holds earlier works' notices (R1.4); an entry with only `includes` is a collection, credited
+  by its parts alone (R1.7). `verified` is false for unchecked facts.
 - `SourceCatalog`: the bundled `Resources/source-catalog.json`, looked up by `SourceTitle.key` over titles and
   aliases; refuses a title listed twice.
 - `SourceTally`: titles and counts, read and written as `title<TAB>count` lines.
@@ -23,6 +24,7 @@
 - `--items`: an app's records; each new source becomes a gap.
 - Adventure Path volumes the data titles "Pathfinder #N: …" become aliases of "Pathfinder Adventure Path #N: …".
 - `--alias "DATA=>NOTICE"`: other titles, linked by hand.
+- `--licenses` also makes the Pathfinder Blog a collection of the posts under "Paizo Blog" in pf2e's OGL file.
 - `--books`: Scrollkeeper's download folder. An ORC book prints the notice it wants to be credited with ("please
   credit us in your product as follows: …"); a gap whose book is there gets that notice, quoted and verified. A
   notice cut short by a column or page break is left for hand filling.
