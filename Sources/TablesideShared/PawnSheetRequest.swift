@@ -6,11 +6,16 @@ public enum PawnSheetRequestError: Error, Equatable, LocalizedError {
     case unrecognizedLink
     /// The link is a sheet request whose payload is missing or damaged.
     case unreadable
+    /// The request is in a newer format than this reader knows.
+    case newerFormat(Int)
 
     public var errorDescription: String? {
         switch self {
         case .unrecognizedLink: "Reading the pawn sheet request failed: the link isn't one."
         case .unreadable: "Reading the pawn sheet request failed: its list of pawns can't be read."
+        case .newerFormat(let version):
+            "Reading the pawn sheet request failed: it is in a newer format (\(version)) than this app knows. "
+                + "Update the app to read it."
         }
     }
 }
@@ -21,6 +26,9 @@ public struct PawnSheetRequest: Codable, Equatable, Sendable {
     public static let scheme = "pawnshop"
     static let host = "sheet"
     static let payloadName = "request"
+    /// The newest format this code reads and the one it writes. Raise it only for a change an older reader would
+    /// get wrong: one that only adds fields, which older readers ignore, keeps the number.
+    public static let currentFormatVersion = 1
 
     /// The bare link, which carries no request: for asking whether anything installed takes these links.
     public static var probeURL: URL { components().url! }
@@ -41,6 +49,8 @@ public struct PawnSheetRequest: Codable, Equatable, Sendable {
         }
     }
 
+    /// The format the request is written in. A request without one is in format 1.
+    public var formatVersion = currentFormatVersion
     /// What to call the sheet.
     public var title: String
     public var lines: [Line]
@@ -50,6 +60,17 @@ public struct PawnSheetRequest: Codable, Equatable, Sendable {
         self.lines = lines
     }
 
+    /// Reads the format first and refuses a newer one before reading the rest, which may have changed.
+    public init(from decoder: any Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        formatVersion = try container.decodeIfPresent(Int.self, forKey: .formatVersion) ?? 1
+        guard formatVersion <= Self.currentFormatVersion else {
+            throw PawnSheetRequestError.newerFormat(formatVersion)
+        }
+        title = try container.decode(String.self, forKey: .title)
+        lines = try container.decode([Line].self, forKey: .lines)
+    }
+
     /// Reads the request a link carries.
     public init(url: URL) throws(PawnSheetRequestError) {
         guard url.scheme?.lowercased() == Self.scheme, url.host?.lowercased() == Self.host else {
@@ -57,10 +78,15 @@ public struct PawnSheetRequest: Codable, Equatable, Sendable {
         }
         let items = URLComponents(url: url, resolvingAgainstBaseURL: false)?.queryItems ?? []
         guard let payload = items.first(where: { $0.name == Self.payloadName })?.value,
-              let data = Self.data(fromURLSafeBase64: payload),
-              let request = try? JSONDecoder().decode(Self.self, from: data)
+              let data = Self.data(fromURLSafeBase64: payload)
         else { throw .unreadable }
-        self = request
+        do {
+            self = try JSONDecoder().decode(Self.self, from: data)
+        } catch let error as PawnSheetRequestError {
+            throw error
+        } catch {
+            throw .unreadable
+        }
     }
 
     /// The link that carries the request. The same request always gives the same link.

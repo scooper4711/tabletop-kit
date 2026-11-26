@@ -79,6 +79,10 @@ Moved here from Mapsmith and Pluck, whose copies had grown apart.
   payload. `probeURL` is the bare `pawnshop://sheet`, for `WorkspaceLauncher.canOpen(_:)`, which asks
   `NSWorkspace.urlForApplication(toOpen:)`. It is on the Mac's launcher alone, not on `ApplicationLauncher`: an iPad
   app would need the scheme in `LSApplicationQueriesSchemes`, and none sends the request yet.
+  `formatVersion` (R6.4) is written as `currentFormatVersion` and read first by a decoder of its own, which throws
+  `.newerFormat(version)` before it looks at the title or the lines; `init(url:)` passes that error on and turns any
+  other decoding failure into `.unreadable`. The number was added before any app with the request reached the App
+  Store, because a reader that is already installed can't be taught to check.
 - **`PageSetupArchive` and `PageSetupStore` (R7, macOS only).** The archive is the whole `NSPrintInfo`, written and
   read with secure coding: a paper size alone would come back formatted for "Any Printer", where a printer's own
   papers don't exist. `PageSetupStore` keeps one archive in `UserDefaults` under a key the app may name
