@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.22.0] - 2026-11-26
+
+### Added
+- Attribute Chronicle Keeper's last 5 sources
+- Attribute 9 more sources from product pages
+- Attribute 16 more of Chronicle Keeper's sources
+- Find more books' notices when seeding the catalog
+- Credit collections such as the Pathfinder Blog by their parts
+- Attribute 43 more of Chronicle Keeper's sources
+- Fill catalog gaps from the books' own notices
+
+### Fixed
+- Wait for GitHub to show a new run before following it
+
+### Changed
+- Keep the attribution code within 120 columns
+
+[1.22.0]: https://github.com/scooper4711/tabletop-kit/releases/tag/v1.22.0
+
 ## [1.21.0] - 2026-11-26
 
 ### Added
