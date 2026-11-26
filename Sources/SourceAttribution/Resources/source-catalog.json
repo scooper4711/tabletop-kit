@@ -493,7 +493,15 @@
   {
     "title": "Pathfinder Abomination Vaults Hardcover Compilation",
     "game": "pf2e",
-    "license": null
+    "license": "ogl",
+    "includes": [
+      "Pathfinder Adventure Path #163: Ruins of Gauntlight © 2021, Paizo Inc.; Authors: James Jacobs",
+      "Pathfinder Adventure Path #164: Hands of the Devil © 2021, Paizo Inc.; Authors: Vanessa Hoskins",
+      "Pathfinder Adventure Path #165: Eyes of Empty Death © 2021, Paizo Inc.; Authors: Stephen Radney-MacFarland"
+    ],
+    "reference": "Its volumes' notices, from pf2e",
+    "verified": false,
+    "note": "A compilation, credited by its volumes; check against the hardcover's own notice."
   },
   {
     "title": "Pathfinder Advanced Player Guide",
@@ -1290,17 +1298,58 @@
   {
     "title": "Pathfinder Adventure Path #225: Vaultlines",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "credits": [
+      {
+        "role": "Authors",
+        "names": [
+          "Sen H.H.S.",
+          "Jacob W. Michaels",
+          "Andrew White",
+          "Bill Fischer",
+          "Paul Hughes",
+          "James Jacobs",
+          "Matthew Taber-Hanson"
+        ]
+      }
+    ],
+    "reference": "https://www.drivethrurpg.com/en/product/592599/pathfinder-vaultlines-adventure-path",
+    "verified": false,
+    "note": "From the DriveThruRPG product page; check against the book's notice."
   },
   {
     "title": "Pathfinder Adventure Path: Bastion of Blasphemies",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "credits": [
+      {
+        "role": "Authors",
+        "names": [
+          "James Jacobs",
+          "Adam Daigle"
+        ]
+      }
+    ],
+    "reference": "https://www.drivethrurpg.com/en/product/582488/pathfinder-bastion-of-blasphemies-adventure-path",
+    "verified": false,
+    "note": "From the DriveThruRPG product page, year from its catalog date; check against the book's notice."
   },
   {
     "title": "Pathfinder Adventure Path: Gatewalkers",
     "game": "pf2e",
-    "license": null
+    "license": "ogl",
+    "includes": [
+      "Pathfinder Adventure Path #187: The Seventh Arch © 2023, Paizo Inc.; Author: James L. Sutter.",
+      "Pathfinder Adventure Path #188: They Watched The Stars © 2023, Paizo Inc.; Author: Jason Keeley.",
+      "Pathfinder Adventure Path #189: Dreamers Of The Nameless Spires © 2023, Paizo Inc.; Author: James Jacobs."
+    ],
+    "reference": "Its volumes' notices, from pf2e",
+    "verified": false,
+    "note": "A compilation, credited by its volumes; check against the hardcover's own notice."
   },
   {
     "title": "Pathfinder Adventure Path: Hell's Destiny",
@@ -1714,7 +1763,62 @@
   {
     "title": "Pathfinder Feybound",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "credits": [
+      {
+        "role": "Authors",
+        "names": [
+          "Alexander Augunas",
+          "Rigby Bendele",
+          "Logan Bonner",
+          "Matt Byrd",
+          "Felix Dritz",
+          "Eleanor Ferron",
+          "Ivis K. Flanagan",
+          "Josh Foster",
+          "Stephen Glicker",
+          "Steven Hammond",
+          "Logan Harper",
+          "BJ Hensley",
+          "Vanessa Hoskins",
+          "Patrick Hurley",
+          "James Jacobs",
+          "Michelle Jones",
+          "Virginia Jordan",
+          "Jason Keeley",
+          "Priscilla N. Lagares",
+          "Luis Loza",
+          "Ron Lundeen",
+          "Jacob W. Michaels",
+          "Ianara Natividad",
+          "K. Tessa Newton",
+          "Randy Price",
+          "Danita Rambo",
+          "Jessica Redekop",
+          "Mikhail Rekun",
+          "Alistair Rigg",
+          "Alex Riggs",
+          "David N. Ross",
+          "Solomon St. John",
+          "Simone D. Sallé",
+          "David Schwartz",
+          "Mark Seifter",
+          "Shay Snow",
+          "Kendra Leigh Speedling",
+          "Tan Shao Han",
+          "Jason Tondro",
+          "Andrew White",
+          "Costin Wilken-Schelling",
+          "Scott D. Young",
+          "Linda Zayas-Palmer"
+        ]
+      }
+    ],
+    "reference": "https://www.drivethrurpg.com/en/product/592607/pathfinder-feybound",
+    "verified": false,
+    "note": "From the DriveThruRPG product page; check against the book's notice."
   },
   {
     "title": "Pathfinder Fists of the Ruby Phoenix Adventure Path",
@@ -1987,7 +2091,38 @@
   {
     "title": "Pathfinder Lost Omens Cheliax, Infernal Inheritance",
     "game": "pf2e",
-    "license": null
+    "license": "orc",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "credits": [
+      {
+        "role": "Authors",
+        "names": [
+          "John Joseph Adams",
+          "Dan Cascone",
+          "Hiromi Cota",
+          "Felix Dritz",
+          "Matthew Fu",
+          "Laura Lynn Horst",
+          "Jason Keeley",
+          "Stephanie Lundeen",
+          "Derry Luttrell",
+          "Letterio Mammoliti",
+          "Liane Merciel",
+          "Jaime Reyes Mondragon",
+          "Andrew Mullen",
+          "AJ Neuro",
+          "Samantha Phelan",
+          "Collette Quach",
+          "Erin Roberts",
+          "Gina Susanna",
+          "Brian Yaksha"
+        ]
+      }
+    ],
+    "reference": "https://www.drivethrurpg.com/en/product/587993/pathfinder-lost-omens-cheliax-infernal-inheritance",
+    "verified": false,
+    "note": "From the DriveThruRPG product page; check against the book's notice."
   },
   {
     "title": "Pathfinder Lost Omens Divine Mysteries",
@@ -2484,7 +2619,16 @@
   {
     "title": "Pathfinder Season of Ghosts Hardcover Compilation",
     "game": "pf2e",
-    "license": null
+    "license": "ogl",
+    "includes": [
+      "Pathfinder Adventure Path #196: The Summer that Never Was © 2023, Paizo Inc.; Authors: Sen H.H.S. and James Jacobs.",
+      "Pathfinder Adventure Path #197: Let the Leaves Fall © 2023, Paizo Inc.; Author: Joan Hong.",
+      "Pathfinder Adventure Path #198: With No Breath to Cry © 2023, Paizo Inc.; Authors: Dan Cascone and Eleanor Ferron.",
+      "Pathfinder Adventure Path #199: To Bloom below the Web © 2024, Paizo Inc.; Author: Liane Merciel."
+    ],
+    "reference": "Its volumes' notices, from pf2e",
+    "verified": false,
+    "note": "A compilation, credited by its volumes; check against the hardcover's own notice."
   },
   {
     "title": "Pathfinder Society (second edition) Faction Showcase",
@@ -4522,7 +4666,23 @@
   {
     "title": "Starfinder Absalom Station",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "credits": [
+      {
+        "role": "Authors",
+        "names": [
+          "Jenny Jarzabski",
+          "James Beck",
+          "Rigby Bendele",
+          "et al."
+        ]
+      }
+    ],
+    "reference": "https://www.drivethrurpg.com/en/product/582489/starfinder-absalom-station-center-of-the-galaxy",
+    "verified": false,
+    "note": "From the DriveThruRPG product page, year from its catalog date; check against the book's notice. The page lists only these names and \"et al.\""
   },
   {
     "title": "Starfinder Guilt of the Grave World",
@@ -4557,7 +4717,26 @@
   {
     "title": "Starfinder Secrets of the Swarm Adventure Path",
     "game": "sf2e",
-    "license": null
+    "license": "orc",
+    "year": 2026,
+    "publisher": "Paizo Inc.",
+    "credits": [
+      {
+        "role": "Authors",
+        "names": [
+          "Kate Baker",
+          "Joan Hong",
+          "Letterio Mammoliti",
+          "Matt Morris",
+          "Dennis Muldoon",
+          "Emily Parks",
+          "Sam W Tennyson"
+        ]
+      }
+    ],
+    "reference": "https://www.drivethrurpg.com/en/product/582162/starfinder-secrets-of-the-swarm-adventure-path",
+    "verified": false,
+    "note": "From the DriveThruRPG product page, year from its catalog date; check against the book's notice."
   },
   {
     "title": "Starfinder Society Scenario #1-00: Collision's Wake",
