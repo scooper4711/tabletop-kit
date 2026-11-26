@@ -37,6 +37,11 @@ public struct WorkspaceLauncher: ApplicationLauncher {
         NSWorkspace.shared.urlForApplication(withBundleIdentifier: bundleIdentifier) != nil
     }
 
+    /// Whether anything installed opens the link, such as a Pawn Shop that takes `PawnSheetRequest.probeURL`.
+    public func canOpen(_ url: URL) -> Bool {
+        NSWorkspace.shared.urlForApplication(toOpen: url) != nil
+    }
+
     public func openInBackground(_ url: URL) {
         let configuration = NSWorkspace.OpenConfiguration()
         configuration.activates = false
