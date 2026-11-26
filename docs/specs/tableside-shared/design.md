@@ -73,3 +73,9 @@ Moved here from Mapsmith and Pluck, whose copies had grown apart.
   app supplies its own, and tests a fake.
 - **`ScrollkeeperCoverThumbnail`.** A SwiftUI view of a cover, read with Image I/O off the main thread, or the
   app's symbol when there is none.
+- **`PawnSheetRequest` (R6).** `Codable`, with `title` and `lines` (`Line`: `name`, `count`, `pawnID`). `url`
+  encodes it with sorted keys, so the same request always gives the same link; `init(url:)` throws
+  `PawnSheetRequestError.unrecognizedLink` for another scheme or host and `.unreadable` for a missing or damaged
+  payload. `probeURL` is the bare `pawnshop://sheet`, for `WorkspaceLauncher.canOpen(_:)`, which asks
+  `NSWorkspace.urlForApplication(toOpen:)`. It is on the Mac's launcher alone, not on `ApplicationLauncher`: an iPad
+  app would need the scheme in `LSApplicationQueriesSchemes`, and none sends the request yet.
