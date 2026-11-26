@@ -138,12 +138,11 @@
     "title": "Invasion's Edge Player's Guide",
     "game": "sf2e",
     "license": "orc",
-    "includes": [
-      "Starfinder Society Scenario #1-01: Invasion’s Edge © 2025, Paizo Inc., Author: Michael Bramnik"
-    ],
-    "reference": "The season's first scenario's notice",
-    "verified": false,
-    "note": "A free player's guide for Society season 1, credited by scenario #1-01's notice; check against the guide's own notice."
+    "notice": "Invasion’s Edge Player’s Guide © 2025, Paizo Inc., Authors: Jessica Catalan and Alex Speidel",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "https://downloads.paizo.com/OP-Files/SFS+Invasions+Edge+Players+Guide.pdf",
+    "verified": true
   },
   {
     "title": "Kineticist Playtest Analysis",
@@ -4742,12 +4741,11 @@
     "title": "Starfinder Guilt of the Grave World Player's Guide",
     "game": "sf2e",
     "license": "orc",
-    "includes": [
-      "Starfinder Guilt of the Grave World Adventure Path © 2025 Paizo Inc., Author: Michael Bramnik."
-    ],
-    "reference": "The adventure's notice",
-    "verified": false,
-    "note": "A free player's guide, credited by its adventure's notice; check against the guide's own notice."
+    "notice": "Starfinder Guilt of the Grave World Player’s Guide © 2025 Paizo Inc., Authors: Jenny Jarzabski and Michael Bramnik.",
+    "year": 2025,
+    "publisher": "Paizo Inc.",
+    "reference": "https://downloads.paizo.com/GuiltoftheGraveWorld_Players-Guide.pdf",
+    "verified": true
   },
   {
     "title": "Starfinder Murder in Metal City Deluxe Adventure",

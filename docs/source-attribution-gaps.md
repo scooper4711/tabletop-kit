@@ -12,12 +12,8 @@ None.
 
 None.
 
-## To check against the book's notice (16)
+## To check against the book's notice (14)
 
-- [ ] Invasion's Edge Player's Guide (sf2e) — used by chronicle-keeper
-  - We print: Starfinder Society Scenario #1-01: Invasion’s Edge © 2025, Paizo Inc., Author: Michael Bramnik
-  - From: The season's first scenario's notice
-  - Note: A free player's guide for Society season 1, credited by scenario #1-01's notice; check against the guide's own notice.
 - [ ] Pathfinder Abomination Vaults Hardcover Compilation (pf2e) — used by chronicle-keeper
   - We print: Pathfinder Adventure Path #163: Ruins of Gauntlight © 2021, Paizo Inc.; Authors: James Jacobs
   - We print: Pathfinder Adventure Path #164: Hands of the Devil © 2021, Paizo Inc.; Authors: Vanessa Hoskins
@@ -65,10 +61,6 @@ None.
   - We print: Starfinder Absalom Station © 2026, Paizo Inc.; Authors: Jenny Jarzabski, James Beck, Rigby Bendele, and et al..
   - From: https://www.drivethrurpg.com/en/product/582489/starfinder-absalom-station-center-of-the-galaxy
   - Note: From the DriveThruRPG product page, year from its catalog date; check against the book's notice. The page lists only these names and "et al."
-- [ ] Starfinder Guilt of the Grave World Player's Guide (sf2e) — used by chronicle-keeper
-  - We print: Starfinder Guilt of the Grave World Adventure Path © 2025 Paizo Inc., Author: Michael Bramnik.
-  - From: The adventure's notice
-  - Note: A free player's guide, credited by its adventure's notice; check against the guide's own notice.
 - [ ] Starfinder Secrets of the Swarm Adventure Path (sf2e) — used by chronicle-keeper
   - We print: Starfinder Secrets of the Swarm Adventure Path © 2026, Paizo Inc.; Authors: Kate Baker, Joan Hong, Letterio Mammoliti, Matt Morris, Dennis Muldoon, Emily Parks, and Sam W Tennyson.
   - From: https://www.drivethrurpg.com/en/product/582162/starfinder-secrets-of-the-swarm-adventure-path
