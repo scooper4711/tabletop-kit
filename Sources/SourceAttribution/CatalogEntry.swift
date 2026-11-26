@@ -31,7 +31,7 @@ public struct CatalogEntry: Hashable, Sendable {
     public var publisher: String?
     public var credits: [Credit] = []
     /// Notices of earlier works the source's own copyright notice carries, such as a creature from the
-    /// Tome of Horrors Complete; the OGL's Section 15 has to repeat them.
+    /// Tome of Horrors Complete, repeated after the sources. A collection (`isCollection`) lists its parts here.
     public var includes: [String] = []
     public var reference: String?
     /// False while the facts come from somewhere other than the book's own notice and nobody has checked them.
@@ -42,11 +42,17 @@ public struct CatalogEntry: Hashable, Sendable {
         self.title = title
     }
 
+    /// True for a source made of many works, such as the Pathfinder Blog: it has no notice of its own and is
+    /// attributed by the notices of its parts, in `includes`.
+    public var isCollection: Bool {
+        notice == nil && year == nil && credits.isEmpty && !includes.isEmpty
+    }
+
     /// The facts the entry still lacks, by name; empty when it can be attributed.
     public var missingFacts: [String] {
         var missing: [String] = []
         if license == nil { missing.append("license") }
-        guard notice == nil else { return missing }
+        guard notice == nil, !isCollection else { return missing }
         if year == nil { missing.append("year") }
         if publisher?.isEmpty ?? true { missing.append("publisher") }
         if credits.allSatisfy({ $0.names.isEmpty }) { missing.append("credits") }

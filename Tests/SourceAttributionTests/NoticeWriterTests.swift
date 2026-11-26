@@ -85,3 +85,31 @@ struct NoticeWriterTests {
         #expect(AttributionError.malformedTally(line: 3, "z").description.contains("line 3"))
     }
 }
+
+struct CollectionTests {
+    private func blog() -> CatalogEntry {
+        var blog = CatalogEntry(title: "Pathfinder Blog")
+        blog.license = .orc
+        blog.includes = ["Redpitch Alchemy © 2020, Paizo Inc.; Author: Ron Lundeen.", "Apex of Power © 2023, Paizo Inc."]
+        return blog
+    }
+
+    @Test func aCollectionNeedsOnlyALicense() {
+        #expect(blog().isCollection && blog().missingFacts.isEmpty)
+        var unlicensed = blog()
+        unlicensed.license = nil
+        #expect(unlicensed.missingFacts == ["license"])
+    }
+
+    @Test func aCollectionIsAttributedByItsPartsAlone() throws {
+        let catalog = try SourceCatalog(entries: [blog(), quoted("Monster Core", .orc)])
+        let text = try #require(try NoticeWriter.notices(for: tally("Pathfinder Blog", "Monster Core"), catalog: catalog)
+            .first?.text)
+        #expect(text.contains("""
+            * Monster Core © 2024, Paizo Inc.; Author: Someone.
+            * Apex of Power © 2023, Paizo Inc.
+            * Redpitch Alchemy © 2020, Paizo Inc.; Author: Ron Lundeen.
+            """))
+        #expect(!text.contains("Pathfinder Blog"))
+    }
+}

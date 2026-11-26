@@ -21,11 +21,11 @@ public enum NoticeWriter {
         let ogl = entries.filter { $0.license == .ogl }
         var files: [NoticeFile] = []
         if !orc.isEmpty {
-            let text = try render("orc-notice", replacing: "{{ATTRIBUTION}}", with: orc.map(\.noticeLine))
+            let text = try render("orc-notice", replacing: "{{ATTRIBUTION}}", with: noticeLines(orc))
             files.append(NoticeFile(name: orcFileName, text: text))
         }
         if !ogl.isEmpty {
-            let text = try render("open-game-license", replacing: "{{COPYRIGHT}}", with: copyrightLines(ogl))
+            let text = try render("open-game-license", replacing: "{{COPYRIGHT}}", with: [oglOwnNotice] + noticeLines(ogl))
             files.append(NoticeFile(name: oglFileName, text: text))
         }
         return files
@@ -73,10 +73,11 @@ public enum NoticeWriter {
         return "covered by neither the ORC License nor the OGL\(basis)"
     }
 
-    private static func copyrightLines(_ entries: [CatalogEntry]) -> [String] {
+    /// Each source's notice, then once each the notices its sources include (a collection's parts, earlier works).
+    private static func noticeLines(_ entries: [CatalogEntry]) -> [String] {
         let included = Set(entries.flatMap(\.includes))
             .sorted { $0.localizedStandardCompare($1) == .orderedAscending }
-        return [oglOwnNotice] + entries.map(\.noticeLine) + included
+        return entries.filter { !$0.isCollection }.map(\.noticeLine) + included
     }
 
     /// The template with `marker` replaced by the lines as a bulleted list.
