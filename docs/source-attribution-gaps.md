@@ -8,38 +8,22 @@ To fill a gap, take the title, copyright year, publisher and credits from the bo
 
 None.
 
-## Missing facts (30)
+## Missing facts (14)
 
 - [ ] Invasion's Edge Player's Guide (sf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder #213: Thirst for Blood (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder #214: The Broken Palace (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder #215: To Blot Out the Sun (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder #217: Death Sails a Wine-Dark Sea (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder #218: Titanbane (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder #219: Lord of the Trinity Star (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder #221: Into the Apocalypse Archive (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 - [ ] Pathfinder Abomination Vaults Hardcover Compilation (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 - [ ] Pathfinder Adventure Path #225: Vaultlines (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 - [ ] Pathfinder Adventure Path: Bastion of Blasphemies (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 - [ ] Pathfinder Adventure Path: Gatewalkers (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder Adventure Path: Hell's Destiny (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder Adventure Path: Hellbreakers (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder Adventures: Troubles in Grayce (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 - [ ] Pathfinder Beginner Box: Secrets of the Unlit Star (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder Blog (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 - [ ] Pathfinder Dark Archive (Remastered) (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 - [ ] Pathfinder Feybound (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 - [ ] Pathfinder Lost Omens Cheliax, Infernal Inheritance (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder Lost Omens Pathfinder Society Guide (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder Monster Core (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder Monster Core 2 (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 - [ ] Pathfinder Season of Ghosts Hardcover Compilation (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 - [ ] Starfinder Absalom Station (sf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Starfinder Guilt of the Grave World (sf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 - [ ] Starfinder Guilt of the Grave World Player's Guide (sf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 - [ ] Starfinder Murder in Metal City Deluxe Adventure (sf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 - [ ] Starfinder Secrets of the Swarm Adventure Path (sf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Tales From the Vast (sf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
 
 ## To check against the book's notice (3)
 
