@@ -7,7 +7,8 @@
 
 - --licenses: every notice in pf2e's ORCLicense.md and OpenGameLicense.md becomes an entry that quotes it, under
   the license of the file it is in. A Tome of Horrors line in an OGL group goes into the `includes` of that group's
-  Paizo books.
+  Paizo books. The Pathfinder Blog, which pf2e credits post by post, becomes a collection of the posts listed under
+  "Paizo Blog" in the OGL file.
 - --items: an app's bundled records (a JSON list with `source` and `game`). Each source not yet in the catalog is
   added as a gap, so it shows in docs/source-attribution-gaps.md.
 - --alias: the data's title for a book whose notice is under another title, such as
@@ -72,6 +73,10 @@ def title_keys(title: str) -> set[str]:
     volume = re.match(r"Pathfinder #(\d+):(.*)", title)
     if volume:
         keys.add(key(f"Pathfinder Adventure Path #{volume[1]}:{volume[2]}"))
+    if adventure_path := re.match(r"Pathfinder Adventure Path: (.*)", title):
+        keys.add(key(f"Pathfinder {adventure_path[1]} Adventure Path"))
+    game = re.match(r"(Pathfinder|Starfinder) (.*)", title)
+    keys.update(key(f"{name} Adventure: {game[2] if game else title}") for name in ["Pathfinder", "Starfinder"])
     return keys
 
 
@@ -85,8 +90,8 @@ def missing_facts(entry: Entry) -> bool:
     """Returns whether the entry still lacks a license, or the notice facts to attribute it."""
     if entry.get("license") is None:
         return True
-    if entry.get("notice"):
-        return False
+    if entry.get("notice") or (entry.get("includes") and entry.get("year") is None and not entry.get("credits")):
+        return False  # quoted, or a collection attributed by its parts
     return entry.get("year") is None or not entry.get("publisher") or not entry.get("credits")
 
 
@@ -172,6 +177,27 @@ def seed_licenses(catalog: Catalog, folder: pathlib.Path) -> None:
     print(f"Added {added} sources from pf2e's notices.")
 
 
+def group_notices(path: pathlib.Path, group: str) -> list[str]:
+    """Returns the notices listed under one group of a pf2e license file, such as "Paizo Blog"."""
+    lines, inside = [], False
+    for line in path.read_text(encoding="utf-8").splitlines():
+        if heading := GROUP.match(line):
+            inside = heading["group"] == group
+        elif inside and (match := NOTICE.match(line)):
+            lines.append(match["notice"])
+    return lines
+
+
+def seed_blog(catalog: Catalog, folder: pathlib.Path) -> None:
+    """Makes the Pathfinder Blog a collection of the blog posts pf2e's OGL notice lists, as pf2e credits them."""
+    posts = group_notices(folder / "OpenGameLicense.md", "Paizo Blog")
+    blog = catalog.by_key.get(key("Pathfinder Blog"))
+    if not posts or blog is None or not missing_facts(blog):
+        return
+    blog.update(license="ogl", includes=posts, reference="pf2e static/licenses/OpenGameLicense.md, Paizo Blog")
+    print(f"Made the Pathfinder Blog a collection of {len(posts)} posts.")
+
+
 def seed_items(catalog: Catalog, path: pathlib.Path) -> None:
     """Adds each source of an app's records that the catalog lacks, as a gap."""
     added = 0
@@ -244,14 +270,14 @@ def largest_pdf(folder: pathlib.Path) -> pathlib.Path | None:
 
 
 def credit_request(pdf: pathlib.Path) -> str | None:
-    """Returns the notice an ORC book asks to be credited with, from its last or first pages.
+    """Returns the notice an ORC book asks to be credited with, from its last or first pages, or else anywhere.
 
     A notice that runs into a column or page break (it ends without a period and before the book's next section)
     comes out cut short, so it isn't returned: that book is filled in by hand.
     """
     info = subprocess.run(["pdfinfo", str(pdf)], capture_output=True, text=True).stdout
     pages = int(match[1]) if (match := re.search(r"Pages:\s+(\d+)", info)) else 0
-    for first, last in [(max(1, pages - 5), pages), (1, min(pages, 6))]:
+    for first, last in [(max(1, pages - 5), pages), (1, min(pages, 6)), (1, pages)]:
         text = subprocess.run(
             ["pdftotext", "-f", str(first), "-l", str(last), str(pdf), "-"], capture_output=True, text=True
         ).stdout
@@ -313,6 +339,8 @@ def main() -> int:
     for items in arguments.items:
         seed_items(catalog, items)
     link_adventure_path_volumes(catalog)
+    if arguments.licenses:
+        seed_blog(catalog, arguments.licenses)
     pairs = [tuple(alias.split("=>", 1)) for alias in arguments.alias]
     if pairs:
         print(f"Linked {link_aliases(catalog, pairs)} of {len(pairs)} aliases.")
