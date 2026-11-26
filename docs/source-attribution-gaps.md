@@ -8,24 +8,24 @@ To fill a gap, take the title, copyright year, publisher and credits from the bo
 
 None.
 
-## Missing facts (5)
+## Missing facts (0)
 
-- [ ] Invasion's Edge Player's Guide (sf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder Beginner Box: Secrets of the Unlit Star (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Pathfinder Dark Archive (Remastered) (pf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Starfinder Guilt of the Grave World Player's Guide (sf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
-- [ ] Starfinder Murder in Metal City Deluxe Adventure (sf2e) — lacks license, year, publisher, credits — used by chronicle-keeper
+None.
 
-## To check against the book's notice (12)
+## To check against the book's notice (16)
 
+- [ ] Invasion's Edge Player's Guide (sf2e) — The season's first scenario's notice — used by chronicle-keeper
 - [ ] Pathfinder Abomination Vaults Hardcover Compilation (pf2e) — Its volumes' notices, from pf2e — used by chronicle-keeper
 - [ ] Pathfinder Adventure Path #225: Vaultlines (pf2e) — https://www.drivethrurpg.com/en/product/592599/pathfinder-vaultlines-adventure-path — used by chronicle-keeper
 - [ ] Pathfinder Adventure Path: Bastion of Blasphemies (pf2e) — https://www.drivethrurpg.com/en/product/582488/pathfinder-bastion-of-blasphemies-adventure-path — used by chronicle-keeper
 - [ ] Pathfinder Adventure Path: Gatewalkers (pf2e) — Its volumes' notices, from pf2e — used by chronicle-keeper
+- [ ] Pathfinder Beginner Box: Secrets of the Unlit Star (pf2e) — PZO12013E GM Guide.pdf, credits page — used by chronicle-keeper
+- [ ] Pathfinder Dark Archive (Remastered) (pf2e) — https://store.paizo.com/pathfinder-dark-archive-remastered-pdf/ — used by chronicle-keeper
 - [ ] Pathfinder Feybound (pf2e) — https://www.drivethrurpg.com/en/product/592607/pathfinder-feybound — used by chronicle-keeper
 - [ ] Pathfinder Lost Omens Cheliax, Infernal Inheritance (pf2e) — https://www.drivethrurpg.com/en/product/587993/pathfinder-lost-omens-cheliax-infernal-inheritance — used by chronicle-keeper
 - [ ] Pathfinder Season of Ghosts Hardcover Compilation (pf2e) — Its volumes' notices, from pf2e — used by chronicle-keeper
 - [ ] Starfinder Absalom Station (sf2e) — https://www.drivethrurpg.com/en/product/582489/starfinder-absalom-station-center-of-the-galaxy — used by chronicle-keeper
+- [ ] Starfinder Guilt of the Grave World Player's Guide (sf2e) — The adventure's notice — used by chronicle-keeper
 - [ ] Starfinder Secrets of the Swarm Adventure Path (sf2e) — https://www.drivethrurpg.com/en/product/582162/starfinder-secrets-of-the-swarm-adventure-path — used by chronicle-keeper
 - [ ] Starfinder Society Scenario #1-05: Sloughscar Summit (sf2e) — https://paizo.com/starfinder-society-scenario-1-05-sloughscar-summit/ — used by chronicle-keeper
 - [ ] Starfinder Society Scenario #1-06: Magic in the Mist (sf2e) — https://paizo.com/starfinder-society-scenario-1-06-magic-in-the-mist/ — used by chronicle-keeper
