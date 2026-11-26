@@ -6,7 +6,8 @@ writer (Scrollkeeper) and every reader (Mapsmith, Pluck, Pawn Shop, Field
 Guide, Turnkeeper) agree. Scrollkeeper's `docs/specs/app-handoff`
 (requirements 5 and 6) says what Scrollkeeper shares and when. The library also
 holds the one bridge through which an app lists and opens Scrollkeeper's titles
-(R5), so the handoff contract is defined once.
+(R5), so the handoff contract is defined once, and the request another app
+sends Pawn Shop for a sheet of pawns (R6).
 
 ## R1 The App Group
 - R1.1 An app finds the group's folder without the team ID in its code: on the
@@ -78,3 +79,13 @@ holds the one bridge through which an app lists and opens Scrollkeeper's titles
   for titles (R5.4).
 - R5.8 Each app keeps its own window. The library gives it the bridge's state, the system side of launching
   Scrollkeeper on the Mac, and a small cover thumbnail with a symbol to show when a title has no cover.
+
+## R6 The pawn sheet request
+- R6.1 An app asks Pawn Shop for a new sheet with a link, `pawnshop://sheet?request=<payload>`: a title for the
+  sheet and, in order, its lines. Each line names a creature, says how many pawns of it to print and, when the
+  sender knows which pawn it means, gives that pawn's ID (the art's ID in the shared library, or a custom
+  creature's ID). The payload is the request as JSON, in URL-safe Base64 without padding.
+- R6.2 Reading a link gives back the request it was made from, whatever characters its names hold. A link that
+  isn't a sheet request (another scheme or host) is told apart from one whose payload can't be read.
+- R6.3 On the Mac an app can ask whether anything installed opens a link, so it offers the request only when a Pawn
+  Shop that takes it is there. This works in the App Sandbox.
