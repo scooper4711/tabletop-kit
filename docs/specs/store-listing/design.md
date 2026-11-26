@@ -67,6 +67,9 @@ Signing depends on the `ASC_*` variables:
   - The archive gets `-xcconfig <out-dir>/Signing.xcconfig`: `CODE_SIGN_STYLE = Manual`, `CODE_SIGN_IDENTITY = Apple
     Distribution`, and `PROVISIONING_PROFILE_SPECIFIER = $(STORE_PROFILE_$(WRAPPER_EXTENSION))`, which names the
     profile for `app` and `appex` targets and is empty for Swift package targets, which take none.
+  - The xcconfig also sets `DEVELOPMENT_TEAM` to the app's, read from the scheme's settings. A Swift package's
+    resource bundle inherits no team from the project, and manual signing refuses a target without one ("Signing
+    for … requires a development team"). An app without a team stops the script with a message that says so.
   - The export options say `signingStyle` `manual`, the `signingCertificate` and the profile of each bundle identifier.
 - **Not set:** automatic signing with `-allowProvisioningUpdates` and the account Xcode is signed in to, as before.
 
