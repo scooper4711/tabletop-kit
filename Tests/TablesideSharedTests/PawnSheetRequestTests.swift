@@ -72,6 +72,44 @@ import Testing
         #expect(throws: PawnSheetRequestError.unreadable) { try PawnSheetRequest(url: url) }
     }
 
+    /// The link carrying `json` as its payload.
+    private func link(carrying json: String) throws -> URL {
+        let payload = Data(json.utf8).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-").replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+        return try link("pawnshop://sheet?request=\(payload)")
+    }
+
+    @Test func aRequestSaysItsFormat() throws {
+        let sent = request([.init(name: "Goblin Warrior")])
+        #expect(sent.formatVersion == PawnSheetRequest.currentFormatVersion)
+        let json = try #require(String(data: try JSONEncoder().encode(sent), encoding: .utf8))
+        #expect(json.contains("\"formatVersion\":1"))
+    }
+
+    @Test func aRequestWithoutAFormatIsTheFirst() throws {
+        let json = #"{"title":"Docks","lines":[{"name":"Ogre","count":2}]}"#
+        let read = try PawnSheetRequest(url: link(carrying: json))
+        #expect(read.formatVersion == 1)
+        #expect(read == PawnSheetRequest(title: "Docks", lines: [.init(name: "Ogre", count: 2)]))
+    }
+
+    @Test func fieldsAddedLaterAreIgnored() throws {
+        let json = #"{"formatVersion":1,"title":"Docks","paper":"A4","lines":[{"name":"Ogre","count":2,"mood":"x"}]}"#
+        #expect(try PawnSheetRequest(url: link(carrying: json)).lines == [.init(name: "Ogre", count: 2)])
+    }
+
+    @Test func aNewerFormatIsRefusedWhateverItHolds() throws {
+        let known = PawnSheetRequest.currentFormatVersion
+        for json in [#"{"formatVersion":\#(known + 1),"title":"Docks","lines":[]}"#,
+                     #"{"formatVersion":\#(known + 6),"sheets":{"all":"changed"}}"#] {
+            let url = try link(carrying: json)
+            #expect(throws: PawnSheetRequestError.self) { try PawnSheetRequest(url: url) }
+        }
+        let url = try link(carrying: #"{"formatVersion":\#(known + 1),"title":"Docks","lines":[]}"#)
+        #expect(throws: PawnSheetRequestError.newerFormat(known + 1)) { try PawnSheetRequest(url: url) }
+    }
+
     @Test func theProbeCarriesNoRequest() {
         #expect(PawnSheetRequest.probeURL.absoluteString == "pawnshop://sheet")
         #expect(throws: PawnSheetRequestError.unreadable) { try PawnSheetRequest(url: PawnSheetRequest.probeURL) }
@@ -80,6 +118,7 @@ import Testing
     @Test func errorsSayWhatFailed() {
         #expect(PawnSheetRequestError.unrecognizedLink.localizedDescription.contains("pawn sheet request"))
         #expect(PawnSheetRequestError.unreadable.localizedDescription.contains("can't be read"))
+        #expect(PawnSheetRequestError.newerFormat(7).localizedDescription.contains("newer format (7)"))
     }
 
     #if os(macOS)

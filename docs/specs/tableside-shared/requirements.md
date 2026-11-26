@@ -89,3 +89,7 @@ sends Pawn Shop for a sheet of pawns (R6).
   isn't a sheet request (another scheme or host) is told apart from one whose payload can't be read.
 - R6.3 On the Mac an app can ask whether anything installed opens a link, so it offers the request only when a Pawn
   Shop that takes it is there. This works in the App Sandbox.
+- R6.4 A request says which format it is written in; one that doesn't is in format 1. A reader checks the format
+  before reading the rest and refuses a newer one than it knows with an error of its own, so the app can tell the
+  user to update. Fields added later are ignored, and adding them doesn't change the format's number: it rises only
+  for a change an older reader would get wrong.
