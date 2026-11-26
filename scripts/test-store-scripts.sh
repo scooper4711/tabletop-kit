@@ -45,10 +45,12 @@ if [[ "${1:-}" == "-showBuildSettings" ]]; then
     # The whole project has another app and its extension, which the scheme doesn't build.
     others=()
     [[ " $* " != *" -alltargets "* ]] || others=(application:io.example.Other app-extension:io.example.Other.Widget)
+    team=',"DEVELOPMENT_TEAM":"TEAM123456"'
+    [[ -z "${NO_TEAM:-}" ]] || team=''
     for target in application:io.example.Demo app-extension:io.example.Demo.Widget \
         bundle.ui-testing:io.example.DemoUITests application:io.example.Demo "${others[@]}"; do
-        printf '{"buildSettings":{"PRODUCT_TYPE":"com.apple.product-type.%s","PRODUCT_BUNDLE_IDENTIFIER":"%s"}}\n' \
-            "${target%%:*}" "${target#*:}"
+        printf '{"buildSettings":{"PRODUCT_TYPE":"com.apple.product-type.%s","PRODUCT_BUNDLE_IDENTIFIER":"%s"%s}}\n' \
+            "${target%%:*}" "${target#*:}" "$team"
     done | paste -sd, - | sed 's/.*/[&]/'
     exit 0
 fi
@@ -294,6 +296,7 @@ check "with the distribution identity" \
 check "and no automatic signing"           'grep -qx "CODE_SIGN_STYLE = Manual" "$APP/build/ios/Signing.xcconfig"'
 check "packages take no profile" \
     'grep -qF "= \$(STORE_PROFILE_\$(WRAPPER_EXTENSION))" "$APP/build/ios/Signing.xcconfig"'
+check "packages sign with the app's team"  'grep -qx "DEVELOPMENT_TEAM = TEAM123456" "$APP/build/ios/Signing.xcconfig"'
 check "Xcode may make nothing"             '! grep -qF -- "-allowProvisioningUpdates" "$LOG"'
 check "the export follows the archive"     'call 5 "|-exportArchive|-archivePath|build/ios/Demo-iPad.xcarchive|"'
 check "the export is for the store"        'grep -q app-store-connect "$OPTIONS"'
@@ -304,6 +307,12 @@ rm "$LOG"
 SETTINGS_ERROR="$(cd "$APP" && FAIL_SETTINGS=1 STORE_PROFILES="$DIR/bin/store-profiles" \
     "$SCRIPTS/archive-ios.sh" ios/Demo.xcodeproj Demo-iPad failed 2>&1 || true)"
 check "unread settings say so"             '[[ "$SETTINGS_ERROR" == *"read the bundle identifiers of Demo-iPad"* ]]'
+check "and nothing is archived"            '! grep -qF -e "profiles|" -e "|archive|" "$LOG"'
+rm "$LOG"
+TEAM_ERROR="$(cd "$APP" && NO_TEAM=1 STORE_PROFILES="$DIR/bin/store-profiles" \
+    "$SCRIPTS/archive-ios.sh" ios/Demo.xcodeproj Demo-iPad failed 2>&1 || true)"
+check "an app without a team says so" \
+    '[[ "$TEAM_ERROR" == *"the app of Demo-iPad in ios/Demo.xcodeproj has no DEVELOPMENT_TEAM"* ]]'
 check "and nothing is archived"            '! grep -qF -e "profiles|" -e "|archive|" "$LOG"'
 rm "$LOG"
 (cd "$APP" && ASC_KEY_ID= VERSION=3.1.0 BUILD_NUMBER=9 "$SCRIPTS/archive-ios.sh" ios/Demo.xcodeproj Demo-iPad out) \

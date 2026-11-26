@@ -31,11 +31,12 @@ SCRIPTS="$(dirname "$0")"
 PROFILE_PREFIX="Tableside App Store "
 DISTRIBUTION="Apple Distribution"
 
-# The bundle identifiers to sign, one per line: the scheme's app, then the project's app extensions whose identifiers
-# start with the app's, as Apple requires of the extensions an app embeds. A scheme's own settings leave those out.
+# Usage: bundle_ids <scheme-settings>; the bundle identifiers to sign, one per line: the scheme's app, then the
+# project's app extensions whose identifiers start with the app's, as Apple requires of the extensions an app embeds.
+# A scheme's own settings leave those out.
 bundle_ids() {
     local app
-    app="$(settings_json -scheme "$SCHEME" -destination 'generic/platform=iOS' | product_ids application)" || return 1
+    app="$(product_ids application <<< "$1")" || return 1
     [[ -n "$app" ]] || return 1
     echo "$app"
     settings_json -alltargets -sdk iphoneos | product_ids app-extension "$app." || return 1
@@ -43,6 +44,15 @@ bundle_ids() {
 
 settings_json() {
     xcodebuild -showBuildSettings -json -project "$PROJECT" -configuration Release "$@"
+}
+
+# The development team of the app in the JSON settings on stdin; nothing when the app has none.
+app_team() {
+    # shellcheck disable=SC2016  # The Ruby program is meant to be literal.
+    ruby -rjson -e '
+        apps = JSON.parse($stdin.read).map { |target| target["buildSettings"] }
+                   .select { |s| s["PRODUCT_TYPE"] == "com.apple.product-type.application" }
+        puts apps.map { |s| s["DEVELOPMENT_TEAM"].to_s }.reject(&:empty?).first.to_s'
 }
 
 # Usage: product_ids <product-type> [<prefix>]; the bundle identifiers of that type in the JSON settings on stdin.
@@ -56,11 +66,17 @@ product_ids() {
 }
 
 # Manual signing creates nothing: no certificate, and no profile beyond the named ones. The profile is chosen per
-# target from its wrapper, so Swift package targets, which take no profile, are left without one.
+# target from its wrapper, so Swift package targets, which take no profile, are left without one. The team is the
+# app's, for every target: a Swift package's resource bundle inherits none from the project, and signing by hand
+# wants one.
 manual_signing() {
-    local ids=() listed
+    local ids=() settings listed team
     [[ -f "$ASC_KEY_FILE" ]] || fail "there is no key file at $ASC_KEY_FILE"
-    listed="$(bundle_ids)" || fail "couldn't read the bundle identifiers of $SCHEME in $PROJECT"
+    settings="$(settings_json -scheme "$SCHEME" -destination 'generic/platform=iOS')" \
+        || fail "couldn't read the bundle identifiers of $SCHEME in $PROJECT"
+    listed="$(bundle_ids "$settings")" || fail "couldn't read the bundle identifiers of $SCHEME in $PROJECT"
+    team="$(app_team <<< "$settings")" || fail "couldn't read the development team of $SCHEME in $PROJECT"
+    [[ -n "$team" ]] || fail "the app of $SCHEME in $PROJECT has no DEVELOPMENT_TEAM"
     read -r -a ids <<< "$(tr '\n' ' ' <<< "$listed")"
     # CI exports PROVISIONING_PROFILE, the Mac App Store profile, and xcodebuild reads the environment as build
     # settings. Manual signing would apply it to every target.
@@ -69,6 +85,7 @@ manual_signing() {
     cat > "$OUT/Signing.xcconfig" <<XCCONFIG
 CODE_SIGN_STYLE = Manual
 CODE_SIGN_IDENTITY = $DISTRIBUTION
+DEVELOPMENT_TEAM = $team
 PROVISIONING_PROFILE =
 STORE_PROFILE_app = $PROFILE_PREFIX\$(PRODUCT_BUNDLE_IDENTIFIER)
 STORE_PROFILE_appex = \$(STORE_PROFILE_app)
