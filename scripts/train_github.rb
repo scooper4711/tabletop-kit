@@ -29,6 +29,7 @@ class TrainGitHub
 
   # Follows the run on the terminal, and stops the train if the run fails.
   def watch(run)
+    wait_until_shown(run)
     @shell.watch('gh', 'run', 'watch', run, '--exit-status')
   end
 
@@ -59,6 +60,16 @@ class TrainGitHub
   def newest_run(workflow)
     @shell.run('gh', 'run', 'list', '--workflow', workflow, '--event', 'workflow_dispatch', '--limit', '1',
                '--json', 'databaseId', '--jq', '.[0].databaseId // 0').to_i
+  end
+
+  # GitHub answers "not found" for a run in the first moments after starting it, and gh run watch gives up on that.
+  def wait_until_shown(run)
+    POLLS.times do
+      return if @shell.ok?('gh', 'run', 'view', run, '--json', 'status')
+
+      @sleeper.call(POLL_SECONDS)
+    end
+    raise TrainError, "run #{run} was started, but GitHub doesn't show it; follow it with gh run watch"
   end
 
   # Older versions of gh don't say which run they started, so this waits for one newer than the last.

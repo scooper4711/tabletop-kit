@@ -136,13 +136,28 @@ class TrainGitHubTest < Minitest::Test
 
   def test_reads_releases_pull_requests_and_runs
     hub = github([[%w[release view], 'yes'], [%w[pr list], "https://example.invalid/pull/3\n"],
-                  [%w[run view], 'abc123'], [%w[repo view], 'https://github.com/o/r'], [%w[run watch], '']])
+                  [%w[run view headSha], 'abc123'], [%w[run view status], 'yes'],
+                  [%w[repo view], 'https://github.com/o/r'], [%w[run watch], '']])
     assert hub.release?('v1.2.0')
     assert_equal ['https://example.invalid/pull/3'], hub.pull_requests('release/1.2.0')
     assert_equal 'abc123', hub.run_commit('42')
     assert_equal 'https://github.com/o/r', hub.url
     hub.watch('42')
     assert_equal %w[gh run watch 42 --exit-status], @gh.commands.last
+  end
+
+  def test_a_run_github_does_not_show_yet_is_waited_for
+    hub = github([[%w[run view status], %w[no no yes]], [%w[run watch], '']])
+    hub.watch('42')
+    assert_equal [TrainGitHub::POLL_SECONDS] * 2, @naps
+    assert_equal %w[gh run watch 42 --exit-status], @gh.commands.last
+  end
+
+  def test_a_run_github_never_shows_stops_the_train
+    hub = github([[%w[run view status], 'no']])
+    error = assert_raises(TrainError) { hub.watch('42') }
+    assert_match(/run 42 was started/, error.message)
+    assert_empty(@gh.commands.select { |command| command.include?('watch') })
   end
 
   def test_a_release_has_notes_and_no_files
