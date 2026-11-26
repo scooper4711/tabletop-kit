@@ -25,7 +25,8 @@ public enum NoticeWriter {
             files.append(NoticeFile(name: orcFileName, text: text))
         }
         if !ogl.isEmpty {
-            let text = try render("open-game-license", replacing: "{{COPYRIGHT}}", with: [oglOwnNotice] + noticeLines(ogl))
+            let lines = [oglOwnNotice] + noticeLines(ogl)
+            let text = try render("open-game-license", replacing: "{{COPYRIGHT}}", with: lines)
             files.append(NoticeFile(name: oglFileName, text: text))
         }
         return files

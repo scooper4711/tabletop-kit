@@ -90,7 +90,8 @@ struct CollectionTests {
     private func blog() -> CatalogEntry {
         var blog = CatalogEntry(title: "Pathfinder Blog")
         blog.license = .orc
-        blog.includes = ["Redpitch Alchemy © 2020, Paizo Inc.; Author: Ron Lundeen.", "Apex of Power © 2023, Paizo Inc."]
+        blog.includes = ["Redpitch Alchemy © 2020, Paizo Inc.; Author: Ron Lundeen.",
+                         "Apex of Power © 2023, Paizo Inc."]
         return blog
     }
 
@@ -103,8 +104,8 @@ struct CollectionTests {
 
     @Test func aCollectionIsAttributedByItsPartsAlone() throws {
         let catalog = try SourceCatalog(entries: [blog(), quoted("Monster Core", .orc)])
-        let text = try #require(try NoticeWriter.notices(for: tally("Pathfinder Blog", "Monster Core"), catalog: catalog)
-            .first?.text)
+        let files = try NoticeWriter.notices(for: tally("Pathfinder Blog", "Monster Core"), catalog: catalog)
+        let text = try #require(files.first?.text)
         #expect(text.contains("""
             * Monster Core © 2024, Paizo Inc.; Author: Someone.
             * Apex of Power © 2023, Paizo Inc.
