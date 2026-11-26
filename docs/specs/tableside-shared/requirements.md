@@ -7,7 +7,8 @@ Guide, Turnkeeper) agree. Scrollkeeper's `docs/specs/app-handoff`
 (requirements 5 and 6) says what Scrollkeeper shares and when. The library also
 holds the one bridge through which an app lists and opens Scrollkeeper's titles
 (R5), so the handoff contract is defined once, and the request another app
-sends Pawn Shop for a sheet of pawns (R6).
+sends Pawn Shop for a sheet of pawns (R6), and the Mac page setup the apps that
+print keep (R7).
 
 ## R1 The App Group
 - R1.1 An app finds the group's folder without the team ID in its code: on the
@@ -89,3 +90,10 @@ sends Pawn Shop for a sheet of pawns (R6).
   isn't a sheet request (another scheme or host) is told apart from one whose payload can't be read.
 - R6.3 On the Mac an app can ask whether anything installed opens a link, so it offers the request only when a Pawn
   Shop that takes it is there. This works in the App Sandbox.
+
+## R7 The page setup
+- R7.1 On the Mac an app can keep a page setup as data, in a document or in its preferences, and get the same setup
+  back: the printer, the orientation, and a paper only that printer has, such as a borderless size.
+- R7.2 An app can keep the page setup the user last confirmed, so the next window, document or launch starts from
+  it. Saving again replaces it. Until one is saved, or when the saved one can't be read, there is none, and the app
+  starts from the system's default.
