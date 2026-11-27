@@ -94,6 +94,15 @@ print keep (R7).
   before reading the rest and refuses a newer one than it knows with an error of its own, so the app can tell the
   user to update. Fields added later are ignored, and adding them doesn't change the format's number: it rises only
   for a change an older reader would get wrong.
+- R6.5 Where a link can't open a document (the iPad and the iPhone), an app writes the request as one of Pawn
+  Shop's sheet files and shares it. The file holds an entry per line that asks for at least one pawn, in order: how
+  many, the pawn's ID and the creature's name, so Pawn Shop shows the pawn where its library has it and a named
+  placeholder where it doesn't. A line that names no pawn gets an ID of its own.
+- R6.6 The file holds no settings, such as the paper: Pawn Shop gives the sheet those of a new one. That makes it
+  sheet format 2 (Pawn Shop's spec, R12.6), which the file says. It can also say which version of the PDF reader
+  made the sender's library.
+- R6.7 The file is named after the request's title, without what a file's name can't hold, since Pawn Shop names a
+  sheet after its file; a title with nothing left gives "Pawns".
 
 ## R7 The page setup
 - R7.1 On the Mac an app can keep a page setup as data, in a document or in its preferences, and get the same setup

@@ -83,6 +83,13 @@ Moved here from Mapsmith and Pluck, whose copies had grown apart.
   `.newerFormat(version)` before it looks at the title or the lines; `init(url:)` passes that error on and turns any
   other decoding failure into `.unreadable`. The number was added before any app with the request reached the App
   Store, because a reader that is already installed can't be taught to check.
+- **The request as a sheet file (R6.5 to R6.7).** `PawnSheetRequest.sheetFile(readerVersion:)` encodes the keys
+  Pawn Shop's `SheetFile` reads (`formatVersion`, `entries` with `id`, `pawnID`, `count` and a `label` of
+  `ArtReference`'s keys, and `readerVersion`) from private structs of its own, so `TablesideShared` needs nothing
+  of Pawn Shop's or of `ArtExtraction`. A test in Pawn Shop reads the kit's file with `SheetFile`, so the two can't
+  drift apart unnoticed. `sheetFileName`, `sheetFileType` and `sheetFileExtension` name the file. Chosen over a
+  second link for iOS because SwiftUI's document apps can't open a document from code there, while the system
+  already hands a shared file to the app that owns its type.
 - **`PageSetupArchive` and `PageSetupStore` (R7, macOS only).** The archive is the whole `NSPrintInfo`, written and
   read with secure coding: a paper size alone would come back formatted for "Any Printer", where a printer's own
   papers don't exist. `PageSetupStore` keeps one archive in `UserDefaults` under a key the app may name
